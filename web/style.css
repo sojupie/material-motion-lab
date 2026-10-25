@@ -88,7 +88,6 @@ main {
   min-inline-size: 0;
   background: var(--md-sys-color-surface-container);
   padding: var(--md-sys-measurement-space300);
-  border-start-start-radius: var(--md-sys-shape-corner-extra-large);
 }
 .workspace-heading {
   margin-block-end: var(--md-sys-measurement-space300);
@@ -107,7 +106,6 @@ main {
   align-items: center;
   justify-content: center;
   padding: var(--md-sys-measurement-space400);
-  border-radius: var(--md-sys-shape-corner-extra-large);
   background: var(--md-sys-color-surface);
   text-align: center;
 }
@@ -135,14 +133,12 @@ main {
   min-inline-size: 0;
   padding: var(--md-sys-measurement-space300);
   background: var(--md-sys-color-surface);
-  border-radius: var(--md-sys-shape-corner-extra-large);
 }
 .video-panel {
   min-inline-size: 0;
 }
 .image-wrap {
   background: var(--md-sys-color-surface-container-highest);
-  border-radius: var(--md-sys-shape-corner-medium);
   overflow: auto;
   block-size: clamp(160px, 26vh, 320px);
   display: flex;
@@ -357,9 +353,6 @@ footer {
   }
   .shell {
     grid-template-columns: 1fr;
-  }
-  main {
-    border-start-end-radius: var(--md-sys-shape-corner-extra-large);
   }
 }
 @media (max-width: 900px) {

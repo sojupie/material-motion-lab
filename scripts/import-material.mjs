@@ -28,6 +28,8 @@ const elevation = postcss.parse(
 
 const allowed = new Set([
   "md-button",
+  "md-icon-button",
+  "md-standard-icon-button",
   "md-button-ripple",
   "md-filled-button",
   "md-tonal-button",
