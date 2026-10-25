@@ -38,6 +38,7 @@ const allowed = new Set([
   "md-field-menu",
   "md-field-empty",
   "md-field-menu-divider",
+  "md-divider",
   "md-card",
   "md-elevated-card",
   "md-outlined-card",

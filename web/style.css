@@ -31,42 +31,40 @@ p {
   margin: 0;
 }
 h1 {
-  font: var(--md-sys-typescale-headline-small);
+  font: var(--md-sys-typescale-title-large);
 }
 h2 {
-  font: var(--md-sys-typescale-title-large);
-  margin-block-end: var(--md-sys-measurement-space200);
+  font: var(--md-sys-typescale-title-medium);
 }
 h3 {
   font: var(--md-sys-typescale-title-medium);
-  margin-block-end: var(--md-sys-measurement-space150);
 }
 p {
   margin-block: var(--md-sys-measurement-space100)
     var(--md-sys-measurement-space200);
 }
-header {
+/* Application chrome stays on the navigation surface. */
+.app-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: var(--md-sys-measurement-space250) var(--md-sys-measurement-space300);
-  border-bottom: 1px solid var(--md-sys-color-outline-variant);
+  padding: var(--md-sys-measurement-space200) var(--md-sys-measurement-space300);
   gap: var(--md-sys-measurement-space200);
+}
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--md-sys-measurement-space100);
 }
 .shell {
   display: grid;
   grid-template-columns: var(
       --md-comp-navigation-drawer-container-width
     ) minmax(0, 1fr);
-  min-height: calc(100vh - 80px);
+  min-block-size: calc(100dvh - 72px);
 }
 .desktop-navigation {
   min-inline-size: 0;
-}
-.header-actions {
-  display: flex;
-  align-items: center;
-  gap: var(--md-sys-measurement-space100);
 }
 .mobile-navigation {
   display: none;
@@ -76,16 +74,39 @@ header {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+/* The tinted document area separates work from application navigation. */
 main {
+  min-inline-size: 0;
+  background: var(--md-sys-color-surface-container);
   padding: var(--md-sys-measurement-space300);
-  min-width: 0;
-  max-width: 1600px;
-  width: 100%;
-  margin: auto;
+  border-start-start-radius: var(--md-sys-shape-corner-extra-large);
+}
+.workspace-heading {
+  margin-block-end: var(--md-sys-measurement-space300);
+}
+#name {
+  font: var(--md-sys-typescale-headline-small);
+  overflow-wrap: anywhere;
+}
+#recording-meta {
+  margin-block: var(--md-sys-measurement-space50);
 }
 #empty {
-  padding: var(--md-sys-measurement-space600) var(--md-sys-measurement-space300);
+  min-block-size: 420px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--md-sys-measurement-space400);
+  border-radius: var(--md-sys-shape-corner-extra-large);
+  background: var(--md-sys-color-surface);
   text-align: center;
+}
+#empty h2 {
+  font: var(--md-sys-typescale-headline-small);
+}
+#empty .help {
+  margin-block-start: var(--md-sys-measurement-space200);
 }
 .muted,
 .help {
@@ -96,21 +117,28 @@ main {
 }
 .stage-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 300px;
-  gap: var(--md-sys-measurement-space250);
+  grid-template-columns: minmax(0, 1fr) 280px;
+  gap: var(--md-sys-measurement-space300);
+  align-items: start;
 }
-.panel {
+/* Video and measurements belong to one working surface. */
+.work-surface {
+  min-inline-size: 0;
+  padding: var(--md-sys-measurement-space300);
+  background: var(--md-sys-color-surface);
+  border-radius: var(--md-sys-shape-corner-extra-large);
+}
+.video-panel {
   min-inline-size: 0;
 }
 .image-wrap {
   background: var(--md-sys-color-surface-container-highest);
   border-radius: var(--md-sys-shape-corner-medium);
   overflow: auto;
-  max-height: 58vh;
+  block-size: clamp(160px, 26vh, 320px);
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  min-height: 180px;
 }
 canvas {
   display: block;
@@ -126,37 +154,56 @@ canvas {
   gap: var(--md-sys-measurement-space100);
   align-items: center;
   flex-wrap: wrap;
-  margin: var(--md-sys-measurement-space200) 0
-    var(--md-sys-measurement-space100);
+  margin-block: var(--md-sys-measurement-space100);
 }
 .time {
   font: var(--md-sys-typescale-body-medium);
   font-variant-numeric: tabular-nums;
   margin-inline-start: auto;
 }
-.actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--md-sys-measurement-space150);
-  margin-block-start: var(--md-sys-measurement-space200);
+.graph-panel {
+  margin-block-start: var(--md-sys-measurement-space300);
 }
+.graph-panel h2 {
+  margin-block-end: var(--md-sys-measurement-space150);
+}
+/* The inspector supports the document; it is not another raised card. */
 .controls {
-  grid-column: 2;
-  grid-row: 1 / span 2;
-  align-self: start;
+  min-inline-size: 0;
+  padding: var(--md-sys-measurement-space200) var(--md-sys-measurement-space100);
 }
-.controls > .md-button {
+.inspector-group {
+  min-inline-size: 0;
+}
+.inspector-group h3 {
+  margin-block-end: var(--md-sys-measurement-space100);
+}
+.inspector-group > .md-button {
   inline-size: 100%;
   margin-block-start: var(--md-sys-measurement-space150);
 }
-.controls > .field-row {
+.inspector-group > .field-row {
   margin-block: var(--md-sys-measurement-space250);
 }
 .field-row > .md-outlined-text-field {
   inline-size: 100%;
 }
-.graph-panel {
-  grid-column: 1;
+.controls > .md-divider {
+  margin-block: var(--md-sys-measurement-space300);
+}
+.tracking-help {
+  margin-block-start: var(--md-sys-measurement-space200);
+  font: var(--md-sys-typescale-body-medium);
+  color: var(--md-sys-color-on-surface-variant);
+}
+.tracking-help summary {
+  cursor: pointer;
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--md-sys-measurement-space100);
+  margin-block-start: var(--md-sys-measurement-space200);
 }
 .graph-controls {
   display: flex;
@@ -170,7 +217,7 @@ canvas {
 }
 #graph {
   width: 100%;
-  height: auto;
+  height: 200px;
   display: block;
   cursor: crosshair;
 }
@@ -216,35 +263,30 @@ canvas {
   border-top-style: dashed;
 }
 #status {
-  padding: var(--md-sys-measurement-space150) var(--md-sys-measurement-space300);
-  min-height: 48px;
-  background: var(--md-sys-color-surface-container);
+  min-block-size: 20px;
   font: var(--md-sys-typescale-body-medium);
+  color: var(--md-sys-color-on-surface-variant);
+}
+#status:empty {
+  display: none;
 }
 #status.error {
-  background: var(--md-sys-color-error);
-  color: var(--md-sys-color-on-error);
+  color: var(--md-sys-color-error);
+}
+body[aria-busy="true"] #status {
+  color: var(--md-sys-color-primary);
 }
 [hidden] {
   display: none !important;
-}
-.filename {
-  overflow-wrap: anywhere;
 }
 #quality {
   font: var(--md-sys-typescale-body-medium);
   color: var(--md-sys-color-on-surface-variant);
 }
 footer {
-  padding: var(--md-sys-measurement-space250) var(--md-sys-measurement-space300);
+  padding-block: var(--md-sys-measurement-space250) 0;
   font: var(--md-sys-typescale-body-medium);
   color: var(--md-sys-color-on-surface-variant);
-}
-.graph-panel h2 {
-  margin-block-end: var(--md-sys-measurement-space100);
-}
-.graph-panel .help {
-  margin-block-end: var(--md-sys-measurement-space50);
 }
 /* Filter placement uses the same chip/listbox anatomy as the catalog previews. */
 .tokens-preview-filter {
@@ -296,7 +338,7 @@ footer {
 .tokens-preview-filter label {
   display: none;
 }
-@media (max-width: 1000px) {
+@media (max-width: 1279px) {
   .desktop-navigation {
     display: none;
   }
@@ -306,38 +348,44 @@ footer {
   .shell {
     grid-template-columns: 1fr;
   }
+  main {
+    border-start-end-radius: var(--md-sys-shape-corner-extra-large);
+  }
+}
+@media (max-width: 900px) {
   .stage-grid {
     grid-template-columns: 1fr;
   }
   .controls {
-    grid-column: auto;
-    grid-row: auto;
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 0 var(--md-sys-measurement-space250);
+    gap: var(--md-sys-measurement-space400);
   }
-  .controls h3,
-  .controls .help {
-    grid-column: 1/-1;
-  }
-  .graph-panel {
-    grid-column: 1;
+  .controls > .md-divider {
+    display: none;
   }
 }
-@media (max-width: 650px) {
-  .shell {
-    grid-template-columns: 1fr;
+@media (max-width: 600px) {
+  .app-header {
+    padding: var(--md-sys-measurement-space200);
   }
   main {
     padding: var(--md-sys-measurement-space200);
   }
-  header {
+  .work-surface {
     padding: var(--md-sys-measurement-space200);
   }
-  .time {
-    margin-inline-start: 0;
+  #empty {
+    padding: var(--md-sys-measurement-space300);
   }
   .controls {
     display: block;
+    padding-inline: 0;
+  }
+  .controls > .md-divider {
+    display: block;
+  }
+  .time {
+    margin-inline-start: 0;
   }
 }

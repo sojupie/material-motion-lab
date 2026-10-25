@@ -35,31 +35,30 @@ type Entry = { id: string; name: string };
 const $ = <T extends HTMLElement = HTMLElement>(id: string) =>
   document.getElementById(id) as T;
 document.querySelector("#app")!.innerHTML = `
-<header><h1>UI Motion</h1><div class="header-actions"><div class="mobile-navigation" data-navigation-demo><button type="button" class="md-button md-outlined-button" data-navigation-open aria-haspopup="dialog" aria-controls="recording-drawer">Recordings</button><dialog id="recording-drawer" class="md-navigation md-navigation-drawer" data-variant="modal" data-navigation-modal data-navigation-group aria-label="Recordings"><h3>Recordings</h3><div id="mobile-projects" class="md-nav-items"></div></dialog></div><button id="import" class="md-button md-filled-button">Open video</button><input id="file" type="file" accept="video/*,.gif" hidden></div></header>
-<div id="status" role="status" aria-live="polite">Open a video to begin.</div>
-<div class="shell"><aside class="desktop-navigation"><nav class="md-navigation md-navigation-drawer" data-variant="standard" data-navigation-group aria-label="Recordings"><h3>Recordings</h3><div id="projects" class="md-nav-items"></div></nav></aside><main id="recording-content">
-<section id="empty" class="md-card md-outlined-card"><h2>Measure motion from video</h2><p>Open a recording, draw around an object or edge, and track its movement.</p><p class="muted">Videos and measurements stay on this machine.</p></section>
-<div id="workspace" hidden><h2 id="name" class="filename"></h2>
-<div class="stage-grid"><section class="md-card md-elevated-card panel">
+<header class="app-header"><h1>UI Motion</h1><div class="header-actions"><div class="mobile-navigation" data-navigation-demo><button type="button" class="md-button md-outlined-button" data-navigation-open aria-haspopup="dialog" aria-controls="recording-drawer">Recordings</button><dialog id="recording-drawer" class="md-navigation md-navigation-drawer" data-variant="modal" data-navigation-modal data-navigation-group aria-label="Recordings"><h3>Recordings</h3><div id="mobile-projects" class="md-nav-items"></div></dialog></div><button id="import" class="md-button md-tonal-button">Open video</button><input id="file" type="file" accept="video/*,.gif" hidden></div></header>
+<div class="shell"><aside class="desktop-navigation"><nav class="md-navigation md-navigation-drawer" data-variant="standard" data-navigation-group aria-label="Recordings"><h3>Recordings</h3><div id="projects" class="md-nav-items"></div></nav></aside><main id="recording-content"><div class="workspace-heading"><h2 id="name" class="filename" hidden></h2><p id="recording-meta" class="help" hidden></p><div id="status" role="status" aria-live="polite"></div></div>
+<section id="empty"><h2>Open a recording</h2><p>Track an object or edge and inspect its movement frame by frame.</p><button id="empty-import" class="md-button md-filled-button">Open video</button><p class="help">Videos and measurements stay on this machine.</p></section>
+<div id="workspace" hidden><div class="stage-grid"><div class="work-surface"><section class="video-panel" aria-label="Video inspection">
 <div class="image-wrap"><canvas id="frame" aria-label="Video frame. Drag to select a tracking region."></canvas></div>
-<div class="transport"><button id="prev" class="md-button md-outlined-button" aria-label="Previous frame">Previous</button><button id="play" class="md-button md-filled-button">Play</button><button id="next" class="md-button md-outlined-button" aria-label="Next frame">Next</button><span id="time" class="time"></span></div>
+<div class="transport"><button id="prev" class="md-button md-outlined-button" aria-label="Previous frame">Previous</button><button id="play" class="md-button md-tonal-button">Play</button><button id="next" class="md-button md-outlined-button" aria-label="Next frame">Next</button><span id="time" class="time"></span></div>
 <div class="md-slider" data-size="small" data-variant="continuous" data-control="standard" data-orientation="horizontal" role="group" aria-label="Frame navigation"><div class="md-slider-rail" aria-hidden="true"><span class="md-slider-inactive md-slider-before"></span><span class="md-slider-active"></span><span class="md-slider-inactive md-slider-after"></span><span class="md-slider-stop md-slider-stop-start"></span><span class="md-slider-stop md-slider-stop-end"></span></div><div class="md-slider-input" data-handle="end"><input id="scrub" type="range" min="0" max="100" value="0" step="1" aria-label="Video frame"><span class="md-slider-thumb" aria-hidden="true"><span class="md-slider-state-layer"></span><span class="md-slider-nub"></span><span class="md-slider-value">0</span></span></div></div>
 <div class="transport"><button id="zero" class="md-button md-outlined-button">Set time zero here</button><label class="zoom-label">Zoom <select id="zoom"><option value="fit">Fit</option><option value="1">100%</option><option value="2">200%</option><option value="4">400%</option></select></label><span id="quality" class="badge" hidden></span></div>
 
-</section><section class="md-card md-outlined-card panel controls"><h3>Track position</h3><p id="selection" class="help">Draw a region on the frame.</p>
-<div><label for="end">Last frame</label><input id="end" type="number" min="0" step="1"></div>
-<div><label for="search">Search distance per frame (px)</label><input id="search" type="number" value="60" min="4" max="1000" step="1"></div>
-<button id="track" class="md-button md-filled-button" disabled>Track from this frame</button><button id="correct" class="md-button md-outlined-button" disabled>Correct position here</button>
-<p class="help">Tracking follows the selected patch. It measures translation, not changes in shape or opacity. Weak matches leave gaps in the graph.</p>
-<div class="actions"><button id="json" class="md-button md-outlined-button" disabled>Save JSON</button><button id="csv" class="md-button md-outlined-button" disabled>Save CSV</button><button id="export" class="md-button md-outlined-button" disabled>Export video</button></div>
 </section>
-<section class="md-card md-outlined-card panel graph-panel"><h2>Position over time</h2><div class="graph-controls">
+<section class="graph-panel" aria-label="Motion measurements"><h2>Position over time</h2><div class="graph-controls">
 <div><label for="axis">Position</label><select id="axis"><option value="x">Horizontal</option><option value="y">Vertical</option></select></div>
 <div><label for="reference">Compare recording</label><select id="reference"><option value="">None</option></select></div>
 <div id="ref-control" hidden><label for="refzero">Comparison zero frame</label><input id="refzero" type="number" min="0" step="1" value="0"></div>
 </div><p id="graph-note" class="help">Track a region to plot its position.</p><div class="graph-wrap"><svg id="graph" viewBox="0 0 1000 270" role="img" aria-label="Tracked displacement against time"></svg></div>
 <div class="legend"><span id="main-legend">Current recording</span><span id="ref-legend" class="ref" hidden>Comparison</span></div>
-</section></div></div></main></div><footer>Coordinates use recording pixels. Times use the original video frame timestamps.</footer>`;
+</section></div><aside class="controls" aria-label="Analysis settings"><section class="inspector-group"><h3>Track position</h3><p id="selection" class="help">Draw around a distinct edge or textured detail.</p>
+<div><label for="end">Last frame</label><input id="end" type="number" min="0" step="1"></div>
+<div><label for="search">Search distance per frame (px)</label><input id="search" type="number" value="60" min="4" max="1000" step="1"></div>
+<button id="track" class="md-button md-filled-button" disabled>Track from this frame</button><button id="correct" class="md-button md-outlined-button" disabled>Correct position here</button>
+<details class="tracking-help"><summary>Tracking method</summary><p class="help">Tracking follows a fixed image patch. It measures position, not changes in shape or opacity. Weak matches leave gaps in the graph.</p></details></section><hr class="md-divider"><section class="inspector-group"><h3>Export</h3><p id="export-note" class="help">Track a region to export measurements.</p>
+<div class="actions"><button id="json" class="md-button md-outlined-button" disabled>Save JSON</button><button id="csv" class="md-button md-outlined-button" disabled>Save CSV</button><button id="export" class="md-button md-outlined-button" disabled>Export video</button></div>
+</section></aside>
+</div></div><footer>Coordinates use recording pixels. Times use the original video frame timestamps.</footer></main></div>`;
 let project: Project | null = null,
   reference: Project | null = null,
   entries: Entry[] = [],
@@ -119,6 +118,8 @@ function buttons() {
   for (const id of ["prev", "next", "play", "zero"])
     $<HTMLButtonElement>(id).disabled = busy || !ready;
   $<HTMLButtonElement>("import").disabled = busy;
+  $<HTMLButtonElement>("empty-import").disabled = busy;
+  $("export-note").hidden = !!project?.samples.length;
   $<HTMLInputElement>("scrub").disabled = busy;
   for (const id of ["track", "correct"])
     $<HTMLButtonElement>(id).disabled =
@@ -191,6 +192,7 @@ async function refresh() {
   $<HTMLSelectElement>("reference").value = selected;
 }
 async function open(id: string) {
+  status("Opening recording…");
   project = await api<Project>("/projects/" + id);
   reference = null;
   index = 0;
@@ -200,6 +202,10 @@ async function open(id: string) {
   $("empty").hidden = true;
   $("workspace").hidden = false;
   $("name").textContent = project.name;
+  $("name").hidden = false;
+  $("recording-meta").hidden = false;
+  $("recording-meta").textContent =
+    `${project.width} × ${project.height} px, ${project.times.length} frames`;
   $<HTMLInputElement>("scrub").max = String(project.times.length - 1);
   $<HTMLInputElement>("end").value = String(
     project.settings.end ?? project.times.length - 1,
@@ -217,11 +223,7 @@ async function open(id: string) {
     comparisonControls(project.comparison.zeroFrame);
   }
   await show(0);
-  status(
-    project.samples.length
-      ? "Tracking loaded. Click the graph or step through the frames to inspect it."
-      : `${project.times.length} frames. Draw a region to track.`,
-  );
+  status("");
   buttons();
 }
 function getPicture(i: number) {
@@ -297,9 +299,14 @@ async function show(i: number) {
 function zoom() {
   if (!project) return;
   const value = $<HTMLSelectElement>("zoom").value;
+  const wrap = canvas.parentElement!;
+  const scale = Math.min(
+    wrap.clientWidth / project.width,
+    wrap.clientHeight / project.height,
+  );
   canvas.style.width =
     value === "fit"
-      ? `min(100%, ${(28 * project.width) / project.height}vh)`
+      ? `${Math.max(1, scale * project.width)}px`
       : `${project.width * Number(value)}px`;
 }
 $("zoom").onchange = zoom;
@@ -457,6 +464,7 @@ $("zero").onclick = () =>
     status(`Time zero set to frame ${index}.`);
   });
 $("import").onclick = () => $<HTMLInputElement>("file").click();
+$("empty-import").onclick = () => $<HTMLInputElement>("file").click();
 $<HTMLInputElement>("file").onchange = () =>
   job(async () => {
     const file = $<HTMLInputElement>("file").files?.[0];
@@ -505,7 +513,7 @@ for (const [id, kind] of [
       setTimeout(() => URL.revokeObjectURL(url), 30000);
       status("Export ready.");
     });
-let domain = { min: 0, max: 1 };
+let domain = { min: 0, max: 1, width: 1000, left: 52, right: 16 };
 function series(p: Project, axis: "x" | "y", zero: number) {
   const valid = p.samples.filter((s) => s.valid);
   const origin = valid.findLast((s) => s.frame <= zero) ?? valid[0];
@@ -526,20 +534,27 @@ function graph() {
   const all = [...main, ...ref],
     vals = all.filter((s) => s.v !== null).map((s) => s.v!);
   svg.replaceChildren();
+  svg.hidden = !vals.length;
+  $("main-legend").parentElement!.hidden = !vals.length;
   if (!vals.length) {
     $("graph-note").textContent = "Track a region to plot its position.";
     return;
   }
   const minT = Math.min(0, ...all.map((s) => s.t)),
     maxT = Math.max(minT + 1, ...all.map((s) => s.t));
-  domain = { min: minT, max: maxT };
+  const width = Math.max(240, svg.parentElement!.clientWidth),
+    left = 52,
+    right = 16;
+  svg.setAttribute("viewBox", `0 0 ${width} 200`);
+  domain = { min: minT, max: maxT, width, left, right };
   let minY = Math.min(0, ...vals),
     maxY = Math.max(0, ...vals);
   const pad = Math.max(2, (maxY - minY) * 0.1);
   minY -= pad;
   maxY += pad;
-  const X = (t: number) => 65 + ((t - minT) / (maxT - minT)) * 910,
-    Y = (v: number) => 220 - ((v - minY) / (maxY - minY)) * 195;
+  const X = (t: number) =>
+      left + ((t - minT) / (maxT - minT)) * (width - left - right),
+    Y = (v: number) => 150 - ((v - minY) / (maxY - minY)) * 130;
   const ns = "http://www.w3.org/2000/svg";
   function el(
     tag: string,
@@ -552,23 +567,30 @@ function graph() {
     svg.append(e);
     return e;
   }
-  for (let i = 0; i <= 5; i++) {
-    const t = minT + ((maxT - minT) * i) / 5,
+  el("text", { x: left, y: 13, class: "tick" }, "Displacement (recording px)");
+  const ticks = width < 480 ? 3 : 5;
+  for (let i = 0; i <= ticks; i++) {
+    const t = minT + ((maxT - minT) * i) / ticks,
       x = X(t);
-    el("line", { x1: x, x2: x, y1: 20, y2: 220, class: "grid" });
+    el("line", { x1: x, x2: x, y1: 20, y2: 150, class: "grid" });
     el(
       "text",
-      { x, y: 243, "text-anchor": "middle", class: "tick" },
+      {
+        x,
+        y: 174,
+        "text-anchor": i === ticks ? "end" : i === 0 ? "start" : "middle",
+        class: "tick",
+      },
       String(Math.round(t)),
     );
   }
   for (let i = 0; i <= 4; i++) {
     const v = minY + ((maxY - minY) * i) / 4,
       y = Y(v);
-    el("line", { x1: 65, x2: 975, y1: y, y2: y, class: "grid" });
+    el("line", { x1: left, x2: width - right, y1: y, y2: y, class: "grid" });
     el(
       "text",
-      { x: 55, y: y + 4, "text-anchor": "end", class: "tick" },
+      { x: left - 8, y: y + 4, "text-anchor": "end", class: "tick" },
       v.toFixed(1),
     );
   }
@@ -599,14 +621,14 @@ function graph() {
   path(main, "trace");
   if (reference) path(ref, "reference");
   const time = project.times[index] - project.times[project.zeroFrame];
-  el("line", { x1: X(time), x2: X(time), y1: 20, y2: 220, class: "playhead" });
+  el("line", { x1: X(time), x2: X(time), y1: 20, y2: 150, class: "playhead" });
   el(
     "text",
-    { x: 520, y: 267, "text-anchor": "middle", class: "tick" },
+    { x: width / 2, y: 194, "text-anchor": "middle", class: "tick" },
     "Time from selected zero (ms)",
   );
   $("graph-note").textContent =
-    `${axis === "x" ? "Horizontal" : "Vertical"} displacement (recording px). Zero: frame ${project.zeroFrame}. Click the graph to inspect a frame.`;
+    `Time zero: frame ${project.zeroFrame}. Click the graph to inspect a frame.`;
 }
 $("axis").onchange = graph;
 function comparisonControls(zero: number) {
@@ -663,10 +685,11 @@ $("refzero").onchange = () =>
 $("graph").onclick = (e) => {
   if (!project || !project.samples.length) return;
   const rect = $("graph").getBoundingClientRect(),
-    x = ((e.clientX - rect.left) / rect.width) * 1000;
+    x = ((e.clientX - rect.left) / rect.width) * domain.width;
   const t =
     domain.min +
-    ((x - 65) / 910) * (domain.max - domain.min) +
+    ((x - domain.left) / (domain.width - domain.left - domain.right)) *
+      (domain.max - domain.min) +
     project.times[project.zeroFrame];
   let best = 0;
   for (let i = 1; i < project.times.length; i++)
@@ -679,9 +702,15 @@ void installMaterialControls()
   .then(() => buttons())
   .catch((e) => status(e.message, true));
 
-matchMedia("(min-width: 1001px)").addEventListener("change", (event) => {
+matchMedia("(min-width: 1280px)").addEventListener("change", (event) => {
   if (event.matches) {
     const drawer = $<HTMLDialogElement>("recording-drawer");
     if (drawer.open) drawer.close();
   }
 });
+
+new ResizeObserver(() => {
+  zoom();
+  graph();
+}).observe(canvas.parentElement!);
+new ResizeObserver(() => graph()).observe($("graph").parentElement!);
