@@ -43,28 +43,37 @@ p {
   margin-block: var(--md-sys-measurement-space100)
     var(--md-sys-measurement-space200);
 }
-/* Application chrome stays on the navigation surface. */
-.app-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: var(--md-sys-measurement-space200) var(--md-sys-measurement-space300);
-  gap: var(--md-sys-measurement-space200);
+/* App identity belongs with navigation; document actions belong with the workspace. */
+.app-identity {
+  padding: var(--md-sys-measurement-space300) var(--md-sys-measurement-space400)
+    var(--md-sys-measurement-space100);
 }
-.header-actions {
+.workspace-actions {
   display: flex;
+  justify-content: flex-end;
   align-items: center;
   gap: var(--md-sys-measurement-space100);
+  margin-block-end: var(--md-sys-measurement-space200);
 }
 .shell {
   display: grid;
-  grid-template-columns: var(
-      --md-comp-navigation-drawer-container-width
-    ) minmax(0, 1fr);
-  min-block-size: calc(100dvh - 72px);
+  grid-template-columns:
+    var(--md-comp-navigation-drawer-container-width)
+    minmax(0, 1fr);
+  min-block-size: 100dvh;
 }
 .desktop-navigation {
   min-inline-size: 0;
+  display: flex;
+  flex-direction: column;
+  block-size: 100dvh;
+  position: sticky;
+  inset-block-start: 0;
+}
+.desktop-navigation > nav {
+  flex: 1;
+  min-block-size: 0;
+  overflow-y: auto;
 }
 .mobile-navigation {
   display: none;
@@ -344,6 +353,7 @@ footer {
   }
   .mobile-navigation {
     display: block;
+    margin-inline-end: auto;
   }
   .shell {
     grid-template-columns: 1fr;
@@ -366,9 +376,6 @@ footer {
   }
 }
 @media (max-width: 600px) {
-  .app-header {
-    padding: var(--md-sys-measurement-space200);
-  }
   main {
     padding: var(--md-sys-measurement-space200);
   }
