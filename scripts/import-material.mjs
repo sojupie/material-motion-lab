@@ -41,6 +41,13 @@ const allowed = new Set([
   "md-card",
   "md-elevated-card",
   "md-outlined-card",
+  "md-navigation",
+  "md-navigation-drawer",
+  "md-nav-items",
+  "md-nav-item",
+  "md-nav-indicator",
+  "md-nav-label",
+  "md-nav-icon",
 ]);
 for (const match of components
   .toString()
@@ -188,6 +195,7 @@ for (const [from, to] of [
   ["forge/components/static/buttons.js", "buttons.js"],
   ["forge/components/static/runtime/utils.js", "utils.js"],
   ["forge/components/static/runtime/sliders.js", "sliders.js"],
+  ["forge/components/static/runtime/navigation.js", "navigation.js"],
 ])
   await copyFile(path.join(source, from), path.join("public/material", to));
 
@@ -206,6 +214,7 @@ const files = [
   "forge/components/static/motion.cjs",
   "forge/components/static/runtime/utils.js",
   "forge/components/static/runtime/sliders.js",
+  "forge/components/static/runtime/navigation.js",
 ];
 await writeFile(
   "public/token-source.json",

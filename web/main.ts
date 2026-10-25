@@ -35,9 +35,9 @@ type Entry = { id: string; name: string };
 const $ = <T extends HTMLElement = HTMLElement>(id: string) =>
   document.getElementById(id) as T;
 document.querySelector("#app")!.innerHTML = `
-<header><h1>UI Motion</h1><div><button id="import" class="md-button md-filled-button">Open video</button><input id="file" type="file" accept="video/*,.gif" hidden></div></header>
+<header><h1>UI Motion</h1><div class="header-actions"><div class="mobile-navigation" data-navigation-demo><button type="button" class="md-button md-outlined-button" data-navigation-open aria-haspopup="dialog" aria-controls="recording-drawer">Recordings</button><dialog id="recording-drawer" class="md-navigation md-navigation-drawer" data-variant="modal" data-navigation-modal data-navigation-group aria-label="Recordings"><h3>Recordings</h3><div id="mobile-projects" class="md-nav-items"></div></dialog></div><button id="import" class="md-button md-filled-button">Open video</button><input id="file" type="file" accept="video/*,.gif" hidden></div></header>
 <div id="status" role="status" aria-live="polite">Open a video to begin.</div>
-<div class="shell"><aside><h2>Recordings</h2><div id="projects"></div></aside><main>
+<div class="shell"><aside class="desktop-navigation"><nav class="md-navigation md-navigation-drawer" data-variant="standard" data-navigation-group aria-label="Recordings"><h3>Recordings</h3><div id="projects" class="md-nav-items"></div></nav></aside><main id="recording-content">
 <section id="empty" class="md-card md-outlined-card"><h2>Measure motion from video</h2><p>Open a recording, draw around an object or edge, and track its movement.</p><p class="muted">Videos and measurements stay on this machine.</p></section>
 <div id="workspace" hidden><h2 id="name" class="filename"></h2>
 <div class="stage-grid"><section class="md-card md-elevated-card panel">
@@ -130,25 +130,56 @@ function buttons() {
   >("select,input[type=number]"))
     control.disabled = busy;
   for (const button of document.querySelectorAll<HTMLButtonElement>(
-    "#projects button",
+    "[data-navigation-item]",
   ))
     button.disabled = busy;
   syncMaterialControls();
 }
 async function refresh() {
   entries = await api<Entry[]>("/projects");
-  $("projects").replaceChildren();
-  for (const item of entries) {
-    const b = document.createElement("button");
-    b.textContent = item.name;
-    b.className =
-      "md-button " +
-      (project?.id === item.id ? "md-tonal-button" : "md-text-button");
-    b.dataset.shape = "square";
-    b.dataset.size = "small";
-    b.setAttribute("aria-current", String(project?.id === item.id));
-    b.onclick = () => job(() => open(item.id));
-    $("projects").append(b);
+  const focused = document.activeElement as HTMLElement | null;
+  const focusId = focused?.dataset.projectId;
+  const focusGroup = focused?.closest(".md-nav-items")?.id;
+  for (const group of ["projects", "mobile-projects"]) {
+    $(group).replaceChildren();
+    for (const item of entries) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "md-nav-item";
+      button.dataset.navigationItem = "";
+      button.dataset.projectId = item.id;
+      button.setAttribute("aria-controls", "recording-content");
+      button.title = item.name;
+      if (project?.id === item.id) button.setAttribute("aria-current", "page");
+      const indicator = document.createElement("span");
+      indicator.className = "md-nav-indicator";
+      const label = document.createElement("span");
+      label.className = "md-nav-label";
+      label.textContent = item.name;
+      indicator.append(label);
+      button.append(indicator);
+      button.onclick = async () => {
+        const restoreFocus =
+          group === "projects" && document.activeElement === button;
+        await job(() => open(item.id));
+        for (const navItem of document.querySelectorAll<HTMLButtonElement>(
+          "[data-navigation-item]",
+        )) {
+          if (navItem.dataset.projectId === project?.id)
+            navItem.setAttribute("aria-current", "page");
+          else navItem.removeAttribute("aria-current");
+        }
+        if (restoreFocus)
+          for (const next of $("projects").querySelectorAll<HTMLButtonElement>(
+            "[data-navigation-item]",
+          ))
+            if (next.dataset.projectId === item.id)
+              next.focus({ preventScroll: true });
+      };
+      $(group).append(button);
+      if (group === focusGroup && item.id === focusId)
+        button.focus({ preventScroll: true });
+    }
   }
   const selected = $<HTMLSelectElement>("reference").value;
   $("reference").replaceChildren(
@@ -647,3 +678,10 @@ void installMaterialControls()
   .then(() => refresh())
   .then(() => buttons())
   .catch((e) => status(e.message, true));
+
+matchMedia("(min-width: 1001px)").addEventListener("change", (event) => {
+  if (event.matches) {
+    const drawer = $<HTMLDialogElement>("recording-drawer");
+    if (drawer.open) drawer.close();
+  }
+});

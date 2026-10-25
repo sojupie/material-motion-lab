@@ -40,7 +40,11 @@
     {
       "file": "forge/components/static/runtime/sliders.js",
       "sha256": "f8f4bd66bc7c64a53f96f13cdcb01b79be076d419a13d929eaa54a25558eca80"
+    },
+    {
+      "file": "forge/components/static/runtime/navigation.js",
+      "sha256": "aefa972a2b14991fc45ab5736ce8593d32d30121c94690a360655935a849e674"
     }
   ],
-  "tokenCount": 1188
+  "tokenCount": 1260
 }

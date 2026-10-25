@@ -15,6 +15,7 @@ test("shared interaction code matches the recorded source bytes", () => {
     "motion.cjs": "motion.js",
     "utils.js": "utils.js",
     "sliders.js": "sliders.js",
+    "navigation.js": "navigation.js",
   };
   for (const [original, local] of Object.entries(files)) {
     const record = source.files.find((f) => path.basename(f.file) === original);

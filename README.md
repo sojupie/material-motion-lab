@@ -29,7 +29,7 @@ For frontend development, run `npm run dev` alongside the Python server.
 
 Use **Set time zero here** to mark the event you want to compare. Choose another tracked recording and set its zero frame to align the events. The recordings keep their original timing.
 
-JSON, CSV and annotated video exports are available after tracking. The video places the tracked frame beside its position graph. Reopen a recording from the sidebar to continue working.
+JSON, CSV and annotated video exports are available after tracking. The video places the tracked frame beside its position graph. Reopen a recording from the navigation drawer to continue working. On narrow screens, press **Recordings** to open it.
 
 Tracking measures horizontal and vertical translation of a fixed image patch. It does not measure resizing, corner morphing or opacity. A weak match leaves a gap. A strong match can still follow the wrong object; inspect the rectangle and correct it where needed. Coordinates use recording pixels. Timing precision is limited by the source recording's frames.
 
