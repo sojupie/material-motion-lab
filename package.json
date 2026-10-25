@@ -1,0 +1,14 @@
+{
+  "name": "ui-motion",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "tsc --noEmit && vite build"
+  },
+  "devDependencies": {
+    "postcss": "^8.5.31",
+    "typescript": "^5.9.3",
+    "vite": "^7.3.1"
+  }
+}

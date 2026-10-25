@@ -1,0 +1,41 @@
+{
+  "repository": "https://github.com/sojupie/tokens",
+  "files": [
+    "published-review/assets/dtcg/light-default/tokens.css",
+    "published-review/assets/theme.css"
+  ],
+  "sha256": "c07b321b5d9ace0e76c5b38be49840399fa984735babb1951a7d76a3d5e86480",
+  "variables": [
+    "--md-ref-typeface-weight-medium",
+    "--md-ref-typeface-weight-regular",
+    "--md-sys-color-error",
+    "--md-sys-color-on-error",
+    "--md-sys-color-on-primary",
+    "--md-sys-color-on-secondary-container",
+    "--md-sys-color-on-surface",
+    "--md-sys-color-on-surface-variant",
+    "--md-sys-color-on-tertiary-container",
+    "--md-sys-color-outline",
+    "--md-sys-color-outline-variant",
+    "--md-sys-color-primary",
+    "--md-sys-color-secondary-container",
+    "--md-sys-color-surface",
+    "--md-sys-color-surface-container",
+    "--md-sys-color-surface-container-highest",
+    "--md-sys-color-surface-container-low",
+    "--md-sys-color-tertiary",
+    "--md-sys-color-tertiary-container",
+    "--md-sys-motion-duration-short3",
+    "--md-sys-motion-easing-standard",
+    "--md-sys-shape-corner-extra-small",
+    "--md-sys-shape-corner-full",
+    "--md-sys-shape-corner-large",
+    "--md-sys-shape-corner-medium",
+    "--md-sys-shape-corner-small",
+    "--md-sys-typescale-body-large-line-height",
+    "--md-sys-typescale-body-large-size",
+    "--md-sys-typescale-body-large-weight",
+    "--md-sys-typescale-label-large-size",
+    "--md-sys-typescale-label-large-weight"
+  ]
+}

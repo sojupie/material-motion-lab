@@ -1,0 +1,46 @@
+/* Token Catalog generated values. Refresh with scripts/import-tokens.mjs. */
+:root {
+  --md-ref-typeface-weight-medium: 500;
+  --md-ref-typeface-weight-regular: 400;
+  --md-sys-color-error: #b3261e;
+  --md-sys-color-on-error: #ffffff;
+  --md-sys-color-on-primary: #ffffff;
+  --md-sys-color-on-secondary-container: #4a4458;
+  --md-sys-color-on-surface: #1d1b20;
+  --md-sys-color-on-surface-variant: #49454f;
+  --md-sys-color-on-tertiary-container: #633b48;
+  --md-sys-color-outline: #79747e;
+  --md-sys-color-outline-variant: #cac4d0;
+  --md-sys-color-primary: #6750a4;
+  --md-sys-color-secondary-container: #e8def8;
+  --md-sys-color-surface: #fef7ff;
+  --md-sys-color-surface-container: #f3edf7;
+  --md-sys-color-surface-container-highest: #e6e0e9;
+  --md-sys-color-surface-container-low: #f7f2fa;
+  --md-sys-color-tertiary: #7d5260;
+  --md-sys-color-tertiary-container: #ffd8e4;
+  --md-sys-motion-duration-short3: 150ms;
+  --md-sys-motion-easing-standard: cubic-bezier(0.2, 0, 0, 1);
+  --md-sys-shape-corner-extra-small: 4px;
+  --md-sys-shape-corner-full: calc(infinity * 1px);
+  --md-sys-shape-corner-large: 16px;
+  --md-sys-shape-corner-medium: 12px;
+  --md-sys-shape-corner-small: 8px;
+  --md-sys-typescale-body-large-line-height: 24px;
+  --md-sys-typescale-body-large-size: 16px;
+  --md-sys-typescale-body-large-weight: 400;
+  --md-sys-typescale-label-large-size: 14px;
+  --md-sys-typescale-label-large-weight: 500
+}
+:root {--md-ref-typeface-weight-medium:500;--md-ref-typeface-weight-regular:400;--md-sys-color-error:#ba1a1a;--md-sys-color-on-error:#ffffff;--md-sys-color-on-primary:#ffffff;--md-sys-color-on-secondary-container:#454559;--md-sys-color-on-surface:#1d1b20;--md-sys-color-on-surface-variant:#49454e;--md-sys-color-on-tertiary-container:#633b48;--md-sys-color-outline:#7a757f;--md-sys-color-outline-variant:#cac4cf;--md-sys-color-primary:#65558f;--md-sys-color-secondary-container:#e2e0f9;--md-sys-color-surface:#fdf7ff;--md-sys-color-surface-container:#f2ecf4;--md-sys-color-surface-container-highest:#e6e0e9;--md-sys-color-surface-container-low:#f8f2fa;--md-sys-color-tertiary:#7e5260;--md-sys-color-tertiary-container:#ffd9e3;--md-sys-motion-duration-short3:150ms;--md-sys-motion-easing-standard:cubic-bezier(0.2, 0, 0, 1);--md-sys-shape-corner-extra-small:4px;--md-sys-shape-corner-full:calc(infinity * 1px);--md-sys-shape-corner-large:16px;--md-sys-shape-corner-medium:12px;--md-sys-shape-corner-small:8px;--md-sys-typescale-body-large-line-height:24px;--md-sys-typescale-body-large-size:16px;--md-sys-typescale-body-large-weight:var(--md-ref-typeface-weight-regular);--md-sys-typescale-label-large-size:14px;--md-sys-typescale-label-large-weight:var(--md-ref-typeface-weight-medium)
+}
+:root[data-theme=light][data-contrast=medium] {--md-sys-color-error:#740006;--md-sys-color-on-secondary-container:#ffffff;--md-sys-color-on-surface:#121016;--md-sys-color-on-surface-variant:#38353d;--md-sys-color-on-tertiary-container:#ffffff;--md-sys-color-outline:#54515a;--md-sys-color-outline-variant:#6f6b75;--md-sys-color-primary:#3c2d63;--md-sys-color-secondary-container:#6b6b81;--md-sys-color-surface-container:#ece6ee;--md-sys-color-surface-container-highest:#d5d0d8;--md-sys-color-tertiary:#502b38;--md-sys-color-tertiary-container:#8e606f
+}
+:root[data-theme=light][data-contrast=high] {--md-sys-color-error:#600004;--md-sys-color-on-secondary-container:#ffffff;--md-sys-color-on-surface:#000000;--md-sys-color-on-surface-variant:#000000;--md-sys-color-on-tertiary-container:#ffffff;--md-sys-color-outline:#2e2b33;--md-sys-color-outline-variant:#4b4851;--md-sys-color-primary:#312259;--md-sys-color-secondary-container:#47475c;--md-sys-color-surface-container:#e6e0e9;--md-sys-color-surface-container-highest:#cac5cc;--md-sys-color-surface-container-low:#f5eff7;--md-sys-color-tertiary:#45212e;--md-sys-color-tertiary-container:#663d4b
+}
+:root[data-theme=dark][data-contrast=default] {--md-sys-color-error:#ffb4ab;--md-sys-color-on-error:#690005;--md-sys-color-on-primary:#36275d;--md-sys-color-on-secondary-container:#e2e0f9;--md-sys-color-on-surface:#e6e0e9;--md-sys-color-on-surface-variant:#cac4cf;--md-sys-color-on-tertiary-container:#ffd9e3;--md-sys-color-outline:#948f99;--md-sys-color-outline-variant:#49454e;--md-sys-color-primary:#cfbdfe;--md-sys-color-secondary-container:#454559;--md-sys-color-surface:#141218;--md-sys-color-surface-container:#211f24;--md-sys-color-surface-container-highest:#36343a;--md-sys-color-surface-container-low:#1d1b20;--md-sys-color-tertiary:#efb8c8;--md-sys-color-tertiary-container:#633b48
+}
+:root[data-theme=dark][data-contrast=medium] {--md-sys-color-error:#ffd2cc;--md-sys-color-on-error:#540003;--md-sys-color-on-primary:#2b1b52;--md-sys-color-on-secondary-container:#000000;--md-sys-color-on-surface:#ffffff;--md-sys-color-on-surface-variant:#e0dae5;--md-sys-color-on-tertiary-container:#000000;--md-sys-color-outline:#b5b0bb;--md-sys-color-outline-variant:#938e99;--md-sys-color-primary:#e3d6ff;--md-sys-color-secondary-container:#8f8fa5;--md-sys-color-surface:#141218;--md-sys-color-surface-container:#29272d;--md-sys-color-surface-container-highest:#3f3c43;--md-sys-color-surface-container-low:#1f1d22;--md-sys-color-tertiary:#ffd0dd;--md-sys-color-tertiary-container:#b58392
+}
+:root[data-theme=dark][data-contrast=high] {--md-sys-color-error:#ffece9;--md-sys-color-on-error:#000000;--md-sys-color-on-primary:#000000;--md-sys-color-on-secondary-container:#09091b;--md-sys-color-on-surface:#ffffff;--md-sys-color-on-surface-variant:#ffffff;--md-sys-color-on-tertiary-container:#1d020d;--md-sys-color-outline:#f4eef9;--md-sys-color-outline-variant:#c6c0cb;--md-sys-color-primary:#f5edff;--md-sys-color-secondary-container:#c2c0d9;--md-sys-color-surface:#141218;--md-sys-color-surface-container:#322f35;--md-sys-color-surface-container-highest:#48464c;--md-sys-color-surface-container-low:#211f24;--md-sys-color-tertiary:#ffebef;--md-sys-color-tertiary-container:#ebb4c4
+}
