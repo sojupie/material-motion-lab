@@ -1,4 +1,5 @@
 import "./style.css";
+import { installMaterialControls, syncMaterialControls } from "./material";
 type Region = [number, number, number, number];
 type Sample = {
   frame: number;
@@ -34,25 +35,25 @@ type Entry = { id: string; name: string };
 const $ = <T extends HTMLElement = HTMLElement>(id: string) =>
   document.getElementById(id) as T;
 document.querySelector("#app")!.innerHTML = `
-<header><h1>UI Motion</h1><div><button id="import" class="primary">Open video</button><input id="file" type="file" accept="video/*,.gif" hidden></div></header>
+<header><h1>UI Motion</h1><div><button id="import" class="md-button md-filled-button">Open video</button><input id="file" type="file" accept="video/*,.gif" hidden></div></header>
 <div id="status" role="status" aria-live="polite">Open a video to begin.</div>
 <div class="shell"><aside><h2>Recordings</h2><div id="projects"></div></aside><main>
-<section id="empty"><h2>Measure motion from video</h2><p>Open a recording, draw around an object or edge, and track its movement.</p><p class="muted">Videos and measurements stay on this machine.</p></section>
+<section id="empty" class="md-card md-outlined-card"><h2>Measure motion from video</h2><p>Open a recording, draw around an object or edge, and track its movement.</p><p class="muted">Videos and measurements stay on this machine.</p></section>
 <div id="workspace" hidden><h2 id="name" class="filename"></h2>
-<div class="stage-grid"><section class="panel">
+<div class="stage-grid"><section class="md-card md-elevated-card panel">
 <div class="image-wrap"><canvas id="frame" aria-label="Video frame. Drag to select a tracking region."></canvas></div>
-<div class="transport"><button id="prev" class="outline" aria-label="Previous frame">Previous</button><button id="play" class="primary">Play</button><button id="next" class="outline" aria-label="Next frame">Next</button><span id="time" class="time"></span></div>
-<input id="scrub" type="range" min="0" value="0" step="1" aria-label="Video frame">
-<div class="transport"><button id="zero" class="outline">Set time zero here</button><label class="zoom-label">Zoom <select id="zoom"><option value="fit">Fit</option><option value="1">100%</option><option value="2">200%</option><option value="4">400%</option></select></label><span id="quality" class="badge" hidden></span></div>
+<div class="transport"><button id="prev" class="md-button md-outlined-button" aria-label="Previous frame">Previous</button><button id="play" class="md-button md-filled-button">Play</button><button id="next" class="md-button md-outlined-button" aria-label="Next frame">Next</button><span id="time" class="time"></span></div>
+<div class="md-slider" data-size="small" data-variant="continuous" data-control="standard" data-orientation="horizontal" role="group" aria-label="Frame navigation"><div class="md-slider-rail" aria-hidden="true"><span class="md-slider-inactive md-slider-before"></span><span class="md-slider-active"></span><span class="md-slider-inactive md-slider-after"></span><span class="md-slider-stop md-slider-stop-start"></span><span class="md-slider-stop md-slider-stop-end"></span></div><div class="md-slider-input" data-handle="end"><input id="scrub" type="range" min="0" max="100" value="0" step="1" aria-label="Video frame"><span class="md-slider-thumb" aria-hidden="true"><span class="md-slider-state-layer"></span><span class="md-slider-nub"></span><span class="md-slider-value">0</span></span></div></div>
+<div class="transport"><button id="zero" class="md-button md-outlined-button">Set time zero here</button><label class="zoom-label">Zoom <select id="zoom"><option value="fit">Fit</option><option value="1">100%</option><option value="2">200%</option><option value="4">400%</option></select></label><span id="quality" class="badge" hidden></span></div>
 
-</section><section class="panel controls"><h3>Track position</h3><p id="selection" class="help">Draw a region on the frame.</p>
+</section><section class="md-card md-outlined-card panel controls"><h3>Track position</h3><p id="selection" class="help">Draw a region on the frame.</p>
 <div><label for="end">Last frame</label><input id="end" type="number" min="0" step="1"></div>
 <div><label for="search">Search distance per frame (px)</label><input id="search" type="number" value="60" min="4" max="1000" step="1"></div>
-<button id="track" class="primary" disabled>Track from this frame</button><button id="correct" class="outline" disabled>Correct position here</button>
+<button id="track" class="md-button md-filled-button" disabled>Track from this frame</button><button id="correct" class="md-button md-outlined-button" disabled>Correct position here</button>
 <p class="help">Tracking follows the selected patch. It measures translation, not changes in shape or opacity. Weak matches leave gaps in the graph.</p>
-<div class="actions"><button id="json" class="outline" disabled>Save JSON</button><button id="csv" class="outline" disabled>Save CSV</button><button id="export" class="outline" disabled>Export video</button></div>
+<div class="actions"><button id="json" class="md-button md-outlined-button" disabled>Save JSON</button><button id="csv" class="md-button md-outlined-button" disabled>Save CSV</button><button id="export" class="md-button md-outlined-button" disabled>Export video</button></div>
 </section>
-<section class="panel graph-panel"><h2>Position over time</h2><div class="graph-controls">
+<section class="md-card md-outlined-card panel graph-panel"><h2>Position over time</h2><div class="graph-controls">
 <div><label for="axis">Position</label><select id="axis"><option value="x">Horizontal</option><option value="y">Vertical</option></select></div>
 <div><label for="reference">Compare recording</label><select id="reference"><option value="">None</option></select></div>
 <div id="ref-control" hidden><label for="refzero">Comparison zero frame</label><input id="refzero" type="number" min="0" step="1" value="0"></div>
@@ -64,6 +65,7 @@ let project: Project | null = null,
   entries: Entry[] = [],
   index = 0,
   roi: Region | null = null;
+let settingFrame = false;
 let playing = false,
   busy = false,
   startClock = 0,
@@ -123,6 +125,15 @@ function buttons() {
       busy || !roi || !ready || (id === "correct" && !project?.samples.length);
   for (const id of ["json", "csv", "export"])
     $<HTMLButtonElement>(id).disabled = busy || !project?.samples.length;
+  for (const control of document.querySelectorAll<
+    HTMLSelectElement | HTMLInputElement
+  >("select,input[type=number]"))
+    control.disabled = busy;
+  for (const button of document.querySelectorAll<HTMLButtonElement>(
+    "#projects button",
+  ))
+    button.disabled = busy;
+  syncMaterialControls();
 }
 async function refresh() {
   entries = await api<Entry[]>("/projects");
@@ -130,6 +141,11 @@ async function refresh() {
   for (const item of entries) {
     const b = document.createElement("button");
     b.textContent = item.name;
+    b.className =
+      "md-button " +
+      (project?.id === item.id ? "md-tonal-button" : "md-text-button");
+    b.dataset.shape = "square";
+    b.dataset.size = "small";
     b.setAttribute("aria-current", String(project?.id === item.id));
     b.onclick = () => job(() => open(item.id));
     $("projects").append(b);
@@ -163,6 +179,7 @@ async function open(id: string) {
   $("ref-control").hidden = true;
   $("ref-legend").hidden = true;
   await refresh();
+  syncMaterialControls();
   if (project.comparison) {
     reference = await api<Project>("/projects/" + project.comparison.id);
     $<HTMLSelectElement>("reference").value = reference.id;
@@ -218,6 +235,9 @@ async function show(i: number) {
   if (!project) return;
   index = Math.max(0, Math.min(project.times.length - 1, i));
   $<HTMLInputElement>("scrub").value = String(index);
+  settingFrame = true;
+  $("scrub").dispatchEvent(new Event("input", { bubbles: true }));
+  settingFrame = false;
   $("time").textContent =
     `Frame ${index} / ${project.times.length - 1}   ${(project.times[index] / 1000).toFixed(3)} s   ${(project.times[index] - project.times[project.zeroFrame]).toFixed(1)} ms`;
   const sample = project.samples.find((s) => s.frame === index);
@@ -294,8 +314,9 @@ function seek(i: number) {
 }
 $("prev").onclick = () => seek(index - 1);
 $("next").onclick = () => seek(index + 1);
-$<HTMLInputElement>("scrub").oninput = (e) =>
-  seek(Number((e.target as HTMLInputElement).value));
+$<HTMLInputElement>("scrub").oninput = (e) => {
+  if (!settingFrame) seek(Number((e.target as HTMLInputElement).value));
+};
 document.addEventListener("keydown", (e) => {
   if (
     (e.target as HTMLElement).matches("input,select,button") ||
@@ -622,5 +643,7 @@ $("graph").onclick = (e) => {
       best = i;
   seek(best);
 };
-void refresh().catch((e) => status(e.message, true));
-buttons();
+void installMaterialControls()
+  .then(() => refresh())
+  .then(() => buttons())
+  .catch((e) => status(e.message, true));

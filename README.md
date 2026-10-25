@@ -58,12 +58,12 @@ The CLI uses the same import, tracking and export functions as the interface.
 - `app/server.py`: local HTTP API and built frontend.
 - `app/cli.py`: command-line entry point.
 - `web/`: TypeScript interface and styles.
-- `public/tokens.css`: token subset imported from Token Catalog.
+- `public/material.css` and `public/material/`: generated component styles, tokens and shared runtimes imported from Token Catalog.
 
-There is no dependency on a running catalog. To refresh its tokens and font:
+There is no dependency on a running catalog. To refresh its tokens, component styles, behavior and font:
 
 ```sh
-node scripts/import-tokens.mjs /path/to/tokens
+node scripts/import-material.mjs /path/to/tokens
 npm run build
 ```
 
@@ -74,6 +74,9 @@ The import script preserves generated values and records the source hash in `pub
 ```sh
 .venv/bin/python -m unittest discover -s tests -v
 npm run build
+npm test
 ```
 
 The test uses a video with known positions and variable frame timestamps. It checks tracking, lost matches, manual corrections, saved measurements, CLI output and annotated export timing.
+
+Component checks verify that shared interaction files match their source hashes, public token references resolve, and app button CSS only controls placement.
