@@ -135,3 +135,5 @@ Choose speed and a finite number of repetitions. Switch the tracking outlines, d
 ```
 
 Optional `chart.window` is a pair of source timestamps in milliseconds; `chart.scale` is a pair of axis values. `chart.comparison` takes `id`, `first`, `last` and `offset` (second video's workspace offset minus the primary video's offset, in milliseconds). Omit `reference` for measured traces alone. Spring references use the same stiffness, damping and velocity fields as the UI and measurement API.
+
+UI changes follow the [workspace design guidelines](docs/design-guidelines.md).
