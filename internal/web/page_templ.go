@@ -31,7 +31,7 @@ func Page(entries []Entry) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<!doctype html><html lang=\"en\"><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>UI Motion</title><link rel=\"stylesheet\" href=\"/assets/main.css\"><script type=\"module\" src=\"/assets/main.js\"></script></head><body><div id=\"app\"><div class=\"shell\"><aside class=\"desktop-navigation\"><div class=\"app-identity\"><h1>UI Motion</h1></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<!doctype html><html lang=\"en\"><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>UI Motion</title><link rel=\"stylesheet\" href=\"/assets/main.css\"><script type=\"module\" src=\"/assets/main.js\"></script></head><body><div id=\"app\"><div class=\"shell\"><aside class=\"desktop-navigation\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -47,7 +47,7 @@ func Page(entries []Entry) templ.Component {
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<div id=\"projects\" class=\"md-nav-items\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<h3>Videos</h3><div id=\"projects\" class=\"md-nav-items\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -63,7 +63,7 @@ func Page(entries []Entry) templ.Component {
 			}
 			return nil
 		})
-		templ_7745c5c3_Err = ui.Drawer("desktop-drawer", false, "Recordings").Render(templ.WithChildren(ctx, templ_7745c5c3_Var2), templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = ui.Drawer("desktop-drawer", false, "Videos").Render(templ.WithChildren(ctx, templ_7745c5c3_Var2), templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -71,7 +71,7 @@ func Page(entries []Entry) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = ui.DrawerToggle("recording-drawer", "Open recordings").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = ui.DrawerToggle("recording-drawer", "Open videos").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -103,7 +103,7 @@ func Page(entries []Entry) templ.Component {
 			}
 			return nil
 		})
-		templ_7745c5c3_Err = ui.Drawer("recording-drawer", true, "Recordings").Render(templ.WithChildren(ctx, templ_7745c5c3_Var3), templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = ui.Drawer("recording-drawer", true, "Videos").Render(templ.WithChildren(ctx, templ_7745c5c3_Var3), templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -138,7 +138,7 @@ func Page(entries []Entry) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "<input id=\"file\" type=\"file\" accept=\"video/*,.gif\" hidden></div><div class=\"workspace-heading\"><h2 id=\"name\" class=\"filename\" hidden></h2><p id=\"recording-meta\" class=\"help\" hidden></p><div id=\"status\" role=\"status\" aria-live=\"polite\"></div></div><section id=\"empty\"><h2>Open a recording</h2><p>Track an object or edge and inspect its movement frame by frame.</p>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "<input id=\"file\" type=\"file\" accept=\"video/*,.gif\" hidden></div><div class=\"workspace-heading\"><h2 id=\"name\" class=\"filename\" hidden></h2><p id=\"recording-meta\" class=\"help\" hidden></p><div id=\"status\" role=\"status\" aria-live=\"polite\"></div></div><section id=\"empty\" class=\"md-card md-elevated-card\"><h2>Open a recording</h2><p>Track an object or edge and inspect its movement frame by frame.</p>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -169,7 +169,7 @@ func Page(entries []Entry) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "<p class=\"help\">Videos and measurements stay on this machine.</p></section><div id=\"workspace\" hidden><div class=\"stage-grid\"><div class=\"work-surface\"><section class=\"video-panel\" aria-label=\"Video inspection\"><div class=\"image-wrap\"><canvas id=\"frame\" aria-label=\"Video frame. Drag to select a tracking region.\"></canvas></div><div class=\"transport\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "<p class=\"help\">Videos and measurements stay on this machine.</p></section><div id=\"workspace\" hidden><div class=\"stage-grid md-card md-elevated-card\"><div class=\"work-surface\"><section class=\"video-panel\" aria-label=\"Video inspection\"><div class=\"image-wrap\"><canvas id=\"frame\" aria-label=\"Video frame. Drag to select a tracking region.\"></canvas></div><div class=\"transport\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

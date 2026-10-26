@@ -11,8 +11,8 @@ templ Page(entries []Entry) {
 			<div id="app">
 				<div class="shell">
 					<aside class="desktop-navigation">
-						<div class="app-identity"><h1>UI Motion</h1></div>
-						@ui.Drawer("desktop-drawer", false, "Recordings") {
+						@ui.Drawer("desktop-drawer", false, "Videos") {
+							<h3>Videos</h3>
 							<div id="projects" class="md-nav-items">
 								for _, entry := range entries {
 									@ui.DrawerItem(templ.Attributes{"data-project-id": entry.ID, "aria-controls": "recording-content"}, entry.Name)
@@ -23,8 +23,8 @@ templ Page(entries []Entry) {
 					<main id="recording-content">
 						<div class="workspace-actions">
 							<div class="mobile-navigation" data-navigation-demo>
-								@ui.DrawerToggle("recording-drawer", "Open recordings")
-								@ui.Drawer("recording-drawer", true, "Recordings") {
+								@ui.DrawerToggle("recording-drawer", "Open videos")
+								@ui.Drawer("recording-drawer", true, "Videos") {
 									<div id="mobile-projects" class="md-nav-items">
 										for _, entry := range entries {
 											@ui.DrawerItem(templ.Attributes{"data-project-id": entry.ID, "aria-controls": "recording-content"}, entry.Name)
@@ -38,7 +38,7 @@ templ Page(entries []Entry) {
 							<input id="file" type="file" accept="video/*,.gif" hidden/>
 						</div>
 						<div class="workspace-heading"><h2 id="name" class="filename" hidden></h2><p id="recording-meta" class="help" hidden></p><div id="status" role="status" aria-live="polite"></div></div>
-						<section id="empty">
+						<section id="empty" class="md-card md-elevated-card">
 							<h2>Open a recording</h2>
 							<p>Track an object or edge and inspect its movement frame by frame.</p>
 							@ui.Button(templ.Attributes{"id": "empty-import", "class": "md-button md-filled-button"}) {
@@ -47,7 +47,7 @@ templ Page(entries []Entry) {
 							<p class="help">Videos and measurements stay on this machine.</p>
 						</section>
 						<div id="workspace" hidden>
-							<div class="stage-grid">
+							<div class="stage-grid md-card md-elevated-card">
 								<div class="work-surface">
 									<section class="video-panel" aria-label="Video inspection">
 										<div class="image-wrap"><canvas id="frame" aria-label="Video frame. Drag to select a tracking region."></canvas></div>

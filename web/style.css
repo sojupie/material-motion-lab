@@ -43,11 +43,6 @@ p {
   margin-block: var(--md-sys-measurement-space100)
     var(--md-sys-measurement-space200);
 }
-/* App identity belongs with navigation; document actions belong with the workspace. */
-.app-identity {
-  padding: var(--md-sys-measurement-space300) var(--md-sys-measurement-space400)
-    var(--md-sys-measurement-space100);
-}
 .workspace-actions {
   display: flex;
   justify-content: flex-end;
@@ -106,7 +101,6 @@ main {
   align-items: center;
   justify-content: center;
   padding: var(--md-sys-measurement-space400);
-  background: var(--md-sys-color-surface);
   text-align: center;
 }
 #empty h2 {
@@ -128,11 +122,9 @@ main {
   gap: var(--md-sys-measurement-space300);
   align-items: start;
 }
-/* Video and measurements belong to one working surface. */
+/* Video, measurements and analysis controls share the same card. */
 .work-surface {
   min-inline-size: 0;
-  padding: var(--md-sys-measurement-space300);
-  background: var(--md-sys-color-surface);
 }
 .video-panel {
   min-inline-size: 0;
@@ -172,10 +164,9 @@ canvas {
 .graph-panel h2 {
   margin-block-end: var(--md-sys-measurement-space150);
 }
-/* The inspector supports the document; it is not another raised card. */
+/* Analysis settings occupy the supporting column inside the workspace card. */
 .controls {
   min-inline-size: 0;
-  padding: var(--md-sys-measurement-space200) var(--md-sys-measurement-space100);
 }
 .inspector-group {
   min-inline-size: 0;
@@ -370,9 +361,6 @@ footer {
 }
 @media (max-width: 600px) {
   main {
-    padding: var(--md-sys-measurement-space200);
-  }
-  .work-surface {
     padding: var(--md-sys-measurement-space200);
   }
   #empty {
