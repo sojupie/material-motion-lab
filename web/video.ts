@@ -294,10 +294,12 @@ export class VideoView {
     if (!p) return;
     const wrap = this.canvas.parentElement!;
     const value = this.el<HTMLSelectElement>("zoom").value;
+    const bounds = getComputedStyle(wrap);
     const scale = Math.min(
-      wrap.clientWidth / p.width,
-      wrap.clientHeight / p.height,
+      parseFloat(bounds.width) / p.width,
+      parseFloat(bounds.height) / p.height,
     );
+    wrap.style.overflow = value === "fit" ? "hidden" : "auto";
     this.canvas.style.width = `${value === "fit" ? Math.max(1, scale * p.width) : p.width * Number(value)}px`;
   }
   overlay() {
