@@ -1,8 +1,8 @@
-import { $, post } from "./api";
+import { $, post, api } from "./api";
 import { fitScale, zoomScale, panScale, type ScaleRange } from "./graph-scale";
-import { milliseconds } from "./timing";
-import type { Measurement, Project } from "./types";
+import type { Measurement, Project, MotionReference } from "./types";
 import type { VideoView } from "./video";
+import { syncMaterialControls } from "./material";
 import { LEFT, RIGHT } from "./timeline";
 type Point = { t: number; v: number | null; frame: number; manual: boolean };
 export class MotionGraph {
@@ -10,6 +10,7 @@ export class MotionGraph {
   private vertical: ScaleRange | null = null;
   private visibleScale: ScaleRange = [0, 1];
   private motionScale: ScaleRange = [0, 1];
+  private presets = new Map<string, MotionReference>();
   private endPosition = 0;
   private plotHeight = 140;
   private hovering = false;
@@ -38,16 +39,34 @@ export class MotionGraph {
       this.paint();
     };
     $("curve").onchange = () => {
-      if (this.preset === "md3") {
-        const token = getComputedStyle(document.documentElement)
-          .getPropertyValue("--md-sys-motion-duration-medium2")
-          .trim();
-        const ms = milliseconds(token);
-        $<HTMLInputElement>("duration").value = String(ms || 300);
-      }
+      const ref = this.presets.get(this.preset);
+      if (ref) this.fillReference(ref);
+      this.referenceControls();
       void this.refresh();
     };
-    $("duration").onchange = () => void this.refresh();
+    for (const id of [
+      "bezier-x1",
+      "bezier-y1",
+      "bezier-x2",
+      "bezier-y2",
+      "spring-stiffness",
+      "spring-damping",
+      "spring-velocity",
+    ]) {
+      $<HTMLInputElement>(id).step = "any";
+      $(id).oninput = () => {
+        $<HTMLSelectElement>("curve").value = id.startsWith("spring-")
+          ? "custom-spring"
+          : "custom-bezier";
+        this.referenceControls();
+        void this.refresh();
+      };
+    }
+    $("reference-save").onclick = () => void this.saveReference();
+    $("reference-load").onclick = () =>
+      $<HTMLInputElement>("reference-file").click();
+    $("reference-file").onchange = () => void this.loadReference();
+    $("duration").oninput = () => void this.refresh();
     $("graph-fit").onclick = () => {
       this.vertical = null;
       this.paint();
@@ -161,15 +180,111 @@ export class MotionGraph {
   get progress() {
     return $<HTMLSelectElement>("units").value === "progress";
   }
-  private curve() {
-    if (this.preset === "linear") return [0, 0, 1, 1];
-    const text = getComputedStyle(document.documentElement).getPropertyValue(
-      "--md-sys-motion-easing-standard",
-    );
-    const values = text.match(/-?\d*\.?\d+/g)?.map(Number);
-    if (!values || values.length !== 4)
-      throw Error("MD3 standard easing token is unavailable.");
-    return values;
+  async loadPresets() {
+    const refs = await api<MotionReference[]>("/references");
+    this.presets = new Map(refs.map((ref) => [ref.id!, ref]));
+  }
+  private fillReference(ref: MotionReference) {
+    ref.curve.forEach((value, i) => {
+      $<HTMLInputElement>(
+        ["bezier-x1", "bezier-y1", "bezier-x2", "bezier-y2"][i],
+      ).value = String(value);
+    });
+    for (const [field, value] of [
+      ["stiffness", ref.stiffness ?? 380],
+      ["damping", ref.damping ?? 0.8],
+      ["velocity", ref.velocity ?? 0],
+    ] as const)
+      $<HTMLInputElement>("spring-" + field).value = String(value);
+  }
+  private curve(): MotionReference {
+    const preset = this.presets.get(this.preset);
+    if (preset) return preset;
+    if (this.preset === "custom-spring")
+      return {
+        kind: "spring",
+        curve: [0, 0, 0, 0],
+        stiffness: Number($<HTMLInputElement>("spring-stiffness").value),
+        damping: Number($<HTMLInputElement>("spring-damping").value),
+        velocity: Number($<HTMLInputElement>("spring-velocity").value),
+      };
+    return {
+      kind: "bezier",
+      curve: ["bezier-x1", "bezier-y1", "bezier-x2", "bezier-y2"].map((id) =>
+        Number($<HTMLInputElement>(id).value),
+      ) as MotionReference["curve"],
+    };
+  }
+  private referenceControls() {
+    const ref = this.curve(),
+      none = this.preset === "none";
+    $("reference-controls").hidden = none;
+    $("bezier-controls").hidden = none || ref.kind !== "bezier";
+    $("spring-controls").hidden = none || ref.kind !== "spring";
+    $("spring-note").hidden = none || ref.kind !== "spring";
+    $("duration-controls").hidden = none || ref.kind === "spring";
+    const link = $<HTMLAnchorElement>("reference-source"),
+      source = this.presets.get(this.preset)?.source;
+    link.hidden = !source;
+    if (source) link.href = source;
+    $("reference-status").textContent = "";
+    syncMaterialControls();
+  }
+  private async saveReference() {
+    try {
+      const reference = await post<MotionReference>(
+        "/references/validate",
+        this.curve(),
+      );
+      const duration = Number($<HTMLInputElement>("duration").value);
+      if (!Number.isFinite(duration) || duration < 1 || duration > 60000)
+        throw Error("Reference duration must be 1–60000 ms.");
+      const url = URL.createObjectURL(
+        new Blob(
+          [JSON.stringify({ schema: 1, reference, duration }, null, 2)],
+          { type: "application/json" },
+        ),
+      );
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "motion-reference.json";
+      a.click();
+      URL.revokeObjectURL(url);
+      $("reference-status").textContent = "Reference saved.";
+    } catch (e) {
+      $("reference-status").textContent = String(e);
+    }
+  }
+  private async loadReference() {
+    const input = $<HTMLInputElement>("reference-file");
+    try {
+      const file = input.files?.[0];
+      if (!file) return;
+      if (file.size > 65536) throw Error("Reference file exceeds 64 KB.");
+      const data = JSON.parse(await file.text());
+      if (
+        data.schema !== 1 ||
+        !Number.isFinite(data.duration) ||
+        data.duration < 1 ||
+        data.duration > 60000
+      )
+        throw Error("Invalid reference file.");
+      const ref = await post<MotionReference>(
+        "/references/validate",
+        data.reference,
+      );
+      this.fillReference(ref);
+      $<HTMLInputElement>("duration").value = String(data.duration);
+      $<HTMLSelectElement>("curve").value =
+        ref.kind === "emphasized" ? "emphasized" : "custom-" + ref.kind;
+      this.referenceControls();
+      await this.refresh();
+      $("reference-status").textContent = "Reference loaded.";
+    } catch (e) {
+      $("reference-status").textContent = String(e);
+    } finally {
+      input.value = "";
+    }
   }
   controls(busy: boolean) {
     for (const id of [
@@ -182,7 +297,11 @@ export class MotionGraph {
         busy || !this.views().some((v) => v.project?.samples.length);
     for (const v of this.views())
       $<HTMLButtonElement>(`fit-${v.prefix}`).disabled =
-        busy || this.preset === "none" || !v.project?.samples.length || v.dirty;
+        busy ||
+        this.preset === "none" ||
+        this.curve().kind === "spring" ||
+        !v.project?.samples.length ||
+        v.dirty;
     $<HTMLInputElement>("duration").disabled = busy || this.preset === "none";
   }
   setActive(v: VideoView) {
@@ -197,14 +316,14 @@ export class MotionGraph {
     void this.refresh();
   }
   async fit(view: VideoView) {
-    if (!view.project) return;
+    if (!view.project || this.curve().kind === "spring") return;
     const report = await post<Measurement>(
       `/projects/${view.project.id}/measure`,
       {
         axis: this.axis,
         start: view.first,
         end: view.last,
-        curve: this.curve(),
+        reference: this.curve(),
         duration: Number($<HTMLInputElement>("duration").value),
         fit: true,
       },
@@ -217,7 +336,7 @@ export class MotionGraph {
     this.reports.clear();
     this.errors.clear();
     $("curve-note").hidden = this.preset === "none";
-    $("reference-controls").hidden = this.preset === "none";
+    this.referenceControls();
     $("curve-legend").hidden = this.preset === "none";
     this.controls(document.body.getAttribute("aria-busy") === "true");
     if (this.preset !== "none")
@@ -225,7 +344,7 @@ export class MotionGraph {
         this.views().map(async (view) => {
           const p = view.project;
           if (!p || view.dirty) return;
-          let curve: number[];
+          let curve: MotionReference;
           try {
             curve = this.curve();
           } catch (e) {
@@ -236,7 +355,7 @@ export class MotionGraph {
             axis: this.axis,
             start: view.first,
             end: view.last,
-            curve,
+            reference: curve,
             duration: Number($<HTMLInputElement>("duration").value),
           };
           const key = JSON.stringify(payload);
@@ -323,6 +442,7 @@ export class MotionGraph {
       this.vertical,
       this.active?.prefix,
       this.preset,
+      this.curve(),
       $<HTMLInputElement>("duration").value,
       views.map((v) => [
         v.project!.id,
@@ -655,7 +775,7 @@ export class MotionGraph {
       ) {
         const factor = this.progress ? 100 / Math.abs(report.displacement) : 1,
           unit = this.progress ? "%" : "px";
-        result.textContent = `${view.prefix.toUpperCase()}: reference ${report.duration.toFixed(1)} ms; RMSE ${(report.rmse * factor).toFixed(3)} ${unit}; maximum error ${(report.maxError * factor).toFixed(3)} ${unit}; ${report.samples} valid samples, ${report.weak} weak matches.`;
+        result.textContent = `${view.prefix.toUpperCase()}: ${report.reference?.kind === "spring" ? "spring" : `reference ${report.duration.toFixed(1)} ms`}; RMSE ${(report.rmse * factor).toFixed(3)} ${unit}; maximum error ${(report.maxError * factor).toFixed(3)} ${unit}; ${report.samples} valid samples, ${report.weak} weak matches.`;
       } else result.textContent = "";
     }
   }

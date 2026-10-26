@@ -181,17 +181,32 @@ func (s *Server) Handler() http.Handler {
 		}
 		return s.Store.TrackMethod(r.PathValue("id"), payload.Region, payload.Start, payload.End, payload.Anchors, payload.Search, payload.Threshold, payload.Method)
 	})
+	api("GET /api/references", func(w http.ResponseWriter, r *http.Request) (any, error) { return analysis.ReferencePresets(), nil })
+	api("POST /api/references/validate", func(w http.ResponseWriter, r *http.Request) (any, error) {
+		var ref analysis.Reference
+		if e := decode(r, &ref); e != nil {
+			return nil, e
+		}
+		if e := ref.Validate(); e != nil {
+			return nil, e
+		}
+		return ref, nil
+	})
 	api("POST /api/projects/{id}/measure", func(w http.ResponseWriter, r *http.Request) (any, error) {
 		payload := struct {
-			Axis     string         `json:"axis"`
-			Start    int            `json:"start"`
-			End      int            `json:"end"`
-			Curve    analysis.Curve `json:"curve"`
-			Duration float64        `json:"duration"`
-			Fit      bool           `json:"fit"`
+			Axis      string              `json:"axis"`
+			Start     int                 `json:"start"`
+			End       int                 `json:"end"`
+			Curve     analysis.Curve      `json:"curve"`
+			Reference *analysis.Reference `json:"reference"`
+			Duration  float64             `json:"duration"`
+			Fit       bool                `json:"fit"`
 		}{Axis: "x", Curve: analysis.Curve{.2, 0, 0, 1}, Duration: 300}
 		if e := decode(r, &payload); e != nil {
 			return nil, e
+		}
+		if payload.Reference != nil {
+			return s.Store.MeasureReference(r.PathValue("id"), payload.Axis, payload.Start, payload.End, *payload.Reference, payload.Duration, payload.Fit)
 		}
 		return s.Store.Measure(r.PathValue("id"), payload.Axis, payload.Start, payload.End, payload.Curve, payload.Duration, payload.Fit)
 	})

@@ -29,7 +29,11 @@ func run(args []string) error {
 	start := flags.Int("start", 0, "first frame")
 	end := flags.Int("end", -1, "last frame")
 	method := flags.String("method", "feature", "feature, edge-x or edge-y")
-	curve := flags.String("curve", "md3-standard", "md3-standard or linear")
+	curve := flags.String("curve", "md3-standard", "reference preset ID, bezier, or spring; GET /api/references lists presets")
+	bezier := flags.String("bezier", "0.2,0,0,1", "custom cubic-bezier x1,y1,x2,y2")
+	stiffness := flags.Float64("stiffness", 380, "unit-mass spring stiffness")
+	damping := flags.Float64("damping", .8, "spring damping ratio")
+	velocity := flags.Float64("velocity", 0, "initial velocity in travel distances/second")
 	duration := flags.Float64("duration", 300, "reference duration in ms")
 	fit := flags.Bool("fit", false, "fit reference duration")
 	search := flags.Int("search", 60, "search distance in pixels")
@@ -122,11 +126,29 @@ func run(args []string) error {
 			result, e = store.TrackMethod(id, values, *start, last, nil, *search, .65, *method)
 		}
 	case "measure":
-		c := analysis.Curve{.2, 0, 0, 1}
-		if *curve == "linear" {
-			c = analysis.Curve{0, 0, 1, 1}
-		} else if *curve != "md3-standard" {
-			return fmt.Errorf("curve must be md3-standard or linear")
+		var ref analysis.Reference
+		switch *curve {
+		case "spring":
+			ref = analysis.Reference{Kind: "spring", Stiffness: *stiffness, Damping: *damping, Velocity: *velocity}
+		case "bezier":
+			ref.Kind = "bezier"
+			parts := strings.Split(*bezier, ",")
+			if len(parts) != 4 {
+				return fmt.Errorf("bezier needs x1,y1,x2,y2")
+			}
+			for i, part := range parts {
+				v, err := strconv.ParseFloat(strings.TrimSpace(part), 64)
+				if err != nil {
+					return err
+				}
+				ref.Curve[i] = v
+			}
+		default:
+			var err error
+			ref, err = analysis.ReferencePreset(*curve)
+			if err != nil {
+				return err
+			}
 		}
 		last := *end
 		if last < 0 {
@@ -136,7 +158,7 @@ func run(args []string) error {
 			}
 			last = len(p.Times) - 1
 		}
-		result, e = store.Measure(id, *axis, *start, last, c, *duration, *fit)
+		result, e = store.MeasureReference(id, *axis, *start, last, ref, *duration, *fit)
 	case "correct":
 		var values []float64
 		values, e = roi()

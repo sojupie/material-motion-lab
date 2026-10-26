@@ -54,7 +54,9 @@ The graph below the tracks shares their visible time span and playhead. Hover a 
 
 Select horizontal or vertical displacement and recording pixels or progress. **Fit motion** fits visible samples and reference curves. The vertical zoom buttons narrow or widen the current axis range. Enable **Pan plot** and drag the chart to move both axes; horizontal movement also pans the shared timeline. Turn it off to select samples again. Drag the vertical axis to pan vertically, or focus it and use Up/Down. Home restores Fit motion. **Fit end position** centers a close view on the selected recording’s final measured position. The displayed axis range uses the selected units. Choose a **Reference curve** beside the chart settings to show its duration and fitting controls. Displacement starts from the first position in each selected tracking range.
 
-An MD3 standard or linear reference runs from the range’s first measured position to its last. Set a duration or fit it to either recording. Fitting changes duration only. RMS error and maximum error compare valid samples with the curve. Both endpoint frames need valid measurements and different positions.
+Choose from MD3 standard, emphasized and legacy easing curves, linear easing, and all standard and expressive spatial/effects springs. Custom Béziers and springs expose their parameters; **Save reference** and **Load reference** reuse them as JSON. Springs use physical time and preserve overshoot. Easing curves accept a duration and duration fitting. [Reference definitions and measurement details](docs/references.md).
+
+References start at the first measured position and aim at the last position in each tracking range. For spring comparisons, choose a final frame after settling. RMS error and maximum error compare valid samples with the reference. Both boundary frames need valid measurements and different positions.
 
 Video measurements remain limited by captured frames, compression and the selected detail. Subpixel estimates do not recover missing frames. These trackers measure translation rather than scale, opacity or text deformation.
 

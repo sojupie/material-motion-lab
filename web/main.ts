@@ -472,6 +472,7 @@ $<HTMLInputElement>("file").onchange = () =>
     $<HTMLInputElement>("file").value = "";
   });
 void installMaterialControls()
+  .then(() => graph.loadPresets())
   .then(refresh)
   .then(controls)
   .catch((e) => status(e.message, true));

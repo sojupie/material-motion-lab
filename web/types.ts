@@ -33,7 +33,18 @@ export type Project = {
   comparison?: { id: string; zeroFrame: number } | null;
 };
 export type Entry = { id: string; name: string };
+export type MotionReference = {
+  id?: string;
+  label?: string;
+  kind: "bezier" | "emphasized" | "spring";
+  curve: [number, number, number, number];
+  stiffness?: number;
+  damping?: number;
+  velocity?: number;
+  source?: string;
+};
 export type Measurement = {
+  reference?: MotionReference;
   start: number;
   end: number;
   duration: number;

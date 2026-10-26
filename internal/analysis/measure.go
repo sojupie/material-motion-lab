@@ -11,6 +11,7 @@ type ExpectedPoint struct {
 	Value float64 `json:"value"`
 }
 type Measurement struct {
+	Reference    Reference       `json:"reference"`
 	Start        int             `json:"start"`
 	End          int             `json:"end"`
 	Duration     float64         `json:"duration"`
@@ -62,18 +63,34 @@ func (s Store) Measure(id, axis string, start, end int, curve Curve, duration fl
 	return Measure(p, axis, start, end, curve, duration, fit)
 }
 func Measure(p *Project, axis string, start, end int, curve Curve, duration float64, fit bool) (Measurement, error) {
+	return MeasureReference(p, axis, start, end, Reference{Kind: "bezier", Curve: curve}, duration, fit)
+}
+func (s Store) MeasureReference(id, axis string, start, end int, ref Reference, duration float64, fit bool) (Measurement, error) {
+	p, e := s.Load(id)
+	if e != nil {
+		return Measurement{}, e
+	}
+	return MeasureReference(p, axis, start, end, ref, duration, fit)
+}
+func MeasureReference(p *Project, axis string, start, end int, ref Reference, duration float64, fit bool) (Measurement, error) {
 	var result Measurement
 	if axis != "x" && axis != "y" {
 		return result, fmt.Errorf("axis must be x or y")
 	}
-	if e := curve.Validate(); e != nil {
+	if e := ref.Validate(); e != nil {
 		return result, e
 	}
 	if start < 0 || end <= start || end >= len(p.Times) {
 		return result, fmt.Errorf("choose an alignment frame before the last frame")
 	}
-	if math.IsNaN(duration) || math.IsInf(duration, 0) || duration < 1 || duration > 60000 {
+	if ref.Kind != "spring" && (math.IsNaN(duration) || math.IsInf(duration, 0) || duration < 1 || duration > 60000) {
 		return result, fmt.Errorf("reference duration must be 1–60000 ms")
+	}
+	if ref.Kind == "spring" {
+		if fit {
+			return result, fmt.Errorf("springs use physical time; duration fitting applies to easing curves")
+		}
+		duration = p.Times[end] - p.Times[start]
 	}
 	var from, to *float64
 	selected := []Sample{}
@@ -108,7 +125,7 @@ func Measure(p *Project, axis string, start, end int, curve Curve, duration floa
 	errorAt := func(d float64) (float64, float64) {
 		var squares, maximum float64
 		for _, sample := range selected {
-			expected := *from + distance*curve.At((sample.T-zero)/d)
+			expected := *from + distance*ref.At(sample.T-zero, d)
 			delta := math.Abs(*axisValue(sample, axis) - expected)
 			squares += delta * delta
 			maximum = max(maximum, delta)
@@ -142,12 +159,13 @@ func Measure(p *Project, axis string, start, end int, curve Curve, duration floa
 		duration = (lo + hi) / 2
 	}
 	rmse, maximum := errorAt(duration)
-	result = Measurement{Start: start, End: end, Duration: duration, RMSE: rmse, MaxError: maximum, Samples: len(selected), Weak: weak, Displacement: distance, Points: []ExpectedPoint{}}
+	result = Measurement{Reference: ref, Start: start, End: end, Duration: duration, RMSE: rmse, MaxError: maximum, Samples: len(selected), Weak: weak, Displacement: distance, Points: []ExpectedPoint{}}
 	// Sample the reference across the measured interval and full reference duration.
 	extent := max(duration, p.Times[end]-zero)
-	for i := 0; i <= 120; i++ {
-		t := extent * float64(i) / 120
-		result.Points = append(result.Points, ExpectedPoint{T: t, Value: distance * curve.At(t/duration)})
+	steps := max(120, min(15000, int(math.Ceil(extent/4))))
+	for i := 0; i <= steps; i++ {
+		t := extent * float64(i) / float64(steps)
+		result.Points = append(result.Points, ExpectedPoint{T: t, Value: distance * ref.At(t, duration)})
 	}
 	return result, nil
 }

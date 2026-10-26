@@ -57,6 +57,26 @@ func TestServerRenderedControlsAndAPI(t *testing.T) {
 		t.Fatal(w.Body.String())
 	}
 
+	presets := get("/api/references")
+	var refs []analysis.Reference
+	if e := json.Unmarshal(presets.Body.Bytes(), &refs); e != nil || len(refs) != 23 {
+		t.Fatal("reference catalogue", e, presets.Body.String())
+	}
+	for _, body := range []string{`{"kind":"spring","stiffness":380,"damping":0.8,"velocity":1.5}`, `{"kind":"bezier","curve":[0.2,0,0,1]}`} {
+		w := httptest.NewRecorder()
+		server.ServeHTTP(w, httptest.NewRequest("POST", "/api/references/validate", strings.NewReader(body)))
+		if w.Code != 200 {
+			t.Fatal(w.Code, w.Body.String())
+		}
+	}
+	for _, body := range []string{`{"kind":"spring","stiffness":0}`, `{"kind":"bezier","curve":[2,0,0,1]}`, `{"kind":"spring","stiffness":380,"bogus":1}`} {
+		w := httptest.NewRecorder()
+		server.ServeHTTP(w, httptest.NewRequest("POST", "/api/references/validate", strings.NewReader(body)))
+		if w.Code != 400 {
+			t.Fatal("invalid reference accepted", w.Code, w.Body.String())
+		}
+	}
+
 	var saved map[string]any
 	if e := json.Unmarshal(get("/api/projects/"+id).Body.Bytes(), &saved); e != nil {
 		t.Fatal(e)

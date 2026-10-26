@@ -723,3 +723,10 @@ canvas.drawing {
 #graph.panning * {
   cursor: grabbing;
 }
+
+#bezier-controls .field-row {
+  flex-basis: 96px;
+}
+.reference-editor {
+  margin-block: var(--md-sys-measurement-space100);
+}
