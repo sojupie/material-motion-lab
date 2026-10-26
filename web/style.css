@@ -723,11 +723,3 @@ canvas.drawing {
 #graph.panning * {
   cursor: grabbing;
 }
-.vertical-axis-pan {
-  fill: var(--md-sys-color-surface-container-high);
-  fill-opacity: 0;
-}
-.vertical-axis-pan:hover,
-.vertical-axis-pan:focus-visible {
-  fill-opacity: 0.5;
-}
