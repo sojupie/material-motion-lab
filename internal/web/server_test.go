@@ -31,7 +31,7 @@ func TestServerRenderedControlsAndAPI(t *testing.T) {
 		t.Fatal(page.Code, page.Body.String())
 	}
 	body := page.Body.String()
-	for _, text := range []string{"data-navigation-modal", "data-field-combo", "md-outlined-text-field", "field-option-template", "recording-item-template", "/assets/main.js", "A &lt;script&gt;", `id="timeline"`, `id="playhead-time"`, `id="inspector-title"`, "Track selected range", "Mark sync point", "Viewer zoom", `id="playback-speed"`, `id="playback-loop"`, `id="playback-start"`, `id="playback-end"`, `id="playback-reset"`} {
+	for _, text := range []string{"data-navigation-modal", "data-field-combo", "md-outlined-text-field", "field-option-template", "recording-item-template", "/assets/main.js", "A &lt;script&gt;", `id="timeline"`, `id="playhead-time"`, `id="inspector-title"`, "Track selected range", "Mark sync point", "Viewer zoom", `id="reference-controls"`, `aria-label="Clip alignment"`, `<h3>Export</h3>`, `id="playback-speed"`, `id="playback-loop"`, `id="playback-start"`, `id="playback-end"`, `id="playback-reset"`} {
 		if !strings.Contains(body, text) {
 			t.Fatal("missing server markup", text)
 		}
@@ -39,7 +39,7 @@ func TestServerRenderedControlsAndAPI(t *testing.T) {
 	if strings.Contains(body, "<script>alert(1)</script>") {
 		t.Fatal("filename was not escaped")
 	}
-	for _, obsolete := range []string{`id="a-scrub"`, `id="b-scrub"`, `id="a-play"`, `id="linked"`, "Track interval", "Correct here"} {
+	for _, obsolete := range []string{`id="a-scrub"`, `id="b-scrub"`, `id="a-play"`, `id="linked"`, "Track interval", "Correct here", "<summary>Curve comparison</summary>", "<summary>Alignment</summary>", "<summary>Export</summary>", "Target ±10 px"} {
 		if strings.Contains(body, obsolete) {
 			t.Fatal("obsolete independent controls", obsolete)
 		}

@@ -151,15 +151,15 @@ main {
 .export-controls {
   margin-block-start: var(--md-sys-measurement-space200);
 }
-.export-controls > summary {
-  cursor: pointer;
-  font: var(--md-sys-typescale-title-medium);
-}
 .reference-controls {
   margin-block-start: var(--md-sys-measurement-space200);
 }
 .reference-controls .field-row {
-  max-inline-size: 240px;
+  flex: 0 1 240px;
+  min-inline-size: 0;
+}
+.reference-controls .md-outlined-text-field {
+  inline-size: 100%;
 }
 .image-wrap {
   background: var(--md-sys-color-surface-container-highest);
@@ -611,10 +611,6 @@ canvas.drawing {
   border-block-start: 1px solid var(--md-sys-color-outline-variant);
   padding-block: var(--md-sys-measurement-space200);
 }
-.alignment-controls > summary {
-  cursor: pointer;
-  font: var(--md-sys-typescale-title-medium);
-}
 .viewer-status {
   display: flex;
   flex-wrap: wrap;
@@ -644,13 +640,6 @@ canvas.drawing {
   overflow-y: hidden;
   height: 14px;
   scrollbar-width: thin;
-}
-.reference-settings {
-  margin-block-start: var(--md-sys-measurement-space150);
-}
-.reference-settings > summary {
-  cursor: pointer;
-  font: var(--md-sys-typescale-title-medium);
 }
 .visually-hidden {
   position: absolute;

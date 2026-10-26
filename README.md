@@ -42,7 +42,7 @@ Existing recordings retain their saved measurements. Rerun tracking to replace o
 
 ## Align videos
 
-Select video A and scrub to the event you want to align. Open **Alignment** in the inspector and press **Mark sync point**. Repeat for B, then press **Align sync points**. Video B moves so the two markers coincide. Clip dragging, the offset field and frame-nudge actions provide manual adjustment.
+Select video A and scrub to the event you want to align. Press **Mark sync point** under **Alignment** in the inspector. Repeat for B, then press **Align sync points**. Video B moves so the two markers coincide. Clip dragging, the offset field and frame-nudge actions provide manual adjustment.
 
 Alignment, sync markers, tracking ranges, playback range, loop and speed save in `workspace.json` beside the primary recording’s `project.json`. The playback range uses workspace time; moving a clip leaves that interval in place. If the workspace becomes shorter, the interval is clamped to its bounds. Moving clips does not change either recording’s stored time zero or tracking measurements. Existing comparisons supply the initial alignment when no workspace has been saved. `GET` and `PUT /api/projects/{id}/workspace` read and save this state.
 
@@ -52,7 +52,7 @@ Playback uses the original timestamps, including different frame rates and irreg
 
 The graph below the tracks shares their visible time span and playhead. Hover a sample to see its frame, time, displacement and tracking score. Click a sample to move the playhead and inspect both videos. Click a trace to select its recording. Dragging the graph does not scrub or change the interval.
 
-Select horizontal or vertical displacement, recording pixels or progress, and an automatic or fixed vertical scale. Open **Curve comparison** for reference settings. Displacement starts from the first position in each selected tracking range. Fixed scales magnify motion around its final position.
+Select horizontal or vertical displacement, recording pixels or progress, and an automatic or fixed vertical scale. Choose a **Reference curve** beside the chart settings to show its duration and fitting controls. Displacement starts from the first position in each selected tracking range. Fixed scales magnify motion around its final position.
 
 An MD3 standard or linear reference runs from the range’s first measured position to its last. Set a duration or fit it to either recording. Fitting changes duration only. RMS error and maximum error compare valid samples with the curve. Both endpoint frames need valid measurements and different positions.
 

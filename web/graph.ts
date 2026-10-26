@@ -23,12 +23,7 @@ export class MotionGraph {
     private select: (view: VideoView) => void,
   ) {
     $("axis").onchange = () => void this.refresh();
-    $("units").onchange = () => {
-      const select = $<HTMLSelectElement>("vertical-scale");
-      select.options[1].textContent = `Target ±10 ${this.progress ? "%" : "px"}`;
-      select.options[2].textContent = `Target ±1 ${this.progress ? "%" : "px"}`;
-      this.paint();
-    };
+    $("units").onchange = () => this.paint();
     $("curve").onchange = () => {
       if (this.preset === "md3") {
         const token = getComputedStyle(document.documentElement)
@@ -99,6 +94,7 @@ export class MotionGraph {
     this.reports.clear();
     this.errors.clear();
     $("curve-note").hidden = this.preset === "none";
+    $("reference-controls").hidden = this.preset === "none";
     $("curve-legend").hidden = this.preset === "none";
     this.controls(document.body.getAttribute("aria-busy") === "true");
     if (this.preset !== "none")
@@ -259,10 +255,29 @@ export class MotionGraph {
       const node = document.createElementNS(ns, name);
       for (const [key, value] of Object.entries(attrs))
         node.setAttribute(key, String(value));
+      if (
+        name === "circle" ||
+        (name === "path" && /\b(trace|reference)\b/.test(String(attrs.class)))
+      )
+        node.setAttribute("clip-path", "url(#displacement-plot)");
       if (text) node.textContent = text;
       svg.append(node);
       return node;
     };
+    const defs = document.createElementNS(ns, "defs");
+    const clip = document.createElementNS(ns, "clipPath");
+    clip.id = "displacement-plot";
+    const rect = document.createElementNS(ns, "rect");
+    for (const [name, value] of Object.entries({
+      x: left,
+      y: 24,
+      width: width - left - right,
+      height: 140,
+    }))
+      rect.setAttribute(name, String(value));
+    clip.append(rect);
+    defs.append(clip);
+    svg.append(defs);
     el(
       "text",
       { x: left, y: 14, class: "tick" },
