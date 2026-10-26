@@ -27,11 +27,11 @@ func (s Store) CSV(id string) (string, error) {
 	w := csv.NewWriter(f)
 	w.Write([]string{"frame", "t", "x", "y", "width", "height", "score", "valid", "manual"})
 	for _, v := range p.Samples {
-		coord := func(p *int) string {
+		coord := func(p *float64) string {
 			if p == nil {
 				return ""
 			}
-			return strconv.Itoa(*p)
+			return strconv.FormatFloat(*p, 'f', 6, 64)
 		}
 		w.Write([]string{strconv.Itoa(v.Frame), strconv.FormatFloat(v.T, 'f', -1, 64), coord(v.X), coord(v.Y), strconv.Itoa(v.Width), strconv.Itoa(v.Height), strconv.FormatFloat(v.Score, 'g', -1, 64), strconv.FormatBool(v.Valid), strconv.FormatBool(v.Manual)})
 	}
@@ -43,7 +43,7 @@ func (s Store) CSV(id string) (string, error) {
 	}
 	return path, closeErr
 }
-func axisValue(s Sample, axis string) *int {
+func axisValue(s Sample, axis string) *float64 {
 	if axis == "y" {
 		return s.Y
 	}
@@ -171,7 +171,15 @@ func renderFrame(p *Project, dir, work string, i int, axis string, rows map[int]
 	}
 	row, ok := rows[i]
 	if ok && row.Valid && row.X != nil && row.Y != nil {
-		gocv.Rectangle(&frame, image.Rect(*row.X, *row.Y, *row.X+row.Width, *row.Y+row.Height), color.RGBA{100, 220, 70, 255}, 2)
+		x, y := int(math.Round(*row.X)), int(math.Round(*row.Y))
+		c := color.RGBA{100, 220, 70, 255}
+		if p.Settings != nil && p.Settings.Method == "edge-x" {
+			gocv.Line(&frame, image.Pt(x, y), image.Pt(x, y+row.Height), c, 2)
+		} else if p.Settings != nil && p.Settings.Method == "edge-y" {
+			gocv.Line(&frame, image.Pt(x, y), image.Pt(x+row.Width, y), c, 2)
+		} else {
+			gocv.Rectangle(&frame, image.Rect(x, y, x+row.Width, y+row.Height), c, 2)
+		}
 	}
 	label := fmt.Sprintf("Frame %d   %+.1f ms", i, p.Times[i]-p.Times[p.ZeroFrame])
 	if ok && !row.Valid {

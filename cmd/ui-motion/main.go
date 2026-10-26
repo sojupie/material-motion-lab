@@ -22,12 +22,16 @@ func main() {
 }
 func run(args []string) error {
 	if len(args) == 0 {
-		return fmt.Errorf("usage: ui-motion <serve|inspect|import|track|correct|frames|zero|compare|export> [arguments]")
+		return fmt.Errorf("usage: ui-motion <serve|inspect|import|track|correct|frames|zero|compare|measure|export> [arguments]")
 	}
 	command := args[0]
 	flags := flag.NewFlagSet(command, flag.ContinueOnError)
 	start := flags.Int("start", 0, "first frame")
 	end := flags.Int("end", -1, "last frame")
+	method := flags.String("method", "feature", "feature, edge-x or edge-y")
+	curve := flags.String("curve", "md3-standard", "md3-standard or linear")
+	duration := flags.Float64("duration", 300, "reference duration in ms")
+	fit := flags.Bool("fit", false, "fit reference duration")
 	search := flags.Int("search", 60, "search distance in pixels")
 	region := flags.String("region", "", "x,y,width,height")
 	frame := flags.Int("frame", 0, "frame")
@@ -43,7 +47,7 @@ func run(args []string) error {
 	for i := 1; i < len(args); i++ {
 		if strings.HasPrefix(args[i], "--") {
 			options = append(options, args[i])
-			if !strings.Contains(args[i], "=") && i+1 < len(args) {
+			if !strings.Contains(args[i], "=") && args[i] != "--fit" && i+1 < len(args) {
 				i++
 				options = append(options, args[i])
 			}
@@ -115,8 +119,24 @@ func run(args []string) error {
 			if *end >= 0 {
 				last = end
 			}
-			result, e = store.Track(id, values, *start, last, nil, *search, .65)
+			result, e = store.TrackMethod(id, values, *start, last, nil, *search, .65, *method)
 		}
+	case "measure":
+		c := analysis.Curve{.2, 0, 0, 1}
+		if *curve == "linear" {
+			c = analysis.Curve{0, 0, 1, 1}
+		} else if *curve != "md3-standard" {
+			return fmt.Errorf("curve must be md3-standard or linear")
+		}
+		last := *end
+		if last < 0 {
+			p, err := store.Load(id)
+			if err != nil {
+				return err
+			}
+			last = len(p.Times) - 1
+		}
+		result, e = store.Measure(id, *axis, *start, last, c, *duration, *fit)
 	case "correct":
 		var values []float64
 		values, e = roi()

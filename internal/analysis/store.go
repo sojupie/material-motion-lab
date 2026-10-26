@@ -41,17 +41,19 @@ type Anchor struct {
 	Region Region `json:"region"`
 }
 type Sample struct {
-	Frame  int     `json:"frame"`
-	T      float64 `json:"t"`
-	X      *int    `json:"x"`
-	Y      *int    `json:"y"`
-	Width  int     `json:"width"`
-	Height int     `json:"height"`
-	Score  float64 `json:"score"`
-	Valid  bool    `json:"valid"`
-	Manual bool    `json:"manual"`
+	Frame  int      `json:"frame"`
+	T      float64  `json:"t"`
+	X      *float64 `json:"x"`
+	Y      *float64 `json:"y"`
+	Width  int      `json:"width"`
+	Height int      `json:"height"`
+	Score  float64  `json:"score"`
+	Valid  bool     `json:"valid"`
+	Manual bool     `json:"manual"`
 }
 type Settings struct {
+	Method    string  `json:"method,omitempty"`
+	Precision string  `json:"precision,omitempty"`
 	Start     int     `json:"start"`
 	End       int     `json:"end"`
 	Search    int     `json:"search"`

@@ -76,7 +76,7 @@ func TestTrackingPipeline(t *testing.T) {
 		t.Fatal(e)
 	}
 	for i, want := range positions[:5] {
-		if p.Samples[i].X == nil || *p.Samples[i].X != want {
+		if p.Samples[i].X == nil || math.Abs(*p.Samples[i].X-float64(want)) > .25 {
 			t.Fatalf("frame %d: %+v", i, p.Samples[i])
 		}
 	}
@@ -88,7 +88,7 @@ func TestTrackingPipeline(t *testing.T) {
 		t.Fatal(e)
 	}
 	for i, want := range positions {
-		if p.Samples[i].X == nil || *p.Samples[i].X != want {
+		if p.Samples[i].X == nil || math.Abs(*p.Samples[i].X-float64(want)) > .25 {
 			t.Fatalf("correction frame %d: %+v", i, p.Samples[i])
 		}
 	}
@@ -108,7 +108,7 @@ func TestTrackingPipeline(t *testing.T) {
 		t.Fatal(e)
 	}
 	raw, _ := os.ReadFile(csv)
-	if !strings.Contains(string(raw), "300,200,45") {
+	if !strings.Contains(string(raw), "300,200.000000,45.000000") {
 		t.Fatal(string(raw))
 	}
 	out, e := store.Video(p.ID, "x")

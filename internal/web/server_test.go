@@ -80,3 +80,49 @@ func TestServerRenderedControlsAndAPI(t *testing.T) {
 		t.Fatal(e)
 	}
 }
+
+func TestMeasurementsAreReadOnlyAndValidateInput(t *testing.T) {
+	store := analysis.Store{Dir: t.TempDir()}
+	id := "c6988398-16fd-4258-8eb9-693c03e10ce4"
+	folder, _ := store.Folder(id)
+	os.MkdirAll(folder, 0700)
+	x0, x1, x2 := 0.25, 5.5, 10.75
+	p := &analysis.Project{Schema: 1, ID: id, Name: "fractional.mp4", Times: []float64{0, 150, 300}, Samples: []analysis.Sample{
+		{Frame: 0, T: 0, X: &x0, Valid: true}, {Frame: 1, T: 150, X: &x1, Valid: true}, {Frame: 2, T: 300, X: &x2, Valid: true},
+	}}
+	if e := store.Save(p); e != nil {
+		t.Fatal(e)
+	}
+	before, _ := os.ReadFile(filepath.Join(folder, "project.json"))
+	handler := (&Server{Store: store, Dist: store.Dir}).Handler()
+	for _, tc := range []struct {
+		path, body string
+		want       int
+	}{
+		{"measure", `{"start":0,"end":2,"curve":[0,0,1,1],"duration":300,"fit":true}`, 200},
+		{"measure", `{"start":2,"end":0}`, 400},
+		{"measure", `{"start":0,"end":2,"axis":"z"}`, 400},
+		{"measure", `{"start":0,"end":2,"curve":[2,0,1,1]}`, 400},
+		{"measure", `{"start":0,"end":2,"duration":-1}`, 400},
+		{"track", `{"region":[0,0,10,10],"start":0,"end":2,"method":"unknown"}`, 400},
+	} {
+		w := httptest.NewRecorder()
+		handler.ServeHTTP(w, httptest.NewRequest("POST", "/api/projects/"+id+"/"+tc.path, strings.NewReader(tc.body)))
+		if w.Code != tc.want {
+			t.Fatalf("%s: %d %s", tc.body, w.Code, w.Body.String())
+		}
+		if w.Code == 200 {
+			var result analysis.Measurement
+			if e := json.Unmarshal(w.Body.Bytes(), &result); e != nil {
+				t.Fatal(e)
+			}
+			if result.RMSE > 0.001 || result.Duration < 299.9 || result.Duration > 300.1 {
+				t.Fatal(result)
+			}
+		}
+	}
+	after, _ := os.ReadFile(filepath.Join(folder, "project.json"))
+	if string(before) != string(after) {
+		t.Fatal("measurement or rejected input changed project")
+	}
+}

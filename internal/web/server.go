@@ -149,6 +149,7 @@ func (s *Server) Handler() http.Handler {
 			Anchors   *[]analysis.Anchor `json:"anchors"`
 			Search    int                `json:"search"`
 			Threshold float64            `json:"threshold"`
+			Method    string             `json:"method"`
 		}{Search: 60, Threshold: .65}
 		if e := decode(r, &payload); e != nil {
 			return nil, e
@@ -160,8 +161,23 @@ func (s *Server) Handler() http.Handler {
 				}
 			}
 		}
-		return s.Store.Track(r.PathValue("id"), payload.Region, payload.Start, payload.End, payload.Anchors, payload.Search, payload.Threshold)
+		return s.Store.TrackMethod(r.PathValue("id"), payload.Region, payload.Start, payload.End, payload.Anchors, payload.Search, payload.Threshold, payload.Method)
 	})
+	api("POST /api/projects/{id}/measure", func(w http.ResponseWriter, r *http.Request) (any, error) {
+		payload := struct {
+			Axis     string         `json:"axis"`
+			Start    int            `json:"start"`
+			End      int            `json:"end"`
+			Curve    analysis.Curve `json:"curve"`
+			Duration float64        `json:"duration"`
+			Fit      bool           `json:"fit"`
+		}{Axis: "x", Curve: analysis.Curve{.2, 0, 0, 1}, Duration: 300}
+		if e := decode(r, &payload); e != nil {
+			return nil, e
+		}
+		return s.Store.Measure(r.PathValue("id"), payload.Axis, payload.Start, payload.End, payload.Curve, payload.Duration, payload.Fit)
+	})
+
 	api("POST /api/projects/{id}/zero", func(w http.ResponseWriter, r *http.Request) (any, error) {
 		var payload struct {
 			Frame int `json:"frame"`
