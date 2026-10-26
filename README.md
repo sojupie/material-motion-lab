@@ -16,19 +16,29 @@ Open http://127.0.0.1:8091. The Go executable serves the templ interface, API an
 
 OpenCV is a native dependency. On Fedora, install `opencv-devel`; on other platforms, follow the [GoCV installation instructions](https://gocv.io/getting-started/). This workstation also has an optional SDK under `.local/opencv/`. The build and run scripts use it when system development files are unavailable.
 
-## Analyze a video
+## Track motion
 
-1. Open a video.
-2. Find the first frame to track. Draw around a distinct edge or textured detail.
-3. Set the last frame and press **Track from this frame**.
-4. Click the graph or step through frames to check the tracked region.
-5. Draw a corrected region and press **Correct position here** when tracking follows the wrong detail.
+1. Open a video and find the first frame to track.
+2. Open **Tracking** and choose a method. Draw around a distinct detail for **Image patch**, or draw a narrow strip across a straight boundary for **Vertical edge (X)** or **Horizontal edge (Y)**.
+3. Set the first and last frames, then press **Track interval**.
+4. Step through frames or click the position graph to inspect the results. **Jump to** lists the interval boundaries, alignment and manual corrections. The weak-match buttons find frames where tracking was lost.
+5. Draw a corrected region on a bad frame and press **Correct here**. This adds a manual anchor and reruns the interval with those corrections.
 
-Set time zero at the event you want to compare. Choose another recording and set its zero frame to align the events. Reopen saved recordings from the sidebar or menu button.
+Image patches track position in two dimensions. Edge tracking follows one axis through a fixed strip; keep corners and other boundaries outside that strip. Both methods estimate subpixel positions. Similarity is the patch correlation score. Edge strength is a ratio to the last manual anchor. Neither score is a probability of correctness. Weak matches leave gaps.
 
-JSON, CSV and annotated video exports become available after tracking. The video places the tracked frame beside its position graph. Existing schema-1 projects from the Python version remain readable without conversion.
+Existing recordings retain their saved measurements. Rerun tracking to replace older whole-pixel results with subpixel estimates. JSON, CSV and annotated video exports are available under **Export** for each video.
 
-Tracking follows a fixed image patch. It measures position, not changes in shape, scale or opacity. Weak matches leave gaps. Timing precision depends on the source video's captured frames.
+## Compare videos
+
+Choose a **Second video** to show both recordings and their tracking controls. Each video can be tracked and corrected directly in this workspace.
+
+Turn off **Linked playback**, scrub each video to the event you want to compare, then press **Align current frames**. Those frames become time zero. Linked playback and graph inspection then use the original frame timestamps, including different frame rates and irregular frame intervals. Frames outside a recording hold at its boundary and are labeled accordingly. Alignment is saved with the comparison.
+
+The graph shows displacement from alignment in recording pixels, or progress toward the selected last frame. Drag across the graph to zoom; its vertical scale follows the visible samples. **Zoom to intervals** shows the tracking ranges. **Full recording** resets the zoom.
+
+Choose an MD3 standard or linear reference curve to compare timing. The reference starts at the alignment frame and ends at the measured position of the selected last frame. Set a duration or fit it to either recording. Fitting changes duration only. RMS error and maximum error describe the difference from the curve across valid samples. Both endpoint frames need valid measurements and different positions.
+
+Video measurements remain limited by captured frames, compression and the selected detail. Subpixel estimates do not recover frames missing from a recording. Use a straight edge or a stable detail to measure translation; these trackers do not measure scale, opacity or text deformation.
 
 ## CLI
 
@@ -39,15 +49,17 @@ The CLI and HTTP API call the same Go analysis package.
 ./scripts/run.sh import clip.mp4
 # Use the returned project ID below.
 ./scripts/run.sh frames PROJECT_ID --start 30 --end 90 --step 10
-./scripts/run.sh track PROJECT_ID --region 100,200,30,40 --start 30 --end 90
+./scripts/run.sh track PROJECT_ID --method feature --region 100,200,30,40 --start 30 --end 90
+./scripts/run.sh track PROJECT_ID --method edge-x --region 100,200,16,60 --start 30 --end 90
 ./scripts/run.sh correct PROJECT_ID --frame 55 --region 140,200,30,40
 ./scripts/run.sh zero PROJECT_ID --frame 40
 ./scripts/run.sh compare PROJECT_ID REFERENCE_ID --zero-frame 35
+./scripts/run.sh measure PROJECT_ID --start 40 --end 90 --curve md3-standard --duration 300 --fit
 ./scripts/run.sh export PROJECT_ID --format csv
 ./scripts/run.sh export PROJECT_ID --format video
 ```
 
-`frames` returns local image paths and timestamps for agent inspection. `--projects PATH` selects a separate project directory for tests or batch work. `serve --port PORT` changes the local server port.
+`frames` returns local image paths and timestamps for agent inspection. `measure` returns the reference points, fitted duration, RMS error, maximum error and sample counts as JSON. Omit `--fit` to assess a fixed duration. The same operation is available at `POST /api/projects/{id}/measure` with `axis`, `start`, `end`, `curve` (four cubic-bezier coordinates), `duration` and `fit`. `--projects PATH` selects a separate project directory for tests or batch work. `serve --port PORT` changes the local server port.
 
 ## Code
 
@@ -69,4 +81,4 @@ node scripts/import-material.mjs ../tokens
 make build
 ```
 
-`make test` checks variable frame timing, tracking loss and correction, exports, HTTP validation, server-rendered controls, token references and shared runtime integrity. Generate templ code after editing templates with `make generate`.
+`make test` checks known fractional motion, both edge axes, correction and tracking loss, curve fitting, variable frame timing, linked-time mapping, exports, HTTP validation, server-rendered controls, token references and shared runtime integrity. Generate templ code after editing templates with `make generate`.

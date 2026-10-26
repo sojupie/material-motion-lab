@@ -28,6 +28,10 @@ const elevation = postcss.parse(
 
 const allowed = new Set([
   "md-button",
+  "md-checkbox",
+  "md-checkbox-box",
+  "md-checkbox-check",
+  "md-checkbox-dash",
   "md-icon-button",
   "md-standard-icon-button",
   "md-button-ripple",
@@ -120,6 +124,8 @@ for (const root of [themeCSS, components])
     .filter((n) => n.type === "rule" && n.selector === ":root")
     .forEach((r) => r.walkDecls((d) => defs.set(d.prop, d.value)));
 const pageTokens = [
+  "motion-easing-standard",
+  "motion-duration-medium2",
   "color-primary",
   "color-on-primary",
   "color-primary-container",

@@ -34,9 +34,12 @@ test("shared interaction code matches the recorded source bytes", () => {
 test("every public token reference has an exported definition", () => {
   const material = fs.readFileSync("public/material.css", "utf8");
   const app = fs.readFileSync("web/style.css", "utf8");
+  const graph = fs.readFileSync("web/graph.ts", "utf8");
   const names = new Set();
   postcss.parse(material).walkDecls((d) => names.add(d.prop));
   for (const m of (material + "\n" + app).matchAll(/var\((--md-[\w-]+)/g))
+    assert.ok(names.has(m[1]), m[1]);
+  for (const m of graph.matchAll(/getPropertyValue\(\s*"(--md-[\w-]+)"/g))
     assert.ok(names.has(m[1]), m[1]);
 });
 

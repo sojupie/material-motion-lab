@@ -1,76 +1,32 @@
 import "./style.css";
+import { nearest } from "./timing";
+import { $, api, post } from "./api";
 import { installMaterialControls, syncMaterialControls } from "./material";
-type Region = [number, number, number, number];
-type Sample = {
-  frame: number;
-  t: number;
-  x: number | null;
-  y: number | null;
-  width: number;
-  height: number;
-  score: number;
-  valid: boolean;
-  manual: boolean;
-};
-type Anchor = { frame: number; region: Region };
-type Project = {
-  comparison?: { id: string; zeroFrame: number } | null;
-  id: string;
-  name: string;
-  width: number;
-  height: number;
-  times: number[];
-  zeroFrame: number;
-  selection: Region | null;
-  anchors: Anchor[];
-  samples: Sample[];
-  settings: {
-    start?: number;
-    end?: number;
-    search?: number;
-    threshold?: number;
-  };
-};
-type Entry = { id: string; name: string };
-const $ = <T extends HTMLElement = HTMLElement>(id: string) =>
-  document.getElementById(id) as T;
-let project: Project | null = null,
-  reference: Project | null = null,
+import { VideoView, type ViewActions } from "./video";
+import { MotionGraph } from "./graph";
+import type { Entry, Project } from "./types";
+let playbackToken = 0;
+let busy = false,
   entries: Entry[] = [],
-  index = 0,
-  roi: Region | null = null;
-let settingFrame = false;
-let playing = false,
-  busy = false,
-  startClock = 0,
-  startTime = 0,
-  paintVersion = 0;
-let drag: { x: number; y: number } | null = null;
-const canvas = $<HTMLCanvasElement>("frame"),
-  ctx = canvas.getContext("2d")!;
-let picture: HTMLImageElement | null = null;
-const cache = new Map<string, Promise<HTMLImageElement>>();
-function status(message: string, error = false) {
-  $("status").textContent = message;
+  playing: VideoView | "both" | null = null,
+  clock = 0,
+  startTime = 0;
+function status(text: string, error = false) {
+  $("status").textContent = text;
   $("status").classList.toggle("error", error);
 }
-async function api<T>(url: string, options?: RequestInit): Promise<T> {
-  const response = await fetch("/api" + url, options);
-  if (!response.ok) {
-    let text = `Request failed (${response.status})`;
-    try {
-      text = (await response.json()).detail || text;
-    } catch {}
-    throw Error(typeof text === "string" ? text : JSON.stringify(text));
-  }
-  return response.json();
+function pause() {
+  playbackToken++;
+  playing = null;
+  for (const view of [a, b]) view.el("play").textContent = "Play";
+  $("play-both").textContent = "Play aligned";
 }
 async function job(fn: () => Promise<void>) {
   if (busy) return;
   pause();
   busy = true;
   document.body.setAttribute("aria-busy", "true");
-  buttons();
+  controls();
   try {
     await fn();
   } catch (e) {
@@ -78,607 +34,291 @@ async function job(fn: () => Promise<void>) {
   } finally {
     busy = false;
     document.body.removeAttribute("aria-busy");
-    buttons();
+    controls();
   }
 }
-function post<T>(path: string, data: unknown) {
-  return api<T>(path, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data),
-  });
-}
-function buttons() {
-  const ready = !!project;
-  for (const id of ["prev", "next", "play", "zero"])
-    $<HTMLButtonElement>(id).disabled = busy || !ready;
-  $<HTMLButtonElement>("import").disabled = busy;
-  $<HTMLButtonElement>("empty-import").disabled = busy;
-  $("export-note").hidden = !!project?.samples.length;
-  $<HTMLInputElement>("scrub").disabled = busy;
-  for (const id of ["track", "correct"])
-    $<HTMLButtonElement>(id).disabled =
-      busy || !roi || !ready || (id === "correct" && !project?.samples.length);
-  for (const id of ["json", "csv", "export"])
-    $<HTMLButtonElement>(id).disabled = busy || !project?.samples.length;
+const actions: ViewActions = {
+  seek,
+  play: togglePlay,
+  change: () => {
+    alignment();
+    a.marks();
+    b.marks();
+    void graph.refresh();
+  },
+  job,
+  message: status,
+  align: async (view) => {
+    if (!view.project) return;
+    view.project = await post<Project>(`/projects/${view.project.id}/zero`, {
+      frame: view.index,
+    });
+    view.zero = view.index;
+    view.marks();
+    await saveComparison();
+    await view.show(view.index);
+    alignment();
+    await graph.refresh();
+  },
+};
+const a = new VideoView("a", actions),
+  b = new VideoView("b", actions);
+const graph = new MotionGraph(
+  () => [a, b],
+  (time) => {
+    pause();
+    void showAligned(time).catch((e) => status(e.message, true));
+  },
+);
+const linked = () => $<HTMLInputElement>("linked").checked && !!b.project;
+function controls() {
+  for (const id of ["import", "empty-import"])
+    $<HTMLButtonElement>(id).disabled = busy;
+  for (const view of [a, b]) view.controls(busy);
   for (const control of document.querySelectorAll<
-    HTMLSelectElement | HTMLInputElement
-  >("select,input[type=number]"))
+    HTMLInputElement | HTMLSelectElement
+  >("select,input[type=number],#linked"))
     control.disabled = busy;
-  for (const button of document.querySelectorAll<HTMLButtonElement>(
+  for (const item of document.querySelectorAll<HTMLButtonElement>(
     "[data-navigation-item]",
   ))
-    button.disabled = busy;
+    item.disabled = busy;
+  $<HTMLButtonElement>("align").disabled = busy || !a.project || !b.project;
+  $<HTMLButtonElement>("play-both").disabled = busy || !a.project || !b.project;
+  graph.controls(busy);
+  syncMaterialControls();
+}
+function alignment() {
+  $("reference-pane").hidden = !b.project;
+  $("video-panes").classList.toggle("comparing", !!b.project);
+  $("alignment").textContent =
+    b.project && a.project
+      ? `A: frame ${a.zero}    B: frame ${b.zero}. Scrub independently, then align the current frames.`
+      : "";
   syncMaterialControls();
 }
 async function refresh() {
   entries = await api<Entry[]>("/projects");
-  const focused = document.activeElement as HTMLElement | null;
-  const focusId = focused?.dataset.projectId;
-  const focusGroup = focused?.closest(".md-nav-items")?.id;
+  const focus = document.activeElement as HTMLElement | null,
+    focusID = focus?.dataset.projectId,
+    focusGroup = focus?.closest(".md-nav-items")?.id;
   for (const group of ["projects", "mobile-projects"]) {
     $(group).replaceChildren();
-    for (const item of entries) {
-      const template = $<HTMLTemplateElement>("recording-item-template");
-      const button = template.content.firstElementChild!.cloneNode(
-        true,
-      ) as HTMLButtonElement;
-      button.dataset.projectId = item.id;
-      button.title = item.name;
-      button.querySelector(".md-nav-label")!.textContent = item.name;
-      if (project?.id === item.id) button.setAttribute("aria-current", "page");
-      button.onclick = async () => {
-        const restoreFocus =
-          group === "projects" && document.activeElement === button;
-        await job(() => open(item.id));
-        for (const navItem of document.querySelectorAll<HTMLButtonElement>(
-          "[data-navigation-item]",
-        )) {
-          if (navItem.dataset.projectId === project?.id)
-            navItem.setAttribute("aria-current", "page");
-          else navItem.removeAttribute("aria-current");
-        }
-        if (restoreFocus)
-          for (const next of $("projects").querySelectorAll<HTMLButtonElement>(
-            "[data-navigation-item]",
-          ))
-            if (next.dataset.projectId === item.id)
-              next.focus({ preventScroll: true });
-      };
-      $(group).append(button);
-      if (group === focusGroup && item.id === focusId)
-        button.focus({ preventScroll: true });
+    for (const entry of entries) {
+      const item = $<HTMLTemplateElement>(
+        "recording-item-template",
+      ).content.firstElementChild!.cloneNode(true) as HTMLButtonElement;
+      item.dataset.projectId = entry.id;
+      item.title = entry.name;
+      item.querySelector(".md-nav-label")!.textContent = entry.name;
+      if (entry.id === a.project?.id) item.setAttribute("aria-current", "page");
+      item.onclick = () =>
+        void job(async () => {
+          await open(entry.id);
+          if (group === "projects")
+            for (const next of $(
+              "projects",
+            ).querySelectorAll<HTMLButtonElement>("[data-navigation-item]"))
+              if (next.dataset.projectId === entry.id)
+                next.focus({ preventScroll: true });
+        });
+      $(group).append(item);
+      if (group === focusGroup && entry.id === focusID)
+        item.focus({ preventScroll: true });
     }
   }
-  const selected = $<HTMLSelectElement>("reference").value;
-  $("reference").replaceChildren(
+  const select = $<HTMLSelectElement>("reference");
+  select.replaceChildren(
     new Option("None", ""),
     ...entries
-      .filter((e) => e.id !== project?.id)
+      .filter((e) => e.id !== a.project?.id)
       .map((e) => new Option(e.name, e.id)),
   );
-  $<HTMLSelectElement>("reference").value = selected;
+  select.value = b.project?.id || "";
+  syncMaterialControls();
 }
 async function open(id: string) {
-  status("Opening recording…");
-  project = await api<Project>("/projects/" + id);
-  reference = null;
-  index = 0;
-  roi = null;
-  picture = null;
-  cache.clear();
+  status("Opening video…");
+  const p = await api<Project>("/projects/" + id);
+  b.project = null;
   $("empty").hidden = true;
   $("workspace").hidden = false;
-  $("name").textContent = project.name;
-  $("name").hidden = false;
-  $("recording-meta").hidden = false;
-  $("recording-meta").textContent =
-    `${project.width} × ${project.height} px, ${project.times.length} frames`;
-  $<HTMLInputElement>("scrub").max = String(project.times.length - 1);
-  $<HTMLInputElement>("end").value = String(
-    project.settings.end ?? project.times.length - 1,
-  );
-  $<HTMLInputElement>("end").max = String(project.times.length - 1);
-  $<HTMLInputElement>("search").value = String(project.settings.search ?? 60);
-  $("selection").textContent = "Draw a region on the frame.";
-  $("ref-control").hidden = true;
-  $("ref-legend").hidden = true;
+  await a.load(p);
+  let comparisonError = "";
+  if (p.comparison) {
+    try {
+      const ref = await api<Project>("/projects/" + p.comparison.id);
+      if (ref.id !== p.id) await b.load(ref, p.comparison.zeroFrame);
+    } catch (e) {
+      b.project = null;
+      comparisonError = `Saved comparison could not be opened: ${e instanceof Error ? e.message : e}`;
+    }
+  }
+  $<HTMLInputElement>("linked").checked = !!b.project;
+  alignment();
   await refresh();
-  syncMaterialControls();
-  if (project.comparison) {
-    reference = await api<Project>("/projects/" + project.comparison.id);
-    $<HTMLSelectElement>("reference").value = reference.id;
-    comparisonControls(project.comparison.zeroFrame);
-  }
-  await show(0);
-  status("");
-  buttons();
+  graph.reset();
+  status(comparisonError, !!comparisonError);
 }
-function getPicture(i: number) {
-  const key = project!.id + ":" + i;
-  let result = cache.get(key);
-  if (!result) {
-    const id = project!.id;
-    result = new Promise<HTMLImageElement>((resolve, reject) => {
-      const img = new Image();
-      img.onload = () => resolve(img);
-      img.onerror = () => {
-        cache.delete(key);
-        reject(Error("Frame failed to load"));
-      };
-      img.src = `/api/projects/${id}/frames/${i}`;
+async function saveComparison() {
+  if (!a.project) return;
+  a.project = await post<Project>(`/projects/${a.project.id}/comparison`, {
+    reference: b.project?.id ?? null,
+    zero: b.zero,
+  });
+  alignment();
+}
+$("reference").onchange = () =>
+  void job(async () => {
+    const id = $<HTMLSelectElement>("reference").value;
+    b.project = null;
+    if (id) await b.load(await api<Project>("/projects/" + id));
+    $<HTMLInputElement>("linked").checked = false;
+    await saveComparison();
+    graph.reset();
+    controls();
+    status("");
+  });
+$("align").onclick = () =>
+  void job(async () => {
+    if (!a.project || !b.project) return;
+    a.project = await post<Project>(`/projects/${a.project.id}/zero`, {
+      frame: a.index,
     });
-    cache.set(key, result);
-    if (cache.size > 90) cache.delete(cache.keys().next().value!);
-  }
-  return result;
-}
-function overlay() {
-  if (!project || !picture) return;
-  ctx.drawImage(picture, 0, 0, canvas.width, canvas.height);
-  const sample = project.samples.find((s) => s.frame === index);
-  const boxes: { r: Region; color: string }[] = [];
-  if (sample?.valid)
-    boxes.push({
-      r: [sample.x!, sample.y!, sample.width, sample.height],
-      color: "#39d877",
-    });
-  if (roi) boxes.push({ r: roi, color: "#ffd54f" });
-  for (const { r, color } of boxes) {
-    ctx.lineWidth = Math.max(2, project.width / 500);
-    ctx.strokeStyle = "#171717";
-    ctx.strokeRect(r[0] - 1, r[1] - 1, r[2] + 2, r[3] + 2);
-    ctx.strokeStyle = color;
-    ctx.strokeRect(...r);
-  }
-}
-async function show(i: number) {
-  if (!project) return;
-  index = Math.max(0, Math.min(project.times.length - 1, i));
-  $<HTMLInputElement>("scrub").value = String(index);
-  settingFrame = true;
-  $("scrub").dispatchEvent(new Event("input", { bubbles: true }));
-  settingFrame = false;
-  $("time").textContent =
-    `Frame ${index} / ${project.times.length - 1}   ${(project.times[index] / 1000).toFixed(3)} s   ${(project.times[index] - project.times[project.zeroFrame]).toFixed(1)} ms`;
-  const sample = project.samples.find((s) => s.frame === index);
-  $("quality").hidden = !sample;
-  $("quality").textContent = sample
-    ? sample.valid
-      ? `Match ${Math.round(sample.score * 100)}%${sample.manual ? " (marked)" : ""}`
-      : "Tracking lost"
-    : "";
-  const version = ++paintVersion;
-  const img = await getPicture(index);
-  if (version !== paintVersion) return;
-  picture = img;
-  canvas.width = project.width;
-  canvas.height = project.height;
-  zoom();
-  overlay();
-  graph();
-  for (
-    let n = index + 1;
-    n <= Math.min(index + 5, project.times.length - 1);
-    n++
-  )
-    void getPicture(n).catch(() => {});
-}
-function zoom() {
-  if (!project) return;
-  const value = $<HTMLSelectElement>("zoom").value;
-  const wrap = canvas.parentElement!;
-  const scale = Math.min(
-    wrap.clientWidth / project.width,
-    wrap.clientHeight / project.height,
+    a.zero = a.index;
+    b.zero = b.index;
+    await saveComparison();
+    a.marks();
+    b.marks();
+    $<HTMLInputElement>("linked").checked = true;
+    await showAligned(0);
+    await graph.refresh();
+    status("Current frames aligned.");
+  });
+$("linked").onchange = () => {
+  pause();
+  if (linked()) void showAligned(a.time).catch((e) => status(e.message, true));
+};
+async function showAligned(time: number) {
+  await Promise.all(
+    [a, b]
+      .filter((v) => v.project)
+      .map(async (view) => {
+        const p = view.project!,
+          absolute = time + p.times[view.zero];
+        view.outside = absolute < 0 || absolute > p.times.at(-1)!;
+        await view.show(nearest(p.times, absolute));
+      }),
   );
-  canvas.style.width =
-    value === "fit"
-      ? `${Math.max(1, scale * project.width)}px`
-      : `${project.width * Number(value)}px`;
+  graph.paint();
 }
-$("zoom").onchange = zoom;
-function pause() {
-  playing = false;
-  $("play").textContent = "Play";
-}
-function animate(now: number) {
-  if (!playing || !project) return;
-  const elapsed = startTime + now - startClock;
-  let next = index;
-  while (next + 1 < project.times.length && project.times[next + 1] <= elapsed)
-    next++;
-  if (next !== index)
-    void show(next).catch((e) => {
-      pause();
-      status(e.message, true);
-    });
-  if (next === project.times.length - 1) {
-    pause();
-    return;
+function seek(view: VideoView, index: number) {
+  if (busy) return;
+  pause();
+  if (!view.project) return;
+  const i = Math.max(0, Math.min(view.project.times.length - 1, index));
+  if (linked())
+    void showAligned(
+      view.project.times[i] - view.project.times[view.zero],
+    ).catch((e) => status(e.message, true));
+  else {
+    view.outside = false;
+    void view
+      .show(i)
+      .then(() => graph.paint())
+      .catch((e) => status(e.message, true));
   }
-  requestAnimationFrame(animate);
 }
-$("play").onclick = () => {
+function togglePlay(view: VideoView) {
   if (playing) {
     pause();
     return;
   }
-  if (!project) return;
-  if (index === project.times.length - 1) index = 0;
-  playing = true;
-  startClock = performance.now();
-  startTime = project.times[index];
-  $("play").textContent = "Pause";
-  requestAnimationFrame(animate);
-};
-function seek(i: number) {
-  pause();
-  roi = null;
-  buttons();
-  void show(i).catch((e) => status(e.message, true));
+  if (!view.project) return;
+  playing = linked() ? "both" : view;
+  const p = view.project;
+  if (view.index >= view.last) view.index = view.first;
+  clock = performance.now();
+  startTime =
+    playing === "both"
+      ? p.times[view.index] - p.times[view.zero]
+      : p.times[view.index];
+  view.el("play").textContent = "Pause";
+  if (playing === "both") {
+    $("play-both").textContent = "Pause aligned";
+    b.el("play").textContent = "Pause";
+    a.el("play").textContent = "Pause";
+  }
+  const token = playbackToken;
+  requestAnimationFrame((now) => tick(now, token));
 }
-$("prev").onclick = () => seek(index - 1);
-$("next").onclick = () => seek(index + 1);
-$<HTMLInputElement>("scrub").oninput = (e) => {
-  if (!settingFrame) seek(Number((e.target as HTMLInputElement).value));
-};
-document.addEventListener("keydown", (e) => {
-  if (
-    (e.target as HTMLElement).matches("input,select,button") ||
-    !project ||
-    busy
-  )
+$("play-both").onclick = () => {
+  if (playing) {
+    pause();
     return;
-  if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
-    e.preventDefault();
-    seek(index + (e.key === "ArrowLeft" ? -1 : 1));
   }
-});
-function point(e: PointerEvent) {
-  const rect = canvas.getBoundingClientRect();
-  return {
-    x: Math.max(
-      0,
-      Math.min(
-        canvas.width,
-        ((e.clientX - rect.left) / rect.width) * canvas.width,
-      ),
-    ),
-    y: Math.max(
-      0,
-      Math.min(
-        canvas.height,
-        ((e.clientY - rect.top) / rect.height) * canvas.height,
-      ),
-    ),
-  };
-}
-canvas.onpointerdown = (e) => {
-  if (!project || busy) return;
-  pause();
-  drag = point(e);
-  canvas.setPointerCapture(e.pointerId);
+  $<HTMLInputElement>("linked").checked = true;
+  togglePlay(a);
 };
-canvas.onpointermove = (e) => {
-  if (!drag) return;
-  const p = point(e);
-  roi = [
-    Math.round(Math.min(drag.x, p.x)),
-    Math.round(Math.min(drag.y, p.y)),
-    Math.round(Math.abs(p.x - drag.x)),
-    Math.round(Math.abs(p.y - drag.y)),
-  ];
-  overlay();
-};
-canvas.onpointerup = () => {
-  drag = null;
-  if (roi && (roi[2] < 4 || roi[3] < 4)) roi = null;
-  $("selection").textContent = roi
-    ? `Frame ${index}: x ${roi[0]}, y ${roi[1]}, ${roi[2]} × ${roi[3]} px`
-    : "Select a region at least 4 × 4 px.";
-  buttons();
-};
-canvas.onpointercancel = () => {
-  drag = null;
-  roi = null;
-  overlay();
-  buttons();
-};
-async function runTrack(correct: boolean) {
-  if (!project || !roi) return;
-  const selected = roi;
-  let anchors: Anchor[] = [],
-    start = index,
-    end = Number($<HTMLInputElement>("end").value),
-    selection = selected;
-  if (correct) {
-    start = project.settings.start!;
-    end = project.settings.end!;
-    if (index < start || index > end)
-      throw Error("Choose a frame inside the tracked interval.");
-    anchors = project.anchors.filter((a) => a.frame !== index);
-    anchors.push({ frame: index, region: selected });
-    selection = index === start ? selected : project.selection!;
+async function tick(now: number, token: number) {
+  if (token !== playbackToken) return;
+  const target = playing;
+  if (!target) return;
+  try {
+    const elapsed = startTime + now - clock;
+    if (target === "both") {
+      const end = Math.max(
+        ...[a, b]
+          .filter((v) => v.project)
+          .map((v) => v.project!.times[v.last] - v.project!.times[v.zero]),
+      );
+      await showAligned(Math.min(end, elapsed));
+      if (elapsed >= end) {
+        pause();
+        return;
+      }
+    } else {
+      const p = target.project!;
+      const end = p.times[target.last];
+      await target.show(nearest(p.times, Math.min(end, elapsed)));
+      graph.paint();
+      if (elapsed >= end) {
+        pause();
+        return;
+      }
+    }
+    if (playing === target && token === playbackToken)
+      requestAnimationFrame((now) => tick(now, token));
+  } catch (e) {
+    pause();
+    status(e instanceof Error ? e.message : String(e), true);
   }
-  status(
-    correct
-      ? "Applying correction and tracking again…"
-      : "Tracking selected region…",
-  );
-  project = await post<Project>(`/projects/${project.id}/track`, {
-    region: selection,
-    start,
-    end,
-    anchors,
-    search: Number($<HTMLInputElement>("search").value),
-  });
-  roi = null;
-  await show(index);
-  const lost = project.samples.filter((s) => !s.valid).length;
-  status(
-    `Tracked ${project.samples.length} frames. ${lost ? `${lost} weak matches. Mark a corrected region on those frames.` : "No weak matches."}`,
-  );
 }
-$("track").onclick = () => job(() => runTrack(false));
-$("correct").onclick = () => job(() => runTrack(true));
-$("zero").onclick = () =>
-  job(async () => {
-    if (!project) return;
-    project = await post<Project>(`/projects/${project.id}/zero`, {
-      frame: index,
-    });
-    await show(index);
-    status(`Time zero set to frame ${index}.`);
-  });
-$("import").onclick = () => $<HTMLInputElement>("file").click();
-$("empty-import").onclick = () => $<HTMLInputElement>("file").click();
+for (const view of [a, b])
+  $(`fit-${view.prefix}`).onclick = () => void job(() => graph.fit(view));
+for (const id of ["import", "empty-import"])
+  $(id).onclick = () => $<HTMLInputElement>("file").click();
 $<HTMLInputElement>("file").onchange = () =>
-  job(async () => {
+  void job(async () => {
     const file = $<HTMLInputElement>("file").files?.[0];
     if (!file) return;
     status("Importing video and extracting frames…");
     const form = new FormData();
     form.append("file", file);
-    const result = await api<Project>("/import", {
+    const project = await api<Project>("/import", {
       method: "POST",
       body: form,
     });
-    await open(result.id);
+    await open(project.id);
     $<HTMLInputElement>("file").value = "";
   });
-for (const [id, kind] of [
-  ["json", "json"],
-  ["csv", "csv"],
-  ["export", "video"],
-])
-  $(id).onclick = () =>
-    job(async () => {
-      if (!project) return;
-      status(
-        kind === "video"
-          ? "Rendering annotated video…"
-          : "Preparing measurements…",
-      );
-      const response = await fetch(
-        `/api/projects/${project.id}/download/${kind}?axis=${$<HTMLSelectElement>("axis").value}`,
-      );
-      if (!response.ok) {
-        const e = await response.json();
-        throw Error(e.detail || "Export failed");
-      }
-      const blob = await response.blob(),
-        url = URL.createObjectURL(blob),
-        a = document.createElement("a");
-      a.href = url;
-      a.download =
-        kind === "video"
-          ? "annotated.mp4"
-          : kind === "csv"
-            ? "measurements.csv"
-            : "project.json";
-      a.click();
-      setTimeout(() => URL.revokeObjectURL(url), 30000);
-      status("Export ready.");
-    });
-let domain = { min: 0, max: 1, width: 1000, left: 52, right: 16 };
-function series(p: Project, axis: "x" | "y", zero: number) {
-  const valid = p.samples.filter((s) => s.valid);
-  const origin = valid.findLast((s) => s.frame <= zero) ?? valid[0];
-  return p.samples.map((s) => ({
-    frame: s.frame,
-    t: s.t - p.times[zero],
-    v: s.valid && origin ? s[axis]! - origin[axis]! : null,
-  }));
-}
-function graph() {
-  if (!project) return;
-  const svg = $("graph"),
-    axis = $<HTMLSelectElement>("axis").value as "x" | "y",
-    main = series(project, axis, project.zeroFrame),
-    ref = reference
-      ? series(reference, axis, Number($<HTMLInputElement>("refzero").value))
-      : [];
-  const all = [...main, ...ref],
-    vals = all.filter((s) => s.v !== null).map((s) => s.v!);
-  svg.replaceChildren();
-  svg.toggleAttribute("hidden", !vals.length);
-  $("main-legend").parentElement!.hidden = !vals.length;
-  if (!vals.length) {
-    $("graph-note").textContent = "Track a region to plot its position.";
-    return;
-  }
-  const minT = Math.min(0, ...all.map((s) => s.t)),
-    maxT = Math.max(minT + 1, ...all.map((s) => s.t));
-  const width = Math.max(240, svg.parentElement!.clientWidth),
-    left = 52,
-    right = 16;
-  svg.setAttribute("viewBox", `0 0 ${width} 200`);
-  domain = { min: minT, max: maxT, width, left, right };
-  let minY = Math.min(0, ...vals),
-    maxY = Math.max(0, ...vals);
-  const pad = Math.max(2, (maxY - minY) * 0.1);
-  minY -= pad;
-  maxY += pad;
-  const X = (t: number) =>
-      left + ((t - minT) / (maxT - minT)) * (width - left - right),
-    Y = (v: number) => 150 - ((v - minY) / (maxY - minY)) * 130;
-  const ns = "http://www.w3.org/2000/svg";
-  function el(
-    tag: string,
-    attrs: Record<string, string | number>,
-    text?: string,
-  ) {
-    const e = document.createElementNS(ns, tag);
-    for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, String(v));
-    if (text) e.textContent = text;
-    svg.append(e);
-    return e;
-  }
-  el("text", { x: left, y: 13, class: "tick" }, "Displacement (recording px)");
-  const ticks = width < 480 ? 3 : 5;
-  for (let i = 0; i <= ticks; i++) {
-    const t = minT + ((maxT - minT) * i) / ticks,
-      x = X(t);
-    el("line", { x1: x, x2: x, y1: 20, y2: 150, class: "grid" });
-    el(
-      "text",
-      {
-        x,
-        y: 174,
-        "text-anchor": i === ticks ? "end" : i === 0 ? "start" : "middle",
-        class: "tick",
-      },
-      String(Math.round(t)),
-    );
-  }
-  for (let i = 0; i <= 4; i++) {
-    const v = minY + ((maxY - minY) * i) / 4,
-      y = Y(v);
-    el("line", { x1: left, x2: width - right, y1: y, y2: y, class: "grid" });
-    el(
-      "text",
-      { x: left - 8, y: y + 4, "text-anchor": "end", class: "tick" },
-      v.toFixed(1),
-    );
-  }
-  function path(data: ReturnType<typeof series>, name: string) {
-    let d = "",
-      pen = false;
-    for (const s of data) {
-      if (s.v === null) {
-        pen = false;
-        continue;
-      }
-      d += (pen ? "L" : "M") + `${X(s.t)},${Y(s.v)}`;
-      pen = true;
-    }
-    el("path", { d, class: name });
-    for (const s of data)
-      if (s.v !== null)
-        el("circle", {
-          cx: X(s.t),
-          cy: Y(s.v),
-          r: 2,
-          fill:
-            name === "trace"
-              ? "var(--md-sys-color-primary)"
-              : "var(--md-sys-color-tertiary)",
-        });
-  }
-  path(main, "trace");
-  if (reference) path(ref, "reference");
-  const time = project.times[index] - project.times[project.zeroFrame];
-  el("line", { x1: X(time), x2: X(time), y1: 20, y2: 150, class: "playhead" });
-  el(
-    "text",
-    { x: width / 2, y: 194, "text-anchor": "middle", class: "tick" },
-    "Time from selected zero (ms)",
-  );
-  $("graph-note").textContent =
-    `Time zero: frame ${project.zeroFrame}. Click the graph to inspect a frame.`;
-}
-$("axis").onchange = graph;
-function comparisonControls(zero: number) {
-  $("ref-control").hidden = !reference;
-  $("ref-legend").hidden = !reference;
-  if (reference) {
-    $<HTMLInputElement>("refzero").value = String(zero);
-    $<HTMLInputElement>("refzero").max = String(reference.times.length - 1);
-    $("ref-legend").textContent = reference.name;
-  }
-}
-async function saveComparison() {
-  if (!project) return;
-  project = await post<Project>(`/projects/${project.id}/comparison`, {
-    reference: reference?.id ?? null,
-    zero: Number($<HTMLInputElement>("refzero").value) || 0,
-  });
-}
-$("reference").onchange = () =>
-  job(async () => {
-    const id = $<HTMLSelectElement>("reference").value;
-    reference = id ? await api<Project>("/projects/" + id) : null;
-    $("ref-control").hidden = !reference;
-    $("ref-legend").hidden = !reference;
-    if (reference) {
-      $<HTMLInputElement>("refzero").value = String(reference.zeroFrame);
-      $<HTMLInputElement>("refzero").max = String(reference.times.length - 1);
-      $("ref-legend").textContent = reference.name;
-      status(
-        reference.samples.length
-          ? "Comparison loaded. Adjust its zero frame to align the events."
-          : "This recording has no tracking measurements yet.",
-      );
-    }
-    await saveComparison();
-    graph();
-  });
-$("refzero").onchange = () =>
-  job(async () => {
-    if (!reference) return;
-    const input = $<HTMLInputElement>("refzero");
-    input.value = String(
-      Math.max(
-        0,
-        Math.min(
-          reference.times.length - 1,
-          Math.round(Number(input.value) || 0),
-        ),
-      ),
-    );
-    await saveComparison();
-    graph();
-  });
-$("graph").onclick = (e) => {
-  if (!project || !project.samples.length) return;
-  const rect = $("graph").getBoundingClientRect(),
-    x = ((e.clientX - rect.left) / rect.width) * domain.width;
-  const t =
-    domain.min +
-    ((x - domain.left) / (domain.width - domain.left - domain.right)) *
-      (domain.max - domain.min) +
-    project.times[project.zeroFrame];
-  let best = 0;
-  for (let i = 1; i < project.times.length; i++)
-    if (Math.abs(project.times[i] - t) < Math.abs(project.times[best] - t))
-      best = i;
-  seek(best);
-};
 void installMaterialControls()
-  .then(() => refresh())
-  .then(() => buttons())
+  .then(refresh)
+  .then(controls)
   .catch((e) => status(e.message, true));
-
-matchMedia("(min-width: 1280px)").addEventListener("change", (event) => {
-  if (event.matches) {
+matchMedia("(min-width:1280px)").addEventListener("change", (e) => {
+  if (e.matches) {
     const drawer = $<HTMLDialogElement>("recording-drawer");
     if (drawer.open) drawer.close();
   }
 });
-
-new ResizeObserver(() => {
-  zoom();
-  graph();
-}).observe(canvas.parentElement!);
-new ResizeObserver(() => graph()).observe($("graph").parentElement!);
