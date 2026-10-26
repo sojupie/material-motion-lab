@@ -1,5 +1,13 @@
 import { defineConfig } from "vite";
 export default defineConfig({
-  server: { proxy: { "/api": "http://127.0.0.1:8091" } },
-  build: { outDir: "dist" },
+  build: {
+    outDir: "dist",
+    rollupOptions: {
+      input: "web/main.ts",
+      output: {
+        entryFileNames: "assets/main.js",
+        assetFileNames: "assets/[name][extname]",
+      },
+    },
+  },
 });

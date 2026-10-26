@@ -1,0 +1,132 @@
+package web
+
+import "github.com/sojupie/tokens/forge/components/ui"
+
+templ Page(entries []Entry) {
+	<!DOCTYPE html>
+	<html lang="en">
+		<head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>UI Motion</title><link rel="stylesheet" href="/assets/main.css"/><script type="module" src="/assets/main.js"></script>
+</head>
+		<body>
+			<div id="app">
+				<div class="shell">
+					<aside class="desktop-navigation">
+						<div class="app-identity"><h1>UI Motion</h1></div>
+						@ui.Drawer("desktop-drawer", false, "Recordings") {
+							<div id="projects" class="md-nav-items">
+								for _, entry := range entries {
+									@ui.DrawerItem(templ.Attributes{"data-project-id": entry.ID, "aria-controls": "recording-content"}, entry.Name)
+								}
+							</div>
+						}
+					</aside>
+					<main id="recording-content">
+						<div class="workspace-actions">
+							<div class="mobile-navigation" data-navigation-demo>
+								@ui.DrawerToggle("recording-drawer", "Open recordings")
+								@ui.Drawer("recording-drawer", true, "Recordings") {
+									<div id="mobile-projects" class="md-nav-items">
+										for _, entry := range entries {
+											@ui.DrawerItem(templ.Attributes{"data-project-id": entry.ID, "aria-controls": "recording-content"}, entry.Name)
+										}
+									</div>
+								}
+							</div>
+							@ui.Button(templ.Attributes{"id": "import", "class": "md-button md-tonal-button"}) {
+								{ "Open video" }
+							}
+							<input id="file" type="file" accept="video/*,.gif" hidden/>
+						</div>
+						<div class="workspace-heading"><h2 id="name" class="filename" hidden></h2><p id="recording-meta" class="help" hidden></p><div id="status" role="status" aria-live="polite"></div></div>
+						<section id="empty">
+							<h2>Open a recording</h2>
+							<p>Track an object or edge and inspect its movement frame by frame.</p>
+							@ui.Button(templ.Attributes{"id": "empty-import", "class": "md-button md-filled-button"}) {
+								{ "Open video" }
+							}
+							<p class="help">Videos and measurements stay on this machine.</p>
+						</section>
+						<div id="workspace" hidden>
+							<div class="stage-grid">
+								<div class="work-surface">
+									<section class="video-panel" aria-label="Video inspection">
+										<div class="image-wrap"><canvas id="frame" aria-label="Video frame. Drag to select a tracking region."></canvas></div>
+										<div class="transport">
+											@ui.Button(templ.Attributes{"id": "prev", "class": "md-button md-outlined-button", "aria-label": "Previous frame"}) {
+												{ "Previous" }
+											}
+											@ui.Button(templ.Attributes{"id": "play", "class": "md-button md-tonal-button"}) {
+												{ "Play" }
+											}
+											@ui.Button(templ.Attributes{"id": "next", "class": "md-button md-outlined-button", "aria-label": "Next frame"}) {
+												{ "Next" }
+											}
+											<span id="time" class="time"></span>
+										</div>
+										@ui.Slider("scrub", "Video frame")
+										<div class="transport">
+											@ui.Button(templ.Attributes{"id": "zero", "class": "md-button md-outlined-button"}) {
+												{ "Set time zero here" }
+											}
+											@ui.Select("zoom", "Zoom", []ui.Option{{Value: "fit", Label: "Fit"}, {Value: "1", Label: "100%"}, {Value: "2", Label: "200%"}, {Value: "4", Label: "400%"}})
+											<span id="quality" hidden></span>
+										</div>
+									</section>
+									<section class="graph-panel" aria-label="Motion measurements">
+										<h2>Position over time</h2>
+										<div class="graph-controls">
+											@ui.Select("axis", "Position", []ui.Option{{Value: "x", Label: "Horizontal"}, {Value: "y", Label: "Vertical"}})
+											@ui.Select("reference", "Compare recording", []ui.Option{{Value: "", Label: "None"}})
+											<div id="ref-control" hidden>
+												@ui.NumberField("refzero", "Comparison zero frame", "0", "0", "")
+											</div>
+										</div>
+										<p id="graph-note" class="help">Track a region to plot its position.</p>
+										<div class="graph-wrap"><svg id="graph" viewBox="0 0 1000 270" role="img" aria-label="Tracked displacement against time"></svg></div>
+										<div class="legend"><span id="main-legend">Current recording</span><span id="ref-legend" class="ref" hidden>Comparison</span></div>
+									</section>
+								</div>
+								<aside class="controls" aria-label="Analysis settings">
+									<section class="inspector-group">
+										<h3>Track position</h3>
+										<p id="selection" class="help">Draw around a distinct edge or textured detail.</p>
+										@ui.NumberField("end", "Last frame", "", "0", "")
+										@ui.NumberField("search", "Search distance per frame (px)", "60", "4", "1000")
+										@ui.Button(templ.Attributes{"id": "track", "class": "md-button md-filled-button", "disabled": true}) {
+											{ "Track from this frame" }
+										}
+										@ui.Button(templ.Attributes{"id": "correct", "class": "md-button md-outlined-button", "disabled": true}) {
+											{ "Correct position here" }
+										}
+										<details class="tracking-help"><summary>Tracking method</summary><p class="help">Tracking follows a fixed image patch. It measures position, not changes in shape or opacity. Weak matches leave gaps in the graph.</p></details>
+									</section>
+									<hr class="md-divider"/>
+									<section class="inspector-group">
+										<h3>Export</h3>
+										<p id="export-note" class="help">Track a region to export measurements.</p>
+										<div class="actions">
+											@ui.Button(templ.Attributes{"id": "json", "class": "md-button md-outlined-button", "disabled": true}) {
+												{ "Save JSON" }
+											}
+											@ui.Button(templ.Attributes{"id": "csv", "class": "md-button md-outlined-button", "disabled": true}) {
+												{ "Save CSV" }
+											}
+											@ui.Button(templ.Attributes{"id": "export", "class": "md-button md-outlined-button", "disabled": true}) {
+												{ "Export video" }
+											}
+										</div>
+									</section>
+								</aside>
+							</div>
+						</div>
+						<footer>Coordinates use recording pixels. Times use the original video frame timestamps.</footer>
+					</main>
+				</div>
+				<template id="recording-item-template">@ui.DrawerItem(templ.Attributes{"data-project-id": "", "aria-controls": "recording-content"}, "")
+</template>
+				<template id="field-option-template">@ui.SelectOption("", "", "", false)
+</template>
+			</div>
+		</body>
+	</html>
+}

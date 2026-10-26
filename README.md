@@ -4,79 +4,69 @@ Measure UI motion from video. Open a recording, track an object or edge, and ins
 
 ## Run
 
-Requires Python 3.11+, Node 22.12+, FFmpeg and ffprobe.
+Requires Go 1.26+, Node 22.12+, FFmpeg, ffprobe and OpenCV 4.13 development files for GoCV 0.43.0. Keep the Token Catalog checkout beside this repository at `../tokens`; the Go module uses its shared Forge components through a local replacement.
 
 ```sh
-python3 -m venv .venv
-.venv/bin/pip install -r requirements.lock
-.venv/bin/pip install --no-deps -e .
 npm ci
-npm run build
-.venv/bin/ui-motion serve
+make build
+./scripts/run.sh serve
 ```
 
-Open http://127.0.0.1:8091. The server runs locally. Videos and results are stored in `projects/`, which Git ignores.
+Open http://127.0.0.1:8091. The Go executable serves the templ interface, API and static assets. Videos and measurements stay in `projects/`, which Git ignores. Python is no longer required.
 
-For frontend development, run `npm run dev` alongside the Python server.
+OpenCV is a native dependency. On Fedora, install `opencv-devel`; on other platforms, follow the [GoCV installation instructions](https://gocv.io/getting-started/). This workstation also has an optional SDK under `.local/opencv/`. The build and run scripts use it when system development files are unavailable.
 
-## Track a recording
+## Analyze a video
 
 1. Open a video.
-2. Find the frame where tracking should start. Draw around a distinct edge or textured detail.
+2. Find the first frame to track. Draw around a distinct edge or textured detail.
 3. Set the last frame and press **Track from this frame**.
-4. Click the graph or step through the frames to check the tracked rectangle.
-5. To fix a mistake, draw the correct region on that frame and press **Correct position here**.
+4. Click the graph or step through frames to check the tracked region.
+5. Draw a corrected region and press **Correct position here** when tracking follows the wrong detail.
 
-Use **Set time zero here** to mark the event you want to compare. Choose another tracked recording and set its zero frame to align the events. The recordings keep their original timing.
+Set time zero at the event you want to compare. Choose another recording and set its zero frame to align the events. Reopen saved recordings from the sidebar or menu button.
 
-JSON, CSV and annotated video exports are available after tracking. The video places the tracked frame beside its position graph. Reopen a recording from the navigation drawer to continue working. On narrow screens, press **Recordings** to open it.
+JSON, CSV and annotated video exports become available after tracking. The video places the tracked frame beside its position graph. Existing schema-1 projects from the Python version remain readable without conversion.
 
-Tracking measures horizontal and vertical translation of a fixed image patch. It does not measure resizing, corner morphing or opacity. A weak match leaves a gap. A strong match can still follow the wrong object; inspect the rectangle and correct it where needed. Coordinates use recording pixels. Timing precision is limited by the source recording's frames.
+Tracking follows a fixed image patch. It measures position, not changes in shape, scale or opacity. Weak matches leave gaps. Timing precision depends on the source video's captured frames.
 
 ## CLI
 
-The CLI uses the same import, tracking and export functions as the interface.
+The CLI and HTTP API call the same Go analysis package.
 
 ```sh
-.venv/bin/ui-motion inspect clip.mp4
-.venv/bin/ui-motion import clip.mp4
-# Use the returned project ID in subsequent commands.
-.venv/bin/ui-motion frames PROJECT_ID --start 30 --end 90 --step 10
-.venv/bin/ui-motion track PROJECT_ID --region 100,200,30,40 --start 30 --end 90
-.venv/bin/ui-motion correct PROJECT_ID --frame 55 --region 140,200,30,40
-.venv/bin/ui-motion zero PROJECT_ID --frame 40
-.venv/bin/ui-motion compare PROJECT_ID REFERENCE_ID --zero-frame 35
-.venv/bin/ui-motion export PROJECT_ID --format csv
-.venv/bin/ui-motion export PROJECT_ID --format video
+./scripts/run.sh inspect clip.mp4
+./scripts/run.sh import clip.mp4
+# Use the returned project ID below.
+./scripts/run.sh frames PROJECT_ID --start 30 --end 90 --step 10
+./scripts/run.sh track PROJECT_ID --region 100,200,30,40 --start 30 --end 90
+./scripts/run.sh correct PROJECT_ID --frame 55 --region 140,200,30,40
+./scripts/run.sh zero PROJECT_ID --frame 40
+./scripts/run.sh compare PROJECT_ID REFERENCE_ID --zero-frame 35
+./scripts/run.sh export PROJECT_ID --format csv
+./scripts/run.sh export PROJECT_ID --format video
 ```
 
-`frames` returns local image paths and timestamps. An agent can view those images, select a region, run tracking and inspect the annotated export. No browser interaction is required.
+`frames` returns local image paths and timestamps for agent inspection. `--projects PATH` selects a separate project directory for tests or batch work. `serve --port PORT` changes the local server port.
 
 ## Code
 
-- `app/analysis.py`: video import, tracking, saved measurements and exports.
-- `app/server.py`: local HTTP API and built frontend.
-- `app/cli.py`: command-line entry point.
-- `web/`: TypeScript interface and styles.
-- `public/material.css` and `public/material/`: generated component styles, tokens and shared runtimes imported from Token Catalog.
+| Location | Responsibility |
+| --- | --- |
+| `cmd/ui-motion/` | CLI and server entry point |
+| `internal/analysis/` | Project files, FFmpeg import/export and GoCV tracking |
+| `internal/web/` | HTTP routes and templ page composition |
+| `../tokens/forge/components/ui/` | Shared templ controls and navigation anatomy |
+| `web/` | Playback, region selection, graph and control state synchronization |
+| `public/` | Token Catalog CSS, fonts and unmodified interaction runtimes |
 
-There is no dependency on a running catalog. To refresh its tokens, component styles, behavior and font:
+Go renders the control markup. Dynamic list entries clone templates rendered by those same components. TypeScript handles analysis interactions rather than rebuilding component anatomy. Vite builds the browser assets; it does not serve the application shell.
 
-```sh
-node scripts/import-material.mjs /path/to/tokens
-npm run build
-```
-
-The import script preserves generated values and records the source hash in `public/token-source.json`. Font licensing is in `public/OFL.txt`.
-
-## Check
+Refresh Material assets from Token Catalog with:
 
 ```sh
-.venv/bin/python -m unittest discover -s tests -v
-npm run build
-npm test
+node scripts/import-material.mjs ../tokens
+make build
 ```
 
-The test uses a video with known positions and variable frame timestamps. It checks tracking, lost matches, manual corrections, saved measurements, CLI output and annotated export timing.
-
-Component checks verify that shared interaction files match their source hashes, public token references resolve, and app button CSS only controls placement.
+`make test` checks variable frame timing, tracking loss and correction, exports, HTTP validation, server-rendered controls, token references and shared runtime integrity. Generate templ code after editing templates with `make generate`.

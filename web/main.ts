@@ -34,30 +34,6 @@ type Project = {
 type Entry = { id: string; name: string };
 const $ = <T extends HTMLElement = HTMLElement>(id: string) =>
   document.getElementById(id) as T;
-document.querySelector("#app")!.innerHTML = `
-<div class="shell"><aside class="desktop-navigation"><div class="app-identity"><h1>UI Motion</h1></div><nav class="md-navigation md-navigation-drawer" data-variant="standard" data-navigation-group aria-label="Recordings"><div id="projects" class="md-nav-items"></div></nav></aside><main id="recording-content"><div class="workspace-actions"><div class="mobile-navigation" data-navigation-demo><button type="button" class="md-icon-button md-standard-icon-button" data-size="small" data-shape="round" data-width="default" data-navigation-open aria-label="Open recordings" aria-haspopup="dialog" aria-controls="recording-drawer"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" width="24" height="24" fill="currentColor" aria-hidden="true" focusable="false"><path d="M120-240v-80h720v80H120Zm0-200v-80h720v80H120Zm0-200v-80h720v80H120Z"/></svg></button><dialog id="recording-drawer" class="md-navigation md-navigation-drawer" data-variant="modal" data-navigation-modal data-navigation-group aria-label="Recordings"><h3>Recordings</h3><div id="mobile-projects" class="md-nav-items"></div></dialog></div><button id="import" class="md-button md-tonal-button">Open video</button><input id="file" type="file" accept="video/*,.gif" hidden></div><div class="workspace-heading"><h2 id="name" class="filename" hidden></h2><p id="recording-meta" class="help" hidden></p><div id="status" role="status" aria-live="polite"></div></div>
-<section id="empty"><h2>Open a recording</h2><p>Track an object or edge and inspect its movement frame by frame.</p><button id="empty-import" class="md-button md-filled-button">Open video</button><p class="help">Videos and measurements stay on this machine.</p></section>
-<div id="workspace" hidden><div class="stage-grid"><div class="work-surface"><section class="video-panel" aria-label="Video inspection">
-<div class="image-wrap"><canvas id="frame" aria-label="Video frame. Drag to select a tracking region."></canvas></div>
-<div class="transport"><button id="prev" class="md-button md-outlined-button" aria-label="Previous frame">Previous</button><button id="play" class="md-button md-tonal-button">Play</button><button id="next" class="md-button md-outlined-button" aria-label="Next frame">Next</button><span id="time" class="time"></span></div>
-<div class="md-slider" data-size="small" data-variant="continuous" data-control="standard" data-orientation="horizontal" role="group" aria-label="Frame navigation"><div class="md-slider-rail" aria-hidden="true"><span class="md-slider-inactive md-slider-before"></span><span class="md-slider-active"></span><span class="md-slider-inactive md-slider-after"></span><span class="md-slider-stop md-slider-stop-start"></span><span class="md-slider-stop md-slider-stop-end"></span></div><div class="md-slider-input" data-handle="end"><input id="scrub" type="range" min="0" max="100" value="0" step="1" aria-label="Video frame"><span class="md-slider-thumb" aria-hidden="true"><span class="md-slider-state-layer"></span><span class="md-slider-nub"></span><span class="md-slider-value">0</span></span></div></div>
-<div class="transport"><button id="zero" class="md-button md-outlined-button">Set time zero here</button><label class="zoom-label">Zoom <select id="zoom"><option value="fit">Fit</option><option value="1">100%</option><option value="2">200%</option><option value="4">400%</option></select></label><span id="quality" class="badge" hidden></span></div>
-
-</section>
-<section class="graph-panel" aria-label="Motion measurements"><h2>Position over time</h2><div class="graph-controls">
-<div><label for="axis">Position</label><select id="axis"><option value="x">Horizontal</option><option value="y">Vertical</option></select></div>
-<div><label for="reference">Compare recording</label><select id="reference"><option value="">None</option></select></div>
-<div id="ref-control" hidden><label for="refzero">Comparison zero frame</label><input id="refzero" type="number" min="0" step="1" value="0"></div>
-</div><p id="graph-note" class="help">Track a region to plot its position.</p><div class="graph-wrap"><svg id="graph" viewBox="0 0 1000 270" role="img" aria-label="Tracked displacement against time"></svg></div>
-<div class="legend"><span id="main-legend">Current recording</span><span id="ref-legend" class="ref" hidden>Comparison</span></div>
-</section></div><aside class="controls" aria-label="Analysis settings"><section class="inspector-group"><h3>Track position</h3><p id="selection" class="help">Draw around a distinct edge or textured detail.</p>
-<div><label for="end">Last frame</label><input id="end" type="number" min="0" step="1"></div>
-<div><label for="search">Search distance per frame (px)</label><input id="search" type="number" value="60" min="4" max="1000" step="1"></div>
-<button id="track" class="md-button md-filled-button" disabled>Track from this frame</button><button id="correct" class="md-button md-outlined-button" disabled>Correct position here</button>
-<details class="tracking-help"><summary>Tracking method</summary><p class="help">Tracking follows a fixed image patch. It measures position, not changes in shape or opacity. Weak matches leave gaps in the graph.</p></details></section><hr class="md-divider"><section class="inspector-group"><h3>Export</h3><p id="export-note" class="help">Track a region to export measurements.</p>
-<div class="actions"><button id="json" class="md-button md-outlined-button" disabled>Save JSON</button><button id="csv" class="md-button md-outlined-button" disabled>Save CSV</button><button id="export" class="md-button md-outlined-button" disabled>Export video</button></div>
-</section></aside>
-</div></div><footer>Coordinates use recording pixels. Times use the original video frame timestamps.</footer></main></div>`;
 let project: Project | null = null,
   reference: Project | null = null,
   entries: Entry[] = [],
@@ -143,21 +119,14 @@ async function refresh() {
   for (const group of ["projects", "mobile-projects"]) {
     $(group).replaceChildren();
     for (const item of entries) {
-      const button = document.createElement("button");
-      button.type = "button";
-      button.className = "md-nav-item";
-      button.dataset.navigationItem = "";
+      const template = $<HTMLTemplateElement>("recording-item-template");
+      const button = template.content.firstElementChild!.cloneNode(
+        true,
+      ) as HTMLButtonElement;
       button.dataset.projectId = item.id;
-      button.setAttribute("aria-controls", "recording-content");
       button.title = item.name;
+      button.querySelector(".md-nav-label")!.textContent = item.name;
       if (project?.id === item.id) button.setAttribute("aria-current", "page");
-      const indicator = document.createElement("span");
-      indicator.className = "md-nav-indicator";
-      const label = document.createElement("span");
-      label.className = "md-nav-label";
-      label.textContent = item.name;
-      indicator.append(label);
-      button.append(indicator);
       button.onclick = async () => {
         const restoreFocus =
           group === "projects" && document.activeElement === button;
@@ -533,7 +502,7 @@ function graph() {
   const all = [...main, ...ref],
     vals = all.filter((s) => s.v !== null).map((s) => s.v!);
   svg.replaceChildren();
-  svg.hidden = !vals.length;
+  svg.toggleAttribute("hidden", !vals.length);
   $("main-legend").parentElement!.hidden = !vals.length;
   if (!vals.length) {
     $("graph-note").textContent = "Track a region to plot its position.";

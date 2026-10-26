@@ -3,9 +3,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite --host 127.0.0.1",
     "build": "tsc --noEmit && vite build",
-    "test": "node --test tests/*.test.mjs"
+    "test": "node --test tests/*.test.mjs",
+    "generate": "go run github.com/a-h/templ/cmd/templ@v0.3.960 generate -path internal/web"
   },
   "devDependencies": {
     "postcss": "^8.5.31",
