@@ -18,6 +18,7 @@ test("shared interaction code matches the recorded source bytes", () => {
     "navigation.js": "navigation.js",
     "button-groups.js": "button-groups.js",
     "menus.js": "menus.js",
+    "tabs.js": "tabs.js",
   };
   for (const [original, local] of Object.entries(files)) {
     const record = source.files.find((f) => path.basename(f.file) === original);
@@ -72,4 +73,14 @@ test("app button rules only position shared components", () => {
       ),
     );
   });
+});
+
+// Status must not insert a row above the editor when a job starts.
+test("job status occupies a fixed surface", () => {
+  let position;
+  postcss.parse(fs.readFileSync("web/style.css", "utf8")).walkRules((rule) => {
+    if (rule.selector === "#status")
+      rule.walkDecls("position", (d) => (position = d.value));
+  });
+  assert.equal(position, "fixed");
 });

@@ -52,7 +52,11 @@
     {
       "file": "forge/components/static/runtime/button-groups.js",
       "sha256": "8c977b3d0ad88e27253ba9f828af396b807a9178984fd4c6d30df69f1120fceb"
+    },
+    {
+      "file": "forge/components/static/runtime/tabs.js",
+      "sha256": "90c70f9eb8c00e5e70ab3f7bbc5d0ededcfeff758a951f229f9adf665f3df223"
     }
   ],
-  "tokenCount": 1720
+  "tokenCount": 2071
 }

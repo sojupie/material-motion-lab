@@ -23,7 +23,7 @@ Use an adaptive scaffold with optional supporting panes around a flexible worksp
 
 The media bin is a list of recordings. It is not a reason to keep a wide navigation drawer open throughout editing. Use navigation components for real destinations and toolbars for tools. Do not invent destinations to fill a navigation rail or bar.
 
-Use a compact application toolbar for project-wide actions. Do not add an app bar solely to repeat a title already visible elsewhere. An Export action belongs here; its configuration does not belong in the tracking inspector.
+Use a compact rail for Recordings, Open and Export while editing. Open and Export are commands, with no selected destination state. Keep comparison and editing tools in the workspace. Export configuration belongs in its dialog.
 
 The timeline and chart share time, selection and playhead state. Their controls remain close enough to make this relationship visible. Changing one region must not force the user to find the corresponding state in a distant form.
 
@@ -67,7 +67,7 @@ Provide visible splitters between regions that compete for working space. Users 
 
 Splitters need hover, focus and dragging feedback; suitable pointer cursors; keyboard resizing; and a non-drag way to collapse or restore a pane. Set minimum usable dimensions so labels, fields and actions remain legible.
 
-Remember pane sizes and visibility. Clamp restored dimensions to the available window rather than restoring unusable sizes. Provide **Reset layout** and a way to maximize the viewer or chart and restore the previous arrangement. Hiding a pane must not discard its data or settings.
+Remember pane sizes. Open recordings with the viewer visible and contextual settings closed. Do not restore maximization as the initial view. Clamp restored dimensions to the available window rather than restoring unusable sizes. Provide keyboard size reset on splitters and a way to maximize the viewer or chart and restore the previous arrangement. Hiding a pane must not discard its data or settings.
 
 Resizing a pane changes its available content area. It must not enlarge all controls, stretch icon buttons or crop a video that is in Fit mode. Video zoom, timeline zoom and chart scale remain separate operations.
 
@@ -102,8 +102,8 @@ Use available window space, including height, rather than a device-name check. T
 | Under 600 | One main working view. Open media and settings through explicit controls. Use sheets or full-screen tasks when necessary. Keep transport reachable and respect safe areas. |
 | 600–839 | Prioritize one workspace. Open supporting tools on demand instead of squeezing two dense panes together. |
 | 840–1199 | Keep the workspace flexible. Show a supporting inspector when its minimum width and the working content both fit; otherwise use a temporary surface. |
-| 1200–1599 | Allow a docked contextual inspector. The media bin can be collapsed to leave more space for comparison. |
-| 1600 and above | Allow media bin, workspace and inspector together when useful. Extra width does not automatically reveal every setting. |
+| 1200–1599 | Keep the application rail compact. Dock the inspector only when the workspace retains enough width; otherwise open it as a modal sheet. |
+| 1600 and above | Allow the application rail, workspace and contextual inspector together. Extra width does not reveal additional settings automatically. |
 
 The thresholds come from Material's breakpoint ranges, applied to web CSS pixels. Short windows can still require a single-work-area arrangement. Browser zoom, text scaling and resized panes must not produce clipped labels or unreachable commands.
 
@@ -113,8 +113,8 @@ Keep selected video, time, tracking range, alignment and settings when the arran
 
 | Area | Default contents | Controls opened when needed |
 | --- | --- | --- |
-| Application toolbar | Open/import, media visibility, layout controls, Export | Export task and layout menu |
-| Media bin | Recordings, selected recording and assignment to A/B | Recording commands |
+| Start screen | Open video and saved recordings | Import |
+| Application rail | Recordings, Open and Export during editing | Open recording dialog and Export dialog |
 | Viewer | Video, A/B identity, active selection, local zoom | Tracking tool choices and overlays |
 | Transport | Standard playback button group, timecode, speed, loop | Less frequent playback commands |
 | Timeline | Shared ruler, playhead, playback interval, tracking ranges and alignment markers | Precise range entry and alignment settings |
@@ -154,3 +154,11 @@ Reviewed from the rendered pages on 2026-10-26. These sources inform the rules a
 - [Breakpoint overview](https://m3.material.io/foundations/layout/breakpoints/overview), [compact](https://m3.material.io/foundations/layout/breakpoints/compact), [medium](https://m3.material.io/foundations/layout/breakpoints/medium), [expanded](https://m3.material.io/foundations/layout/breakpoints/expanded), [large and extra-large](https://m3.material.io/foundations/layout/breakpoints/large-extra-large).
 - [Color roles](https://m3.material.io/styles/color/roles), [elevation tokens](https://m3.material.io/styles/elevation/tokens).
 - [Button groups](https://m3.material.io/components/button-groups/guidelines), [toolbars](https://m3.material.io/components/toolbars/overview), [side sheets](https://m3.material.io/components/side-sheets/guidelines), [dialogs](https://m3.material.io/components/dialogs/guidelines).
+
+## Screen states
+
+The start screen contains import and saved recordings. It has no editing rail, transport, inspector or export controls. Opening a recording enters the editor. Returning to Recordings leaves saved measurements intact.
+
+The editor separates viewer, timeline and chart with working surfaces and gutters. Its header identifies the recording. The left rail owns app commands; region toolbars own editing tools. The right side sheet shows one contextual tool at a time, using tabs for its sections.
+
+Maximizing a region shows an explicit Back to workspace action. New recordings and reloads start with the viewer visible. Status messages occupy a fixed region and never displace the editor.

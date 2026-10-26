@@ -52,114 +52,111 @@ p {
   overflow: hidden;
   background: var(--md-sys-color-surface-container);
 }
-.application-bar {
-  flex: none;
-  padding: var(--md-sys-measurement-space100);
-}
-.application-bar > .md-toolbar {
-  inline-size: 100%;
-  justify-content: flex-start;
-}
-.app-name {
-  font: var(--md-sys-typescale-title-medium);
-  margin-inline-end: auto;
-}
-.application-bar #save-state {
-  margin-inline-start: auto;
-}
 .shell {
   flex: 1;
   min-block-size: 0;
   display: grid;
-  grid-template-columns: var(--media-width, 0px) var(
-      --media-divider,
+  grid-template-columns: auto minmax(0, 1fr) var(--tools-divider, 0px) var(
+      --tools-width,
       0px
-    ) minmax(0, 1fr) var(--tools-divider, 0px) var(--tools-width, 0px);
-  padding: 0 var(--md-sys-measurement-space100)
-    var(--md-sys-measurement-space100);
+    );
+  gap: 0;
+  padding: var(--md-sys-measurement-space150);
 }
-.media-panel {
+.shell[data-editor="false"] {
+  grid-template-columns: minmax(0, 1fr);
+}
+.shell[data-editor="false"] main {
   grid-column: 1;
-  min-inline-size: 0;
-  min-block-size: 0;
-  overflow: hidden;
 }
-.media-panel:not(:modal),
-.inspector:not(:modal) {
-  position: static;
-  inset: auto;
+.app-navigation {
+  grid-column: 1;
+  align-self: stretch;
+  margin-inline-end: var(--md-sys-measurement-space150);
+}
+.app-navigation .md-nav-items {
+  gap: var(--md-sys-measurement-space300);
+}
+.recording-list {
   inline-size: 100%;
-  block-size: 100%;
-  max-block-size: none;
-  max-inline-size: none;
+  margin-block-start: var(--md-sys-measurement-space200);
 }
-.media-panel:modal {
-  position: fixed;
-  inset-block: 0;
-  inset-inline-start: 0;
-  inset-inline-end: auto;
-  inline-size: min(360px, 100vw);
-  block-size: 100dvh;
-  max-block-size: none;
+.recording-list {
+  max-inline-size: 100%;
 }
-.media-panel .md-navigation {
-  flex: 1;
-  min-block-size: 0;
-  inline-size: 100%;
-  overflow: auto;
-}
-.md-nav-label {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  min-inline-size: 0;
-}
-.panel-heading {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding-inline: var(--md-sys-measurement-space200);
-}
-#media-splitter {
-  grid-column: 2;
+.recording-list .md-list-label {
+  overflow-wrap: anywhere;
 }
 main {
-  grid-column: 3;
+  grid-column: 2;
   min-inline-size: 0;
   min-block-size: 0;
-  background: var(--md-sys-color-surface);
-  border-radius: var(--md-sys-shape-corner-medium);
   overflow: hidden;
 }
 #empty {
+  max-inline-size: 960px;
+  margin-inline: auto;
+  padding: clamp(24px, 5vw, 72px);
   block-size: 100%;
+  overflow: auto;
+}
+.home-header {
   display: flex;
-  flex-direction: column;
-  justify-content: center;
   align-items: center;
-  padding: var(--md-sys-measurement-space300);
-  text-align: center;
+  justify-content: space-between;
+  gap: 24px;
+  margin-block-end: 48px;
 }
 #empty h1 {
-  font: var(--md-sys-typescale-headline-small);
+  font: var(--md-sys-typescale-headline-medium);
 }
-#empty .help {
-  margin-block-start: var(--md-sys-measurement-space200);
+#empty h2 {
+  font: var(--md-sys-typescale-title-medium);
+}
+#empty p {
+  margin-block: 8px 0;
+}
+.editor-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex: none;
+  padding: 4px 16px 16px;
+  min-block-size: 64px;
+}
+.recording-heading {
+  min-inline-size: 0;
+  margin-inline-end: auto;
+}
+.recording-heading h1 {
+  font: var(--md-sys-typescale-title-medium);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.editor-header #save-state {
+  white-space: nowrap;
 }
 .workspace-container {
   block-size: 100%;
-  padding: var(--md-sys-measurement-space150);
+  display: flex;
+  flex-direction: column;
+  min-block-size: 0;
 }
 .editing-main {
-  block-size: 100%;
+  flex: 1;
   min-block-size: 0;
   display: grid;
-  grid-template-rows: minmax(150px, var(--viewer-height, 30%)) 10px auto minmax(
+  grid-template-rows: minmax(150px, var(--viewer-height, 30%)) 12px auto minmax(
       230px,
       1fr
     );
   overflow: hidden;
 }
 #viewer-area {
+  padding: var(--md-sys-measurement-space200);
+  background: var(--md-sys-color-surface);
+  border-radius: var(--md-sys-shape-corner-medium);
   min-block-size: 0;
   display: flex;
   flex-direction: column;
@@ -300,6 +297,10 @@ canvas.drawing {
   outline: 2px solid var(--md-sys-color-primary);
 }
 .timeline-panel {
+  padding: var(--md-sys-measurement-space200);
+  margin-block-end: var(--md-sys-measurement-space150);
+  background: var(--md-sys-color-surface);
+  border-radius: var(--md-sys-shape-corner-medium);
   min-inline-size: 0;
   align-self: start;
 }
@@ -336,6 +337,9 @@ canvas.drawing {
   margin-inline: 64px 16px;
 }
 .graph-panel {
+  padding: var(--md-sys-measurement-space200);
+  background: var(--md-sys-color-surface);
+  border-radius: var(--md-sys-shape-corner-medium);
   min-inline-size: 0;
   min-block-size: 0;
   display: flex;
@@ -393,13 +397,23 @@ canvas.drawing {
   cursor: default;
 }
 #inspector-splitter {
-  grid-column: 4;
+  grid-column: 3;
 }
 .inspector {
-  grid-column: 5;
+  grid-column: 4;
+  border-radius: var(--md-sys-shape-corner-medium);
   min-inline-size: 0;
   min-block-size: 0;
   overflow: hidden;
+}
+.inspector:not(:modal) {
+  position: static;
+  inset: auto;
+  margin: 0;
+  inline-size: 100%;
+  block-size: 100%;
+  max-inline-size: none;
+  max-block-size: none;
 }
 .inspector:modal {
   position: fixed;
@@ -414,10 +428,28 @@ canvas.drawing {
   font: var(--md-sys-typescale-title-small);
   margin-block-end: var(--md-sys-measurement-space100);
 }
+.inspector .md-sheet-content {
+  padding: var(--md-sys-measurement-space200);
+  min-block-size: 0;
+  block-size: 100%;
+  display: flex;
+  flex-direction: column;
+}
+.inspector .md-sheet-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-block-end: 16px;
+}
+.inspector .md-sheet-body {
+  padding: 24px 8px 8px;
+  overflow: auto;
+  min-block-size: 0;
+  flex: 1;
+}
 .inspector-tabs {
-  max-inline-size: 100%;
-  align-self: center;
-  margin-block: var(--md-sys-measurement-space100);
+  flex: none;
 }
 .inspector section {
   margin-block-end: var(--md-sys-measurement-space200);
@@ -449,10 +481,15 @@ canvas.drawing {
   inline-size: 100%;
 }
 #status {
-  flex: none;
+  position: fixed;
+  inset: auto 24px 20px auto;
+  z-index: 100;
+  max-inline-size: min(480px, calc(100vw - 48px));
+  padding: 12px 20px;
+  border-radius: var(--md-sys-shape-corner-small);
+  background: var(--md-sys-color-inverse-surface);
+  color: var(--md-sys-color-inverse-on-surface);
   font: var(--md-sys-typescale-body-medium);
-  padding-inline: var(--md-sys-measurement-space200);
-  color: var(--md-sys-color-on-surface-variant);
 }
 #status:empty {
   display: none;
@@ -498,18 +535,6 @@ body[aria-busy="true"] #status {
 .export-format {
   margin-block-end: var(--md-sys-measurement-space200);
 }
-.layout-menu {
-  margin: 0;
-  position: fixed;
-  inset: auto;
-  min-inline-size: 220px;
-}
-.layout-menu ul,
-.playback-menu ul {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
 .shell[data-focus="viewer"] .graph-panel,
 .shell[data-focus="viewer"] #viewer-splitter,
 .shell[data-focus="chart"] #viewer-area,
@@ -533,21 +558,14 @@ body[aria-busy="true"] #status {
   clip-path: inset(50%);
   white-space: nowrap;
 }
-@media (max-width: 1099px) {
+@media (max-width: 1279px) {
   .shell {
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: auto minmax(0, 1fr);
   }
   main {
-    grid-column: 1;
+    grid-column: 2;
   }
-  .media-panel:not(:modal),
   .inspector:not(:modal) {
-    display: none;
-  }
-  .app-name {
-    display: none;
-  }
-  .application-bar #save-state {
     display: none;
   }
 }
@@ -580,9 +598,24 @@ body[aria-busy="true"] #status {
   .export-options {
     grid-template-columns: 1fr;
   }
-  .application-bar .md-toolbar {
+  .app-navigation {
+    margin-inline-end: 8px;
+  }
+  .editor-header {
     flex-wrap: wrap;
-    block-size: auto;
+  }
+  .editor-header #save-state {
+    display: none;
+  }
+  .home-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  #empty {
+    padding: 24px;
+  }
+  .shell {
+    padding: 8px;
   }
   .video-pane > .help {
     display: none;

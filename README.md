@@ -18,7 +18,9 @@ OpenCV is a native dependency. On Fedora, install `opencv-devel`; on other platf
 
 ## Workspace
 
-Open a recording and choose a **Second video** to compare it. Both videos use one playhead and one time ruler. Play and frame stepping operate on the workspace; frame stepping follows the selected video’s timestamps.
+The start screen lists saved recordings and provides **Open video**. Select a recording to enter the editor. The left rail returns to **Recordings**, opens another recording, or opens **Export**. **Open** shows saved recordings and an import action in a dialog.
+
+Choose a **Second video** in the viewer toolbar to compare it. Both videos use one playhead and one time ruler. Play and frame stepping operate on the workspace; frame stepping follows the selected video’s timestamps.
 
 Click a viewer title or a clip to select its video. Open **Tracking settings** for that video, **Alignment** for clip timing, or **Chart settings** for measurement and reference controls. The inspector shows one section at a time. Viewer magnification sits above each image. Timeline zoom changes the visible time span in both the tracks and displacement graph. The horizontal scrollbar appears when zoomed in and pans that span. **Fit clips** restores the full span; **Fit range** frames the selected tracking range.
 
@@ -26,7 +28,7 @@ Drag the time ruler to scrub between recorded frames. The selected video defines
 
 Playback has its own range, separate from tracking. Seek to a frame and open the playback interval menu and choose **Set start at playhead** or **Set end at playhead**, or drag the handles on the **Play** row. **Full clips** clears the playback range. Playback resumes from the playhead inside the range and starts at the range beginning when outside it. **Loop** repeats that interval; **Speed** runs from ⅛× to 4×. Both videos follow the same playback clock. Frame stepping and scrubbing remain available outside the playback range.
 
-The media and tools buttons show or hide the supporting panes. Drag their dividers to resize them. Drag the divider above the transport to divide space between viewers and chart. Focus a divider and use arrow keys to resize, Enter to collapse, or Home to reset its size. **Layout** provides maximize, restore and reset commands. Pane sizes, visibility and the selected inspector section save in browser storage. On narrow windows, the supporting panes open as modal sheets.
+Tracking, alignment and chart controls open a contextual side sheet. Drag its divider to resize it. Drag the divider above the transport to divide space between viewers and chart. Focus a divider and use arrow keys to resize, Enter to collapse, or Home to reset its size. Enlarge a viewer or chart with its expand icon; **Back to workspace** restores the normal view. Pane sizes save in browser storage. Each recording opens with the viewer visible and settings closed. On narrow windows, settings open as a modal sheet.
 
 **Export** opens a separate dialog with format, interval and annotation settings. Its preview renders the first export frame with the same settings as the output video. Export settings remain available when the dialog reopens.
 
@@ -42,7 +44,7 @@ Correction diamonds and tracking-loss marks appear on the clip. The inspector ha
 
 Image patches track position in two dimensions. Edge tracking follows one axis through a fixed strip; keep corners and other boundaries outside that strip. Both methods estimate subpixel positions. Similarity is the patch correlation score. Edge strength is a ratio to the last manual anchor. Neither score is a probability of correctness. Weak matches leave gaps.
 
-Existing recordings retain their saved measurements. Rerun tracking to replace older whole-pixel results with subpixel estimates. Use **Export** in the application toolbar for JSON, CSV, chart SVG or annotated video.
+Existing recordings retain their saved measurements. Rerun tracking to replace older whole-pixel results with subpixel estimates. Use **Export** in the left rail for JSON, CSV, chart SVG or annotated video.
 
 ## Align videos
 

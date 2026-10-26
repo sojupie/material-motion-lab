@@ -32,7 +32,8 @@ function playButton(active: boolean) {
   const button = $("play");
   button.setAttribute("aria-label", active ? "Pause" : "Play");
   button.title = active ? "Pause" : "Play";
-  const label=button.querySelector("[data-transport-label]");if(label)label.textContent=active?"Pause":"Play";
+  const label = button.querySelector("[data-transport-label]");
+  if (label) label.textContent = active ? "Pause" : "Play";
   button
     .querySelector("svg path")!
     .setAttribute(
@@ -144,7 +145,7 @@ async function renderExportPreview() {
     }
     if (previewURL) URL.revokeObjectURL(previewURL);
     previewURL = url;
-    $("export-error").textContent="";
+    $("export-error").textContent = "";
     v.el<HTMLImageElement>("export-preview").src = url;
   } catch (e) {
     if (!request.signal.aborted)
@@ -322,7 +323,10 @@ function selectVideo(v: VideoView) {
 }
 function inspector() {
   if (!selected.project) return;
-  $("inspector-title").textContent = layout.state.mode === "reference" ? "Chart" : `${layout.state.mode === "alignment" ? "Align" : "Track"} video ${selected.prefix.toUpperCase()}`;
+  $("inspector-title").textContent =
+    layout.state.mode === "reference"
+      ? "Chart"
+      : `${layout.state.mode === "alignment" ? "Align" : "Track"} video ${selected.prefix.toUpperCase()}`;
   $<HTMLInputElement>("clip-offset").value = selected.offset.toFixed(3);
   $("sync-info").textContent =
     selected.sync === null
@@ -342,7 +346,7 @@ function controls() {
   >("input,select"))
     control.disabled = busy;
   for (const control of document.querySelectorAll<HTMLButtonElement>(
-    "[data-navigation-item],#import,#empty-import",
+    "[data-project-id],#import,#empty-import,#home,#open-recording",
   ))
     control.disabled = busy;
   for (const view of views()) view.controls(busy);
@@ -462,20 +466,22 @@ function saveWorkspace() {
 }
 async function refresh() {
   entries = await api<Entry[]>("/projects");
-  for (const group of ["projects"]) {
+  for (const group of ["projects", "recent-projects"]) {
     $(group).replaceChildren();
     for (const entry of entries) {
       const item = $<HTMLTemplateElement>(
         "recording-item-template",
-      ).content.firstElementChild!.cloneNode(true) as HTMLButtonElement;
-      item.dataset.projectId = entry.id;
+      ).content.firstElementChild!.cloneNode(true) as HTMLElement;
+      const button = item.querySelector<HTMLButtonElement>("button")!;
+      button.dataset.projectId = entry.id;
+      button.disabled = busy;
       item.title = entry.name;
-      item.querySelector(".md-nav-label")!.textContent = entry.name;
-      if (entry.id === a.project?.id) item.setAttribute("aria-current", "page");
+      item.querySelector(".md-list-label")!.textContent = entry.name;
       item.onclick = () => void job(() => open(entry.id));
       $(group).append(item);
     }
   }
+  $("no-recordings").hidden = entries.length > 0;
   const select = $<HTMLSelectElement>("reference");
   select.replaceChildren(
     new Option("None", ""),
@@ -510,7 +516,8 @@ async function open(id: string) {
   $("empty").hidden = true;
   $("workspace").hidden = false;
   layout.projectLoaded();
-  layout.closeMedia();
+  $<HTMLDialogElement>("open-dialog").close();
+  $("workspace-name").textContent = p.name;
   $("reference-pane").hidden = !b.project;
   $("video-panes").classList.toggle("comparing", !!b.project);
   playback = workspace?.playback || { range: null, speed: 1, loop: false };
@@ -696,6 +703,51 @@ $<HTMLInputElement>("file").onchange = () =>
     await open(p.id);
     $<HTMLInputElement>("file").value = "";
   });
+$("home").onclick = () => {
+  if (busy) return;
+  pause();
+  $("workspace").hidden = true;
+  $("empty").hidden = false;
+  layout.home();
+  $("empty-import").focus();
+};
+for (const [id, target] of [
+  ["open-recording", "open-dialog"],
+  ["open-export", "export-dialog"],
+]) {
+  $(id).setAttribute("aria-haspopup", "dialog");
+  $(id).setAttribute("aria-controls", target);
+}
+$("open-recording").onclick = () =>
+  $<HTMLDialogElement>("open-dialog").showModal();
+$("close-open").onclick = () => $<HTMLDialogElement>("open-dialog").close();
+// Modal settings must release the viewer while a region is being drawn.
+let drawingFromSheet: VideoView | null = null;
+for (const view of views()) {
+  view.el("draw").addEventListener("click", () => {
+    if (view.drawing && $("inspector").matches(":modal")) {
+      drawingFromSheet = view;
+      layout.closeTools();
+      view.canvas.focus();
+    }
+  });
+  view.canvas.addEventListener("pointerup", () => {
+    if (drawingFromSheet === view && !view.drawing) {
+      drawingFromSheet = null;
+      layout.inspect("tracking");
+      status("");
+    }
+  });
+}
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && drawingFromSheet) {
+    e.preventDefault();
+    drawingFromSheet.stopDrawing();
+    drawingFromSheet = null;
+    layout.inspect("tracking");
+    status("");
+  }
+});
 void installMaterialControls()
   .then(() => graph.loadPresets())
   .then(refresh)
