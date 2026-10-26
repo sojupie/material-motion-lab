@@ -141,6 +141,24 @@ func (s *Server) Handler() http.Handler {
 		http.ServeFile(w, r, path)
 		return nil, nil
 	})
+	api("GET /api/projects/{id}/workspace", func(w http.ResponseWriter, r *http.Request) (any, error) {
+		if _, e := s.Store.Load(r.PathValue("id")); e != nil {
+			return nil, e
+		}
+		result, e := s.Store.LoadWorkspace(r.PathValue("id"))
+		if errors.Is(e, os.ErrNotExist) {
+			return (*analysis.Workspace)(nil), nil
+		}
+		return result, e
+	})
+	api("PUT /api/projects/{id}/workspace", func(w http.ResponseWriter, r *http.Request) (any, error) {
+		var payload analysis.Workspace
+		if e := decode(r, &payload); e != nil {
+			return nil, e
+		}
+		return s.Store.SaveWorkspace(r.PathValue("id"), &payload)
+	})
+
 	api("POST /api/projects/{id}/track", func(w http.ResponseWriter, r *http.Request) (any, error) {
 		payload := struct {
 			Region    []float64          `json:"region"`
