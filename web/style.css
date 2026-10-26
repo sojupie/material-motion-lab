@@ -675,3 +675,23 @@ canvas.drawing {
   stroke: var(--md-sys-color-outline);
   stroke-width: 1;
 }
+
+.graph-scale-controls {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--md-sys-measurement-space100);
+  margin-block: var(--md-sys-measurement-space100);
+}
+#graph-scale-info {
+  font: var(--md-sys-typescale-body-medium);
+  font-variant-numeric: tabular-nums;
+}
+.vertical-axis-pan {
+  cursor: ns-resize;
+  touch-action: none;
+}
+.vertical-axis-pan:focus-visible {
+  outline: 2px solid var(--md-sys-color-primary);
+  outline-offset: -2px;
+}

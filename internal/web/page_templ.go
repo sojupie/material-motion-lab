@@ -700,10 +700,6 @@ func Page(entries []Entry) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = ui.Select("vertical-scale", "Vertical scale", []ui.Option{{Value: "auto", Label: "Fit visible samples"}, {Value: "10", Label: "Target ±10"}, {Value: "1", Label: "Target ±1"}}).Render(ctx, templ_7745c5c3_Buffer)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
 		templ_7745c5c3_Err = ui.Select("curve", "Reference curve", []ui.Option{{Value: "none", Label: "None"}, {Value: "md3", Label: "MD3 standard"}, {Value: "linear", Label: "Linear"}}).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
@@ -724,7 +720,27 @@ func Page(entries []Entry) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 45, "</div><p id=\"graph-note\" class=\"help\">Hover a sample for its measurements. Click a sample to inspect its frame.</p><div class=\"graph-wrap\"><svg id=\"graph\" viewBox=\"0 0 900 220\" role=\"img\" aria-label=\"Tracked displacement against workspace time. Use arrow keys to inspect frames.\" aria-describedby=\"sample-info\" tabindex=\"0\"></svg></div><output id=\"sample-info\" class=\"sample-info help\" aria-live=\"polite\"></output><div id=\"legend\" class=\"legend\"><span>Video A</span><span class=\"ref\" id=\"ref-legend\" hidden>Video B</span><span class=\"expected\" id=\"curve-legend\" hidden>Reference curve</span></div><p id=\"curve-note\" class=\"help\" hidden>Reference curves run from each tracking range’s first position to its last position.</p><div class=\"measurement-results\"><p id=\"a-result\" class=\"help\"></p><p id=\"b-result\" class=\"help\" hidden></p></div></section></div><aside class=\"inspector\" aria-label=\"Selected video settings\"><h2 id=\"inspector-title\">Video A</h2><section class=\"alignment-controls\" aria-label=\"Clip alignment\"><h3>Alignment</h3><div class=\"inspector-actions\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 45, "</div><div class=\"graph-scale-controls\" role=\"group\" aria-label=\"Vertical axis\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = action("graph-fit", "Fit motion", true).Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = iconAction("graph-zoom-out", "Zoom out vertical axis", "M200-440v-80h560v80H200Z").Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = iconAction("graph-zoom-in", "Zoom in vertical axis", "M440-440H200v-80h240v-240h80v240h240v80H520v240h-80v-240Z").Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = action("graph-fit-end", "Fit end position", true).Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 46, "<output id=\"graph-scale-info\"></output></div><p id=\"graph-note\" class=\"help\">Hover a sample for its measurements. Click a sample to inspect its frame. Drag the vertical axis to pan.</p><div class=\"graph-wrap\"><svg id=\"graph\" viewBox=\"0 0 900 220\" role=\"group\" aria-label=\"Tracked displacement against workspace time. Use arrow keys to inspect frames.\" aria-describedby=\"sample-info\" tabindex=\"0\"></svg></div><output id=\"sample-info\" class=\"sample-info help\" aria-live=\"polite\"></output><div id=\"legend\" class=\"legend\"><span>Video A</span><span class=\"ref\" id=\"ref-legend\" hidden>Video B</span><span class=\"expected\" id=\"curve-legend\" hidden>Reference curve</span></div><p id=\"curve-note\" class=\"help\" hidden>Reference curves run from each tracking range’s first position to its last position.</p><div class=\"measurement-results\"><p id=\"a-result\" class=\"help\"></p><p id=\"b-result\" class=\"help\" hidden></p></div></section></div><aside class=\"inspector\" aria-label=\"Selected video settings\"><h2 id=\"inspector-title\">Video A</h2><section class=\"alignment-controls\" aria-label=\"Clip alignment\"><h3>Alignment</h3><div class=\"inspector-actions\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -740,7 +756,7 @@ func Page(entries []Entry) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 46, "</div><p id=\"sync-info\" class=\"help\"></p>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 47, "</div><p id=\"sync-info\" class=\"help\"></p>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -748,7 +764,7 @@ func Page(entries []Entry) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 47, "<div class=\"inspector-actions\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 48, "<div class=\"inspector-actions\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -760,7 +776,7 @@ func Page(entries []Entry) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 48, "</div></section>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 49, "</div></section>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -772,7 +788,7 @@ func Page(entries []Entry) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 49, "</aside></div></div><footer>Coordinates use recording pixels. Times use the original video frame timestamps.</footer></main></div><template id=\"recording-item-template\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 50, "</aside></div></div><footer>Coordinates use recording pixels. Times use the original video frame timestamps.</footer></main></div><template id=\"recording-item-template\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -780,7 +796,7 @@ func Page(entries []Entry) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 50, "</template><template id=\"field-option-template\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 51, "</template><template id=\"field-option-template\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -788,7 +804,7 @@ func Page(entries []Entry) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 51, "</template></div></body></html>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 52, "</template></div></body></html>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

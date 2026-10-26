@@ -167,7 +167,7 @@ templ Page(entries []Entry) {
 										<div class="graph-controls">
 											@ui.Select("axis", "Position", []ui.Option{{Value: "x", Label: "Horizontal"}, {Value: "y", Label: "Vertical"}})
 											@ui.Select("units", "Units", []ui.Option{{Value: "px", Label: "Recording pixels"}, {Value: "progress", Label: "Progress (%)"}})
-											@ui.Select("vertical-scale", "Vertical scale", []ui.Option{{Value: "auto", Label: "Fit visible samples"}, {Value: "10", Label: "Target ±10"}, {Value: "1", Label: "Target ±1"}})
+
 										@ui.Select("curve", "Reference curve", []ui.Option{{Value: "none", Label: "None"}, {Value: "md3", Label: "MD3 standard"}, {Value: "linear", Label: "Linear"}})
 </div>
 																				<div id="reference-controls" class="reference-controls" hidden>
@@ -175,8 +175,15 @@ templ Page(entries []Entry) {
  @action("fit-a", "Fit duration to A", true)
  @action("fit-b", "Fit duration to B", true)
  </div>
- <p id="graph-note" class="help">Hover a sample for its measurements. Click a sample to inspect its frame.</p>
-										<div class="graph-wrap"><svg id="graph" viewBox="0 0 900 220" role="img" aria-label="Tracked displacement against workspace time. Use arrow keys to inspect frames." aria-describedby="sample-info" tabindex="0"></svg></div>
+ <div class="graph-scale-controls" role="group" aria-label="Vertical axis">
+ @action("graph-fit", "Fit motion", true)
+ @iconAction("graph-zoom-out", "Zoom out vertical axis", "M200-440v-80h560v80H200Z")
+ @iconAction("graph-zoom-in", "Zoom in vertical axis", "M440-440H200v-80h240v-240h80v240h240v80H520v240h-80v-240Z")
+ @action("graph-fit-end", "Fit end position", true)
+ <output id="graph-scale-info"></output>
+ </div>
+ <p id="graph-note" class="help">Hover a sample for its measurements. Click a sample to inspect its frame. Drag the vertical axis to pan.</p>
+										<div class="graph-wrap"><svg id="graph" viewBox="0 0 900 220" role="group" aria-label="Tracked displacement against workspace time. Use arrow keys to inspect frames." aria-describedby="sample-info" tabindex="0"></svg></div>
 										<output id="sample-info" class="sample-info help" aria-live="polite"></output>
 										<div id="legend" class="legend"><span>Video A</span><span class="ref" id="ref-legend" hidden>Video B</span><span class="expected" id="curve-legend" hidden>Reference curve</span></div>
 										<p id="curve-note" class="help" hidden>Reference curves run from each tracking range’s first position to its last position.</p>

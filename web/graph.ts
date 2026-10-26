@@ -1,4 +1,5 @@
 import { $, post } from "./api";
+import { fitScale, zoomScale, panScale, type ScaleRange } from "./graph-scale";
 import { milliseconds } from "./timing";
 import type { Measurement, Project } from "./types";
 import type { VideoView } from "./video";
@@ -6,6 +7,10 @@ import { LEFT, RIGHT } from "./timeline";
 type Point = { t: number; v: number | null; frame: number; manual: boolean };
 export class MotionGraph {
   private renderKey = "";
+  private vertical: ScaleRange | null = null;
+  private visibleScale: ScaleRange = [0, 1];
+  private motionScale: ScaleRange = [0, 1];
+  private endPosition = 0;
   private hovering = false;
   private active: VideoView | null = null;
   private reports = new Map<string, Measurement>();
@@ -22,8 +27,14 @@ export class MotionGraph {
     private playhead: () => number,
     private select: (view: VideoView) => void,
   ) {
-    $("axis").onchange = () => void this.refresh();
-    $("units").onchange = () => this.paint();
+    $("axis").onchange = () => {
+      this.vertical = null;
+      void this.refresh();
+    };
+    $("units").onchange = () => {
+      this.vertical = null;
+      this.paint();
+    };
     $("curve").onchange = () => {
       if (this.preset === "md3") {
         const token = getComputedStyle(document.documentElement)
@@ -35,7 +46,63 @@ export class MotionGraph {
       void this.refresh();
     };
     $("duration").onchange = () => void this.refresh();
-    $("vertical-scale").onchange = () => this.paint();
+    $("graph-fit").onclick = () => {
+      this.vertical = null;
+      this.paint();
+    };
+    for (const [id, factor] of [
+      ["graph-zoom-in", 0.5],
+      ["graph-zoom-out", 2],
+    ] as const)
+      $(id).onclick = () => {
+        this.vertical = zoomScale(this.visibleScale, factor);
+        this.paint();
+      };
+    $("graph-fit-end").onclick = () => {
+      const half = Math.max(
+        this.progress ? 1 : 0.1,
+        (this.motionScale[1] - this.motionScale[0]) * 0.05,
+      );
+      this.vertical = [this.endPosition - half, this.endPosition + half];
+      this.paint();
+    };
+    const svg = $("graph");
+    let drag: { y: number; range: ScaleRange; height: number } | null = null;
+    svg.onpointerdown = (e) => {
+      if (
+        !(e.target as Element).closest("[data-y-axis]") ||
+        document.body.hasAttribute("aria-busy")
+      )
+        return;
+      e.preventDefault();
+      drag = {
+        y: e.clientY,
+        range: [...this.visibleScale],
+        height: (svg.getBoundingClientRect().height * 140) / 220,
+      };
+      svg.setPointerCapture(e.pointerId);
+    };
+    svg.onpointermove = (e) => {
+      if (!drag) return;
+      this.vertical = panScale(drag.range, (e.clientY - drag.y) / drag.height);
+      this.paint();
+    };
+    svg.onpointerup = svg.onpointercancel = () => {
+      drag = null;
+    };
+    svg.addEventListener("keydown", (e) => {
+      if (!(e.target as Element).closest("[data-y-axis]")) return;
+      if (!["ArrowUp", "ArrowDown", "Home"].includes(e.key)) return;
+      e.preventDefault();
+      this.vertical =
+        e.key === "Home"
+          ? null
+          : panScale(this.visibleScale, e.key === "ArrowUp" ? 0.1 : -0.1);
+      this.paint();
+      svg
+        .querySelector<SVGElement>("[data-y-axis]")
+        ?.focus({ preventScroll: true });
+    });
     new ResizeObserver(() => this.paint()).observe($("graph").parentElement!);
   }
   get axis() {
@@ -58,6 +125,14 @@ export class MotionGraph {
     return values;
   }
   controls(busy: boolean) {
+    for (const id of [
+      "graph-fit",
+      "graph-zoom-in",
+      "graph-zoom-out",
+      "graph-fit-end",
+    ])
+      $<HTMLButtonElement>(id).disabled =
+        busy || !this.views().some((v) => v.project?.samples.length);
     for (const v of this.views())
       $<HTMLButtonElement>(`fit-${v.prefix}`).disabled =
         busy || this.preset === "none" || !v.project?.samples.length || v.dirty;
@@ -68,6 +143,7 @@ export class MotionGraph {
     this.paint();
   }
   reset() {
+    this.vertical = null;
     this.cache.clear();
     this.hovering = false;
     $("sample-info").textContent = "";
@@ -196,7 +272,7 @@ export class MotionGraph {
       renderWidth,
       this.axis,
       this.progress,
-      $<HTMLSelectElement>("vertical-scale").value,
+      this.vertical,
       this.active?.prefix,
       this.preset,
       $<HTMLInputElement>("duration").value,
@@ -230,19 +306,26 @@ export class MotionGraph {
         .filter((s) => s.v !== null && s.t >= min && s.t <= max)
         .map((s) => s.v!),
     );
-    let low = Math.min(...(values.length ? values : [0])),
-      high = Math.max(...(values.length ? values : [0])),
-      padding = Math.max(this.progress ? 1 : 0.1, (high - low) * 0.1);
-    low -= padding;
-    high += padding;
-    const fixed = Number($<HTMLSelectElement>("vertical-scale").value);
-    if (Number.isFinite(fixed) && fixed > 0) {
-      const active = data.find((d) => d.view === this.active) || data[0];
-      const end =
-        active.distance * (this.progress ? 100 / (active.distance || 1) : 1);
-      low = end - fixed;
-      high = end + fixed;
+    for (const d of data) {
+      const report = this.reports.get(d.view.prefix);
+      if (!report || d.view.dirty) continue;
+      for (const point of report.points) {
+        const t = point.t + d.view.project!.times[d.view.first] + d.view.offset;
+        if (t >= min && t <= max)
+          values.push(
+            this.progress
+              ? (point.value / report.displacement) * 100
+              : point.value,
+          );
+      }
     }
+    const active = data.find((d) => d.view === this.active) || data[0];
+    this.endPosition =
+      this.progress && Math.abs(active.distance) > 1e-6 ? 100 : active.distance;
+    this.motionScale = fitScale(values, this.progress ? 1 : 0.1);
+    const [low, high] = (this.visibleScale = this.vertical || this.motionScale);
+    $("graph-scale-info").textContent =
+      `${low.toFixed(2)} to ${high.toFixed(2)} ${this.progress ? "%" : "px"}`;
     const X = (t: number) =>
         left + ((t - min) / (max - min)) * (width - left - right),
       Y = (v: number) => 164 - ((v - low) / (high - low)) * 140;
@@ -479,6 +562,19 @@ export class MotionGraph {
       { x: width / 2, y: 214, "text-anchor": "middle", class: "tick" },
       "Workspace time (s)",
     );
+    el("rect", {
+      x: 0,
+      y: 24,
+      width: left,
+      height: 140,
+      fill: "transparent",
+      "data-y-axis": "",
+      class: "vertical-axis-pan",
+      tabindex: 0,
+      role: "button",
+      "aria-label":
+        "Pan vertical axis. Drag or use up and down arrows. Home fits motion.",
+    });
     for (const view of this.views()) {
       const result = $(`${view.prefix}-result`);
       result.hidden = !view.project;
