@@ -695,3 +695,39 @@ canvas.drawing {
   outline: 2px solid var(--md-sys-color-primary);
   outline-offset: -2px;
 }
+
+.graph-readouts {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--md-sys-measurement-space200);
+}
+.graph-readouts .measurement-results p:first-child {
+  margin-block-start: 0;
+}
+@media (max-width: 700px) {
+  .graph-readouts {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+  }
+}
+#graph.pan-mode,
+#graph.pan-mode circle,
+#graph.pan-mode .trace,
+#graph.pan-mode .reference {
+  cursor: grab;
+}
+#graph.pan-mode {
+  touch-action: none;
+}
+#graph.panning,
+#graph.panning * {
+  cursor: grabbing;
+}
+.vertical-axis-pan {
+  fill: var(--md-sys-color-surface-container-high);
+  fill-opacity: 0;
+}
+.vertical-axis-pan:hover,
+.vertical-axis-pan:focus-visible {
+  fill-opacity: 0.5;
+}

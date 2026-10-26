@@ -27,6 +27,7 @@ export class MotionGraph {
     private bounds: () => [number, number],
     private playhead: () => number,
     private select: (view: VideoView) => void,
+    private panTime: (bounds: [number, number]) => void,
   ) {
     $("axis").onchange = () => {
       this.vertical = null;
@@ -68,28 +69,70 @@ export class MotionGraph {
       this.paint();
     };
     const svg = $("graph");
-    let drag: { y: number; range: ScaleRange; height: number } | null = null;
+    $("graph-pan").onchange = () => {
+      svg.classList.toggle("pan-mode", this.panning);
+      this.hovering = false;
+    };
+    svg.addEventListener(
+      "click",
+      (e) => {
+        if (this.panning) {
+          e.preventDefault();
+          e.stopImmediatePropagation();
+        }
+      },
+      true,
+    );
+    let drag: {
+      x: number;
+      y: number;
+      range: ScaleRange;
+      height: number;
+      time: [number, number];
+      plot: boolean;
+      width: number;
+    } | null = null;
     svg.onpointerdown = (e) => {
       if (
-        !(e.target as Element).closest("[data-y-axis]") ||
+        (!(e.target as Element).closest("[data-y-axis]") && !this.panning) ||
         document.body.hasAttribute("aria-busy")
+      )
+        return;
+      const rect = svg.getBoundingClientRect();
+      const axis = !!(e.target as Element).closest("[data-y-axis]");
+      if (
+        !axis &&
+        (e.clientX < rect.left + LEFT ||
+          e.clientX > rect.right - RIGHT ||
+          e.clientY < rect.top + 24 ||
+          e.clientY > rect.bottom - 56)
       )
         return;
       e.preventDefault();
       drag = {
+        x: e.clientX,
+        time: [...this.bounds()],
+        plot: !axis,
+        width: rect.width - LEFT - RIGHT,
         y: e.clientY,
         range: [...this.visibleScale],
         height: this.plotHeight,
       };
+      svg.classList.add("panning");
       svg.setPointerCapture(e.pointerId);
     };
     svg.onpointermove = (e) => {
       if (!drag) return;
       this.vertical = panScale(drag.range, (e.clientY - drag.y) / drag.height);
-      this.paint();
+      if (drag.plot) {
+        const delta =
+          (-(e.clientX - drag.x) / drag.width) * (drag.time[1] - drag.time[0]);
+        this.panTime([drag.time[0] + delta, drag.time[1] + delta]);
+      } else this.paint();
     };
     svg.onpointerup = svg.onpointercancel = () => {
       drag = null;
+      svg.classList.remove("panning");
     };
     svg.addEventListener("keydown", (e) => {
       if (!(e.target as Element).closest("[data-y-axis]")) return;
@@ -105,6 +148,9 @@ export class MotionGraph {
         ?.focus({ preventScroll: true });
     });
     new ResizeObserver(() => this.paint()).observe($("graph").parentElement!);
+  }
+  get panning() {
+    return $<HTMLInputElement>("graph-pan").checked;
   }
   get axis() {
     return $<HTMLSelectElement>("axis").value as "x" | "y";
@@ -474,6 +520,7 @@ export class MotionGraph {
           `${d.view.prefix.toUpperCase()} frame ${s.frame}, ${s.v.toFixed(3)} ${this.progress ? "percent" : "pixels"}`,
         );
         const inspect = () => {
+          if (this.panning) return;
           this.active = d.view;
           this.select(d.view);
           this.seek(s.t);
@@ -486,6 +533,7 @@ export class MotionGraph {
           }
         });
         dot.addEventListener("pointerenter", () => {
+          if (this.panning) return;
           this.hovering = true;
           const sample = d.view.project!.samples.find(
             (row) => row.frame === s.frame,

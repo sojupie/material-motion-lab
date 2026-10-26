@@ -88,6 +88,10 @@ const graph = new MotionGraph(
   () => timeline.bounds(),
   () => time,
   selectVideo,
+  (bounds) => {
+    timeline.window = bounds;
+    changed(false);
+  },
 );
 function selectVideo(v: VideoView) {
   if (!v.project) return;

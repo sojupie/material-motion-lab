@@ -724,6 +724,10 @@ func Page(entries []Entry) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
+		templ_7745c5c3_Err = ui.Checkbox("graph-pan", "Pan plot").Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
 		templ_7745c5c3_Err = action("graph-fit", "Fit motion", true).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
@@ -740,7 +744,7 @@ func Page(entries []Entry) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 46, "<output id=\"graph-scale-info\"></output></div><p id=\"graph-note\" class=\"help\">Hover a sample for its measurements. Click a sample to inspect its frame. Drag the vertical axis to pan.</p><output id=\"sample-info\" class=\"sample-info help\" aria-live=\"polite\"></output><div id=\"legend\" class=\"legend\"><span>Video A</span><span class=\"ref\" id=\"ref-legend\" hidden>Video B</span><span class=\"expected\" id=\"curve-legend\" hidden>Reference curve</span></div><p id=\"curve-note\" class=\"help\" hidden>Reference curves run from each tracking range’s first position to its last position.</p><div class=\"measurement-results\"><p id=\"a-result\" class=\"help\"></p><p id=\"b-result\" class=\"help\" hidden></p></div><div class=\"graph-wrap\"><svg id=\"graph\" viewBox=\"0 0 900 400\" role=\"group\" aria-label=\"Tracked displacement against workspace time. Use arrow keys to inspect frames.\" aria-describedby=\"sample-info\" tabindex=\"0\"></svg></div></section></div><aside class=\"inspector\" aria-label=\"Selected video settings\"><h2 id=\"inspector-title\">Video A</h2><section class=\"alignment-controls\" aria-label=\"Clip alignment\"><h3>Alignment</h3><div class=\"inspector-actions\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 46, "<output id=\"graph-scale-info\"></output></div><p id=\"graph-note\" class=\"help\">Hover a sample for its measurements. Click a sample to inspect its frame. Enable Pan plot to drag the chart horizontally and vertically.</p><div class=\"graph-readouts\"><div><output id=\"sample-info\" class=\"sample-info help\" aria-live=\"polite\"></output><div id=\"legend\" class=\"legend\"><span>Video A</span><span class=\"ref\" id=\"ref-legend\" hidden>Video B</span><span class=\"expected\" id=\"curve-legend\" hidden>Reference curve</span></div><p id=\"curve-note\" class=\"help\" hidden>Reference curves run from each tracking range’s first position to its last position.</p></div><div class=\"measurement-results\"><p id=\"a-result\" class=\"help\"></p><p id=\"b-result\" class=\"help\" hidden></p></div></div><div class=\"graph-wrap\"><svg id=\"graph\" viewBox=\"0 0 900 400\" role=\"group\" aria-label=\"Tracked displacement against workspace time. Use arrow keys to inspect frames.\" aria-describedby=\"sample-info\" tabindex=\"0\"></svg></div></section></div><aside class=\"inspector\" aria-label=\"Selected video settings\"><h2 id=\"inspector-title\">Video A</h2><section class=\"alignment-controls\" aria-label=\"Clip alignment\"><h3>Alignment</h3><div class=\"inspector-actions\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
