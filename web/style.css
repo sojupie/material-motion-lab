@@ -94,6 +94,11 @@ main {
 #recording-meta {
   margin-block: var(--md-sys-measurement-space50);
 }
+#empty,
+.stage-grid {
+  background: var(--md-sys-color-surface);
+  border-radius: var(--md-sys-shape-corner-medium);
+}
 #empty {
   min-block-size: 420px;
   display: flex;
@@ -117,12 +122,13 @@ main {
   font: var(--md-sys-typescale-body-medium);
 }
 .stage-grid {
+  padding: var(--md-sys-measurement-space200);
   display: grid;
   grid-template-columns: minmax(0, 1fr) 280px;
   gap: var(--md-sys-measurement-space300);
   align-items: start;
 }
-/* Video, measurements and analysis controls share the same card. */
+/* Video, measurements and analysis controls share one container. */
 .work-surface {
   min-inline-size: 0;
 }
@@ -164,7 +170,7 @@ canvas {
 .graph-panel h2 {
   margin-block-end: var(--md-sys-measurement-space150);
 }
-/* Analysis settings occupy the supporting column inside the workspace card. */
+/* Analysis settings occupy the supporting column inside the workspace container. */
 .controls {
   min-inline-size: 0;
 }

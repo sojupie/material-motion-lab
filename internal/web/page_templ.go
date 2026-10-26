@@ -138,7 +138,7 @@ func Page(entries []Entry) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "<input id=\"file\" type=\"file\" accept=\"video/*,.gif\" hidden></div><div class=\"workspace-heading\"><h2 id=\"name\" class=\"filename\" hidden></h2><p id=\"recording-meta\" class=\"help\" hidden></p><div id=\"status\" role=\"status\" aria-live=\"polite\"></div></div><section id=\"empty\" class=\"md-card md-elevated-card\"><h2>Open a recording</h2><p>Track an object or edge and inspect its movement frame by frame.</p>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "<input id=\"file\" type=\"file\" accept=\"video/*,.gif\" hidden></div><div class=\"workspace-heading\"><h2 id=\"name\" class=\"filename\" hidden></h2><p id=\"recording-meta\" class=\"help\" hidden></p><div id=\"status\" role=\"status\" aria-live=\"polite\"></div></div><section id=\"empty\"><h2>Open a recording</h2><p>Track an object or edge and inspect its movement frame by frame.</p>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -169,7 +169,7 @@ func Page(entries []Entry) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "<p class=\"help\">Videos and measurements stay on this machine.</p></section><div id=\"workspace\" hidden><div class=\"stage-grid md-card md-elevated-card\"><div class=\"work-surface\"><section class=\"video-panel\" aria-label=\"Video inspection\"><div class=\"image-wrap\"><canvas id=\"frame\" aria-label=\"Video frame. Drag to select a tracking region.\"></canvas></div><div class=\"transport\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "<p class=\"help\">Videos and measurements stay on this machine.</p></section><div id=\"workspace\" hidden><div class=\"stage-grid\"><div class=\"work-surface\"><section class=\"video-panel\" aria-label=\"Video inspection\"><div class=\"image-wrap\"><canvas id=\"frame\" aria-label=\"Video frame. Drag to select a tracking region.\"></canvas></div><div class=\"transport\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
