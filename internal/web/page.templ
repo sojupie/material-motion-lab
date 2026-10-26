@@ -141,6 +141,8 @@ templ Page(entries []Entry) {
 												@iconAction("play", "Play", "M320-200v-560l440 280-440 280Z")
 												@iconAction("next-frame", "Next frame", "M240-240v-480l360 240-360 240Zm400 0v-480h80v480h-80Z")
 												<output id="playhead-time"></output>
+ @ui.Select("playback-speed", "Speed", []ui.Option{{Value: "0.125", Label: "⅛×"}, {Value: "0.25", Label: "¼×"}, {Value: "0.5", Label: "½×"}, {Value: "1", Label: "1×"}, {Value: "2", Label: "2×"}, {Value: "4", Label: "4×"}})
+ @ui.Checkbox("playback-loop", "Loop")
 											</div>
 											<div class="timeline-tools">
 												@iconAction("timeline-out", "Zoom out timeline", "M200-440v-80h560v80H200Z")
@@ -149,7 +151,14 @@ templ Page(entries []Entry) {
 												@action("timeline-range", "Fit range", true)
 											</div>
 										</div>
-										<p class="visually-hidden" id="timeline-help">Drag the ruler to scrub. Drag a clip to move it. Drag range handles to choose which frames to track.</p>
+										<div class="playback-controls" role="group" aria-label="Playback range">
+ <span>Playback range</span>
+ @action("playback-start", "Set start", true)
+ @action("playback-end", "Set end", true)
+ @action("playback-reset", "Full clips", true)
+ <output id="playback-range"></output>
+ </div>
+ <p class="visually-hidden" id="timeline-help">Drag the ruler to scrub frame by frame. Drag playback handles to limit playback. Drag a clip to move it. Drag range handles to choose which frames to track.</p>
 										<svg id="timeline" role="group" aria-describedby="timeline-help" aria-label="Video tracks and time ruler" viewBox="0 0 900 200"></svg>
 										<div id="timeline-pan" class="timeline-pan" tabindex="0" role="region" aria-label="Timeline horizontal scroll"><div></div></div>
 									</section>

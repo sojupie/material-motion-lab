@@ -21,13 +21,16 @@ func TestWorkspaceDoesNotChangeRecordings(t *testing.T) {
 		before[id] = string(raw)
 	}
 	point := 1
-	w := &Workspace{Schema: 1, Tracks: []WorkspaceTrack{{ID: ids[0], Offset: 0, Sync: &point, First: 1, Last: 3}, {ID: ids[1], Offset: -12.5, Sync: &point, First: 0, Last: 3}}}
+	w := &Workspace{Playback: &Playback{Range: []float64{0, 40}, Speed: .25, Loop: true}, Schema: 1, Tracks: []WorkspaceTrack{{ID: ids[0], Offset: 0, Sync: &point, First: 1, Last: 3}, {ID: ids[1], Offset: -12.5, Sync: &point, First: 0, Last: 3}}}
 	if _, e := s.SaveWorkspace(ids[0], w); e != nil {
 		t.Fatal(e)
 	}
 	got, e := s.LoadWorkspace(ids[0])
 	if e != nil {
 		t.Fatal(e)
+	}
+	if got.Playback == nil || got.Playback.Speed != .25 || !got.Playback.Loop || got.Playback.Range[1] != 40 {
+		t.Fatal("playback settings not restored", got)
 	}
 	if got.Tracks[1].Offset != -12.5 || *got.Tracks[0].Sync != 1 {
 		t.Fatal(got)
@@ -39,8 +42,16 @@ func TestWorkspaceDoesNotChangeRecordings(t *testing.T) {
 			t.Fatal("workspace changed source recording", id)
 		}
 	}
+	old := *w
+	old.Playback = nil
+	if _, e := s.SaveWorkspace(ids[0], &old); e != nil {
+		t.Fatal("legacy workspace rejected", e)
+	}
+	if _, e := s.SaveWorkspace(ids[0], w); e != nil {
+		t.Fatal(e)
+	}
 	raw, _ := json.Marshal(w)
-	for _, mutate := range []func(*Workspace){func(w *Workspace) { w.Schema = 2 }, func(w *Workspace) { w.Tracks[1].ID = ids[0] }, func(w *Workspace) { w.Tracks[1].Offset = 86400001 }, func(w *Workspace) { w.Tracks[0].First = 3; w.Tracks[0].Last = 1 }, func(w *Workspace) { w.Tracks[1].Last = 99 }, func(w *Workspace) { bad := -1; w.Tracks[0].Sync = &bad }, func(w *Workspace) { w.Tracks[0].ID = "../bad" }} {
+	for _, mutate := range []func(*Workspace){func(w *Workspace) { w.Playback.Speed = 0 }, func(w *Workspace) { w.Playback.Range = []float64{0} }, func(w *Workspace) { w.Playback.Range = []float64{40, 0} }, func(w *Workspace) { w.Playback.Range = []float64{-100, 40} }, func(w *Workspace) { w.Playback.Range = []float64{0, 100} }, func(w *Workspace) { w.Schema = 2 }, func(w *Workspace) { w.Tracks[1].ID = ids[0] }, func(w *Workspace) { w.Tracks[1].Offset = 86400001 }, func(w *Workspace) { w.Tracks[0].First = 3; w.Tracks[0].Last = 1 }, func(w *Workspace) { w.Tracks[1].Last = 99 }, func(w *Workspace) { bad := -1; w.Tracks[0].Sync = &bad }, func(w *Workspace) { w.Tracks[0].ID = "../bad" }} {
 		var bad Workspace
 		json.Unmarshal(raw, &bad)
 		mutate(&bad)

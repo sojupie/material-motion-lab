@@ -31,7 +31,7 @@ func TestServerRenderedControlsAndAPI(t *testing.T) {
 		t.Fatal(page.Code, page.Body.String())
 	}
 	body := page.Body.String()
-	for _, text := range []string{"data-navigation-modal", "data-field-combo", "md-outlined-text-field", "field-option-template", "recording-item-template", "/assets/main.js", "A &lt;script&gt;", `id="timeline"`, `id="playhead-time"`, `id="inspector-title"`, "Track selected range", "Mark sync point", "Viewer zoom"} {
+	for _, text := range []string{"data-navigation-modal", "data-field-combo", "md-outlined-text-field", "field-option-template", "recording-item-template", "/assets/main.js", "A &lt;script&gt;", `id="timeline"`, `id="playhead-time"`, `id="inspector-title"`, "Track selected range", "Mark sync point", "Viewer zoom", `id="playback-speed"`, `id="playback-loop"`, `id="playback-start"`, `id="playback-end"`, `id="playback-reset"`} {
 		if !strings.Contains(body, text) {
 			t.Fatal("missing server markup", text)
 		}

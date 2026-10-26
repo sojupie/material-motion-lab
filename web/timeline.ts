@@ -21,6 +21,12 @@ export class Timeline {
     private seek: (t: number) => void,
     private select: (v: VideoView) => void,
     private change: (save: boolean) => void,
+    private playback: () => [number, number],
+    private setPlayback: (
+      edge: "start" | "end",
+      t: number,
+      save: boolean,
+    ) => void,
   ) {
     const svg = $("timeline");
     svg.onpointerdown = (e) => {
@@ -33,7 +39,12 @@ export class Timeline {
       this.drag = { kind, view, x: e.clientX, offset: view?.offset || 0 };
       svg.setPointerCapture(e.pointerId);
       if (kind === "scrub") this.seek(this.at(e.clientX));
-      else if (kind === "start" || kind === "end") this.seek(this.time());
+      else if (
+        kind === "start" ||
+        kind === "end" ||
+        kind.startsWith("playback-")
+      )
+        this.seek(this.time());
       if (kind === "mark") {
         this.seek(Number(target!.dataset.time));
         this.drag = null;
@@ -44,6 +55,14 @@ export class Timeline {
       if (!d) return;
       if (d.kind === "scrub") {
         this.seek(this.at(e.clientX));
+        return;
+      }
+      if (d.kind === "playback-start" || d.kind === "playback-end") {
+        this.setPlayback(
+          d.kind === "playback-start" ? "start" : "end",
+          this.at(e.clientX),
+          false,
+        );
         return;
       }
       const v = d.view;
@@ -81,6 +100,22 @@ export class Timeline {
         dir = e.key === "ArrowLeft" ? -1 : 1;
       if (kind === "mark") {
         this.seek(Number(target.dataset.time));
+        return;
+      }
+      if (kind === "playback-start" || kind === "playback-end") {
+        const view = this.selected(),
+          p = view.project;
+        if (!p || !e.key.startsWith("Arrow")) return;
+        const edge = kind === "playback-start" ? "start" : "end";
+        const current = this.playback()[edge === "start" ? 0 : 1];
+        const frame = Math.max(
+          0,
+          Math.min(
+            p.times.length - 1,
+            nearest(p.times, current - view.offset) + dir,
+          ),
+        );
+        this.setPlayback(edge, p.times[frame] + view.offset, true);
         return;
       }
       if (!v?.project) return;
@@ -182,7 +217,7 @@ export class Timeline {
     if (!views.length) return;
     const width = (this.width = Math.max(240, svg.parentElement!.clientWidth)),
       [min, max] = this.bounds(),
-      height = 40 + views.length * 64,
+      height = 70 + views.length * 64,
       X = (t: number) =>
         LEFT + ((t - min) / (max - min)) * (width - LEFT - RIGHT);
     svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
@@ -234,9 +269,67 @@ export class Timeline {
         `${(t / 1000).toFixed(max - min < 1000 ? 3 : 2)} s`,
       );
     }
+    const [playStart, playEnd] = this.playback();
+    el("text", { x: 12, y: 55, class: "range-label" }, "Play");
+    el("rect", {
+      x: Math.max(LEFT, X(playStart)),
+      y: 40,
+      width: Math.max(
+        0,
+        Math.min(width - RIGHT, X(playEnd)) - Math.max(LEFT, X(playStart)),
+      ),
+      height: 18,
+      class: "playback-band",
+      "pointer-events": "none",
+    });
+    for (const [edge, t] of [
+      ["start", playStart],
+      ["end", playEnd],
+    ] as const) {
+      const x = X(t);
+      if (x < LEFT || x > width - RIGHT) continue;
+      el("rect", {
+        x: x - 6,
+        y: 36,
+        width: 12,
+        height: 26,
+        rx: 2,
+        class: "playback-handle",
+        "data-kind": `playback-${edge}`,
+        role: "slider",
+        tabindex: 0,
+        "aria-label": `Playback ${edge}`,
+        "aria-valuemin": this.full()[0],
+        "aria-valuemax": this.full()[1],
+        "aria-valuenow": t,
+        "aria-valuetext": `${(t / 1000).toFixed(3)} seconds`,
+      });
+    }
+    const active = this.selected();
+    if (active.project) {
+      const times = active.project.times;
+      // Draw individual frame ticks only when there is room to distinguish them.
+      for (let i = 0; i < times.length; i++) {
+        const x = X(times[i] + active.offset);
+        if (
+          x < LEFT ||
+          x > width - RIGHT ||
+          (i && x - X(times[i - 1] + active.offset) < 4)
+        )
+          continue;
+        el("line", {
+          x1: x,
+          x2: x,
+          y1: 29,
+          y2: 35,
+          class: "frame-tick",
+          "pointer-events": "none",
+        });
+      }
+    }
     for (const [vindex, v] of views.entries()) {
       const p = v.project!,
-        y = 40 + vindex * 64,
+        y = 70 + vindex * 64,
         selected = v === this.selected(),
         clipStart = Math.max(LEFT, X(v.offset)),
         clipEnd = Math.min(width - RIGHT, X(v.offset + p.times.at(-1)!));
@@ -403,7 +496,7 @@ export class Timeline {
     if (focused?.kind)
       svg
         .querySelector<SVGElement>(
-          `[data-kind="${focused.kind}"][data-view="${focused.view}"]`,
+          `[data-kind="${focused.kind}"]${focused.view ? `[data-view="${focused.view}"]` : ""}`,
         )
         ?.focus({ preventScroll: true });
   }

@@ -37,3 +37,53 @@ test("workspace alignment and source-frame mapping preserve recorded timestamps"
   assert.deepEqual(clampRange(12, 2, 30), [12, 12]);
   assert.deepEqual(clampRange(1.2, 7.6, 30), [1, 8]);
 });
+
+test("scrubbing snaps to recorded frames with clip offsets and irregular intervals", async () => {
+  const { snapTime } = await import("../web/timing.ts");
+  const times = [0, 10, 70, 90];
+  assert.equal(snapTime(times, 100, 165), 170);
+  assert.equal(snapTime(times, -50, -32), -40);
+  assert.equal(snapTime(times, 100, 1000), 190);
+  assert.equal(snapTime(times, 100, 140), 110); // equidistant: earlier frame
+});
+
+test("playback respects range, speed, looping and the final frame's duration", async () => {
+  const { playbackPosition: at } = await import("../web/timing.ts");
+  assert.deepEqual(at(100, 50, 0.5, [100, 200], false, 20), {
+    time: 125,
+    done: false,
+  });
+  assert.deepEqual(at(150, 25, 2, [100, 200], false, 20), {
+    time: 200,
+    done: true,
+  });
+  assert.deepEqual(at(100, 110, 1, [100, 200], true, 20), {
+    time: 200,
+    done: false,
+  });
+  assert.deepEqual(at(100, 125, 1, [100, 200], true, 20), {
+    time: 105,
+    done: false,
+  });
+  assert.deepEqual(at(100, 245, 1, [100, 200], true, 20), {
+    time: 105,
+    done: false,
+  });
+  assert.deepEqual(at(100, 10, 1, [100, 100], true, 20), {
+    time: 100,
+    done: true,
+  });
+});
+
+test("workspace frame grid handles mixed rates, clip gaps and range endpoints", async () => {
+  const { workspaceFrame: snap } = await import("../web/timing.ts");
+  const tracks = [
+    { times: [0, 10, 70, 90], offset: 100 },
+    { times: [0, 40, 80], offset: 300 },
+  ];
+  assert.equal(snap(tracks, 0, 165), 170);
+  assert.equal(snap(tracks, 0, 335), 340); // outside selected clip
+  assert.equal(snap(tracks, 0, 250), 300); // gap snaps to a real frame
+  assert.equal(snap(tracks, 0, 185, [110, 175]), 170); // no frame outside range
+  assert.equal(snap(tracks, 0, 340, [300, 380]), 340);
+});

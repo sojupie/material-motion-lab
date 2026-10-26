@@ -22,7 +22,9 @@ Open a recording and choose a **Second video** to compare it. Both videos use on
 
 Click a viewer title or a clip to select its video. The inspector shows that video’s tracking settings. Viewer magnification sits above each image. Timeline zoom changes the visible time span in both the tracks and displacement graph. The horizontal scrollbar appears when zoomed in and pans that span. **Fit clips** restores the full span; **Fit range** frames the selected tracking range.
 
-Drag the time ruler to scrub. Drag a clip to change its offset. Drag its **In** and **Out** handles to choose a tracking range. The same boundaries appear in the displacement graph. Range handles and clips also support left/right arrow keys when focused. Space plays or pauses, and the arrow keys step frames outside text fields and other controls.
+Drag the time ruler to scrub between recorded frames. The selected video defines the frame grid within its clip; outside it, the playhead snaps to the other video’s frames. Zoom in to see individual frame ticks. Drag a clip to change its offset. Drag its **In** and **Out** handles to choose a tracking range. The same boundaries appear in the displacement graph. Range handles and clips also support left/right arrow keys when focused. Space plays or pauses, and the arrow keys step frames outside text fields and other controls.
+
+Playback has its own range, separate from tracking. Seek to a frame and press **Set start** or **Set end** beside **Playback range**, or drag the handles on the **Play** row. **Full clips** clears the playback range. Playback resumes from the playhead inside the range and starts at the range beginning when outside it. **Loop** repeats that interval; **Speed** runs from ⅛× to 4×. Both videos follow the same playback clock. Frame stepping and scrubbing remain available outside the playback range.
 
 ## Track motion
 
@@ -42,7 +44,7 @@ Existing recordings retain their saved measurements. Rerun tracking to replace o
 
 Select video A and scrub to the event you want to align. Open **Alignment** in the inspector and press **Mark sync point**. Repeat for B, then press **Align sync points**. Video B moves so the two markers coincide. Clip dragging, the offset field and frame-nudge actions provide manual adjustment.
 
-Alignment, sync markers and selected ranges save in `workspace.json` beside the primary recording’s `project.json`. Moving clips does not change either recording’s stored time zero or tracking measurements. Existing comparisons supply the initial alignment when no workspace has been saved. `GET` and `PUT /api/projects/{id}/workspace` read and save this state.
+Alignment, sync markers, tracking ranges, playback range, loop and speed save in `workspace.json` beside the primary recording’s `project.json`. The playback range uses workspace time; moving a clip leaves that interval in place. If the workspace becomes shorter, the interval is clamped to its bounds. Moving clips does not change either recording’s stored time zero or tracking measurements. Existing comparisons supply the initial alignment when no workspace has been saved. `GET` and `PUT /api/projects/{id}/workspace` read and save this state.
 
 Playback uses the original timestamps, including different frame rates and irregular frame intervals. A viewer holds its boundary frame outside the clip and labels it accordingly.
 

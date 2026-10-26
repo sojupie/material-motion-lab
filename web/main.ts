@@ -1,19 +1,27 @@
 import "./style.css";
 import { $, api } from "./api";
 import { installMaterialControls, syncMaterialControls } from "./material";
-import { nearest, sourceFrame, alignedOffset } from "./timing";
+import {
+  sourceFrame,
+  alignedOffset,
+  snapTime,
+  playbackPosition,
+  workspaceFrame,
+} from "./timing";
 import { VideoView, type ViewActions } from "./video";
 import { Timeline } from "./timeline";
 import { MotionGraph } from "./graph";
-import type { Entry, Project, Workspace, WorkspaceTrack } from "./types";
+import type { Entry, Project, Workspace, Playback } from "./types";
 let busy = false,
   time = 0,
   playing = false,
   playbackToken = 0,
   clock = 0,
   startTime = 0,
+  endHold = 1000 / 60,
   entries: Entry[] = [],
   selected: VideoView;
+let playback: Playback = { range: null, speed: 1, loop: false };
 let saveChain: Promise<unknown> = Promise.resolve();
 function status(text: string, error = false) {
   $("status").textContent = text;
@@ -71,6 +79,8 @@ const timeline = new Timeline(
   (t) => seek(t),
   selectVideo,
   changed,
+  playbackRange,
+  setPlaybackEdge,
 );
 const graph = new MotionGraph(
   views,
@@ -125,6 +135,9 @@ function controls() {
     "timeline-in",
     "timeline-fit",
     "timeline-range",
+    "playback-start",
+    "playback-end",
+    "playback-reset",
   ])
     $<HTMLButtonElement>(id).disabled = busy || !a.project;
   graph.controls(busy);
@@ -132,7 +145,52 @@ function controls() {
   syncMaterialControls();
   timeline.paint();
 }
+function playbackRange(): [number, number] {
+  const full = timeline.full();
+  if (!playback.range) return full;
+  const start = Math.max(full[0], Math.min(full[1], playback.range[0]));
+  return [start, Math.max(start, Math.min(full[1], playback.range[1]))];
+}
+function playbackControls() {
+  const [first, last] = playbackRange();
+  $("playback-range").textContent =
+    `${(first / 1000).toFixed(3)} s to ${(last / 1000).toFixed(3)} s`;
+  $<HTMLSelectElement>("playback-speed").value = String(playback.speed);
+  $<HTMLInputElement>("playback-loop").checked = playback.loop;
+}
+function setPlaybackEdge(edge: "start" | "end", t: number, save: boolean) {
+  pause();
+  const p = selected.project;
+  if (!p) return;
+  const snapped = snapTime(p.times, selected.offset, t);
+  const [first, last] = playbackRange();
+  playback.range =
+    edge === "start"
+      ? [snapped, Math.max(snapped, last)]
+      : [Math.min(first, snapped), snapped];
+  changed(save);
+}
+$("playback-start").onclick = () => setPlaybackEdge("start", time, true);
+$("playback-end").onclick = () => setPlaybackEdge("end", time, true);
+$("playback-reset").onclick = () => {
+  pause();
+  playback.range = null;
+  changed(true);
+};
+$("playback-speed").onchange = () => {
+  const resume = playing;
+  pause();
+  playback.speed = Number($<HTMLSelectElement>("playback-speed").value);
+  changed(true);
+  if (resume) $("play").click();
+};
+$("playback-loop").onchange = () => {
+  playback.loop = $<HTMLInputElement>("playback-loop").checked;
+  changed(true);
+};
 function changed(save: boolean) {
+  if (playback.range) playback.range = playbackRange();
+  playbackControls();
   for (const v of views()) v.controls(busy);
   timeline.paint();
   if (save) void graph.refresh();
@@ -145,6 +203,7 @@ function queueSave() {
   const id = a.project.id,
     payload: Workspace = {
       schema: 1,
+      playback: structuredClone(playback),
       tracks: views()
         .filter((v) => v.project)
         .map((v) => v.workspace()),
@@ -225,6 +284,8 @@ async function open(id: string) {
   $("workspace").hidden = false;
   $("reference-pane").hidden = !b.project;
   $("video-panes").classList.toggle("comparing", !!b.project);
+  playback = workspace?.playback || { range: null, speed: 1, loop: false };
+  playbackControls();
   timeline.window = null;
   time = a.offset;
   selectVideo(a);
@@ -235,6 +296,13 @@ async function open(id: string) {
   status("");
 }
 async function show(t: number) {
+  const loaded = views().filter((v) => v.project);
+  t = workspaceFrame(
+    loaded.map((v) => ({ times: v.project!.times, offset: v.offset })),
+    loaded.indexOf(selected),
+    t,
+    playing ? playbackRange() : undefined,
+  );
   time = t;
   const generation = ++showGeneration;
   await Promise.all(
@@ -279,23 +347,44 @@ $("play").onclick = () => {
     return;
   }
   if (!a.project) return;
-  const [min, max] = timeline.full();
-  if (time >= max) time = min;
+  const [min, max] = playbackRange();
+  if (time < min || time >= max) time = min;
   playing = true;
   clock = performance.now();
   startTime = time;
+  const lastView =
+    views().find(
+      (v) =>
+        v.project &&
+        max >= v.offset &&
+        max <= v.offset + v.project.times.at(-1)!,
+    ) || selected;
+  const times = lastView.project!.times,
+    frame = sourceFrame(times, lastView.offset, max);
+  endHold =
+    (times[frame + 1] ??
+      times[frame] +
+        (times[frame] - (times[frame - 1] ?? times[frame] - 1000 / 60))) -
+    times[frame];
   playButton(true);
   const token = ++playbackToken;
   requestAnimationFrame((now) => void tick(now, token));
 };
 async function tick(now: number, token: number) {
   if (token !== playbackToken || !playing) return;
-  const end = timeline.full()[1],
-    next = Math.min(end, startTime + now - clock);
+  const range = playbackRange();
+  const next = playbackPosition(
+    startTime,
+    now - clock,
+    playback.speed,
+    range,
+    playback.loop,
+    endHold,
+  );
   try {
-    await show(next);
+    await show(next.time);
     if (token !== playbackToken) return;
-    if (next >= end) {
+    if (next.done) {
       pause();
       return;
     }
@@ -355,6 +444,8 @@ $("reference").onchange = () =>
     $("reference-pane").hidden = !b.project;
     $("video-panes").classList.toggle("comparing", !!b.project);
     timeline.window = null;
+    if (playback.range) playback.range = playbackRange();
+    playbackControls();
     if (!b.project) selectVideo(a);
     await show(time);
     saveWorkspace();

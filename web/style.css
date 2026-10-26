@@ -663,3 +663,26 @@ canvas.drawing {
   white-space: nowrap;
   border: 0;
 }
+
+.playback-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--md-sys-measurement-space100);
+  margin-block-end: var(--md-sys-measurement-space100);
+}
+.playback-controls output {
+  font: var(--md-sys-typescale-body-medium);
+  font-variant-numeric: tabular-nums;
+}
+.playback-band {
+  fill: var(--md-sys-color-tertiary-container);
+}
+.playback-handle {
+  fill: var(--md-sys-color-tertiary);
+  cursor: ew-resize;
+}
+.frame-tick {
+  stroke: var(--md-sys-color-outline);
+  stroke-width: 1;
+}

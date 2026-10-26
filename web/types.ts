@@ -51,4 +51,13 @@ export type WorkspaceTrack = {
   first: number;
   last: number;
 };
-export type Workspace = { schema: 1; tracks: WorkspaceTrack[] };
+export type Playback = {
+  range: [number, number] | null;
+  speed: number;
+  loop: boolean;
+};
+export type Workspace = {
+  schema: 1;
+  tracks: WorkspaceTrack[];
+  playback?: Playback;
+};
