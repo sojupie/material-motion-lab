@@ -11,6 +11,7 @@ export class MotionGraph {
   private visibleScale: ScaleRange = [0, 1];
   private motionScale: ScaleRange = [0, 1];
   private endPosition = 0;
+  private plotHeight = 140;
   private hovering = false;
   private active: VideoView | null = null;
   private reports = new Map<string, Measurement>();
@@ -78,7 +79,7 @@ export class MotionGraph {
       drag = {
         y: e.clientY,
         range: [...this.visibleScale],
-        height: (svg.getBoundingClientRect().height * 140) / 220,
+        height: this.plotHeight,
       };
       svg.setPointerCapture(e.pointerId);
     };
@@ -270,6 +271,7 @@ export class MotionGraph {
     const key = JSON.stringify([
       bounds,
       renderWidth,
+      svg.clientHeight,
       this.axis,
       this.progress,
       this.vertical,
@@ -299,8 +301,11 @@ export class MotionGraph {
     const [min, max] = this.bounds();
     const width = Math.max(240, svg.parentElement!.clientWidth),
       left = LEFT,
-      right = RIGHT;
-    svg.setAttribute("viewBox", `0 0 ${width} 220`);
+      right = RIGHT,
+      height = svg.clientHeight,
+      bottom = height - 56,
+      plotHeight = (this.plotHeight = bottom - 24);
+    svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
     const values = data.flatMap((d) =>
       d.points
         .filter((s) => s.v !== null && s.t >= min && s.t <= max)
@@ -328,7 +333,7 @@ export class MotionGraph {
       `${low.toFixed(2)} to ${high.toFixed(2)} ${this.progress ? "%" : "px"}`;
     const X = (t: number) =>
         left + ((t - min) / (max - min)) * (width - left - right),
-      Y = (v: number) => 164 - ((v - low) / (high - low)) * 140;
+      Y = (v: number) => bottom - ((v - low) / (high - low)) * plotHeight;
     const ns = "http://www.w3.org/2000/svg";
     const el = (
       name: string,
@@ -355,7 +360,7 @@ export class MotionGraph {
       x: left,
       y: 24,
       width: width - left - right,
-      height: 140,
+      height: plotHeight,
     }))
       rect.setAttribute(name, String(value));
     clip.append(rect);
@@ -370,12 +375,12 @@ export class MotionGraph {
     for (let i = 0; i <= ticks; i++) {
       const t = min + ((max - min) * i) / ticks,
         x = X(t);
-      el("line", { x1: x, x2: x, y1: 24, y2: 164, class: "grid" });
+      el("line", { x1: x, x2: x, y1: 24, y2: bottom, class: "grid" });
       el(
         "text",
         {
           x,
-          y: 189,
+          y: bottom + 25,
           "text-anchor": i === ticks ? "end" : i === 0 ? "start" : "middle",
           class: "tick",
         },
@@ -397,7 +402,7 @@ export class MotionGraph {
         x1: X(0),
         x2: X(0),
         y1: 24,
-        y2: 164,
+        y2: bottom,
         class: "alignment-line",
       });
     for (const d of data) {
@@ -413,7 +418,7 @@ export class MotionGraph {
             x1: X(t),
             x2: X(t),
             y1: 24,
-            y2: 164,
+            y2: bottom,
             class: `range-boundary ${cls}`,
           });
           el(
@@ -442,8 +447,8 @@ export class MotionGraph {
             el("line", {
               x1: X(s.t),
               x2: X(s.t),
-              y1: 166,
-              y2: 173,
+              y1: bottom + 2,
+              y2: bottom + 9,
               class: "weak-mark",
             });
           continue;
@@ -552,21 +557,21 @@ export class MotionGraph {
       x1: 0,
       x2: 0,
       y1: 24,
-      y2: 164,
+      y2: bottom,
       class: "playhead",
     });
     this.paintPlayhead();
 
     el(
       "text",
-      { x: width / 2, y: 214, "text-anchor": "middle", class: "tick" },
+      { x: width / 2, y: height - 6, "text-anchor": "middle", class: "tick" },
       "Workspace time (s)",
     );
     el("rect", {
       x: 0,
       y: 24,
       width: left,
-      height: 140,
+      height: plotHeight,
       fill: "transparent",
       "data-y-axis": "",
       class: "vertical-axis-pan",
