@@ -26,6 +26,10 @@
       "sha256": "6e743222d2e1064c070ac9e30e5cb93c1cc3bf38cd439a2968efd73f77dde99b"
     },
     {
+      "file": "forge/components/static/menus.js",
+      "sha256": "811147a43b392246f8bfa40b890dcec7b2c7fde179a1735bc24a9755d018dcac"
+    },
+    {
       "file": "forge/components/static/fields.js",
       "sha256": "d16f69ab628ca0b37daa2b9a7dbe96a84683790619ab0461d5841ec9b68155ef"
     },
@@ -44,7 +48,11 @@
     {
       "file": "forge/components/static/runtime/navigation.js",
       "sha256": "aefa972a2b14991fc45ab5736ce8593d32d30121c94690a360655935a849e674"
+    },
+    {
+      "file": "forge/components/static/runtime/button-groups.js",
+      "sha256": "8c977b3d0ad88e27253ba9f828af396b807a9178984fd4c6d30df69f1120fceb"
     }
   ],
-  "tokenCount": 1383
+  "tokenCount": 1720
 }

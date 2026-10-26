@@ -80,18 +80,6 @@ export class VideoView {
       for (const direction of [-1, 1])
         this.el(`${kind}-${direction < 0 ? "prev" : "next"}`).onclick = () =>
           this.jump(kind, direction);
-    for (const [key, kind] of [
-      ["json", "json"],
-      ["csv", "csv"],
-      ["export", "video"],
-      ["chart", "chart"],
-    ])
-      this.el(key).onclick = () =>
-        actions.job(() =>
-          kind === "video" || kind === "chart"
-            ? actions.export(this, kind)
-            : this.download(kind),
-        );
     for (const key of [
       "tracking",
       "plot",
@@ -279,15 +267,18 @@ export class VideoView {
         ? `Tracked frames ${p.settings.start}–${p.settings.end}.${this.first !== p.settings.start && !this.roi ? " Go to the range start and draw a region to retrack this range." : ""}`
         : "No measurements yet. Select a region at the range start, then track the range.";
     for (const key of [
-      "json",
-      "csv",
-      "export",
-      "chart",
       "export-range-tracking",
       "export-range-playback",
       "export-range-full",
     ])
       this.el<HTMLButtonElement>(key).disabled = busy || !p?.samples.length;
+    const corrections = this.markFrames("anchor").length,
+      losses = this.markFrames("weak").length;
+    this.el("marks-empty").hidden = !!(corrections + losses);
+    for (const kind of ["anchor", "weak"])
+      for (const direction of [-1, 1])
+        this.el(`${kind}-${direction < 0 ? "prev" : "next"}`).hidden =
+          !(kind === "anchor" ? corrections : losses);
     for (const kind of ["anchor", "weak"])
       for (const direction of [-1, 1])
         this.el<HTMLButtonElement>(

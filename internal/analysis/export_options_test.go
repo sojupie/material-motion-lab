@@ -2,10 +2,12 @@ package analysis
 
 import (
 	"encoding/xml"
+	"image/png"
 	"io"
 	"math"
 	"os"
 	"path/filepath"
+	"reflect"
 
 	"strings"
 	"testing"
@@ -190,5 +192,46 @@ func TestSpanLossDoesNotInventWidthAndCorrectionRestoresTracking(t *testing.T) {
 	}
 	if !p.Samples[2].Manual || !p.Samples[2].Valid || p.Samples[2].MeasuredWidth == nil {
 		t.Fatal(p.Samples[2])
+	}
+}
+
+func TestExportPreviewUsesVideoRendererWithoutChangingProject(t *testing.T) {
+	store, p := spanFixture(t, "width")
+	p, trackErr := store.TrackMethod(p.ID, []float64{25, 15, 40, 65}, 0, nil, nil, 8, .65, "width")
+	if trackErr != nil {
+		t.Fatal(trackErr)
+	}
+	before, err := store.Load(p.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	options := DefaultVideoOptions(p, "width")
+	file, err := store.Preview(p.ID, options)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Remove(file)
+	f, err := os.Open(file)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer f.Close()
+	image, err := png.DecodeConfig(f)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if image.Width != 1600 || image.Height != 900 {
+		t.Fatalf("preview dimensions: %+v", image)
+	}
+	after, err := store.Load(p.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(before, after) {
+		t.Fatal("preview changed stored project")
+	}
+	options.First = len(p.Times)
+	if _, err = store.Preview(p.ID, options); err == nil {
+		t.Fatal("invalid preview interval accepted")
 	}
 }

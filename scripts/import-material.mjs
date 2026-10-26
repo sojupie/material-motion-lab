@@ -34,6 +34,8 @@ const allowed = new Set([
   "md-checkbox-dash",
   "md-icon-button",
   "md-standard-icon-button",
+ "md-filled-icon-button",
+ "md-tonal-icon-button",
   "md-button-ripple",
   "md-filled-button",
   "md-tonal-button",
@@ -58,7 +60,7 @@ const allowed = new Set([
 ]);
 for (const match of components
   .toString()
-  .matchAll(/\.(md-(?:slider|field)[\w-]*)/g))
+  .matchAll(/\.(md-(?:slider|field|button-group|group|toolbar|dialog|basic|full|sheet|side-sheet)[\w-]*)/g))
   allowed.add(match[1]);
 for (const c of [
   "md-text-button",
@@ -202,9 +204,11 @@ await copyFile(
 );
 for (const [from, to] of [
   ["forge/components/static/buttons.js", "buttons.js"],
+  ["forge/components/static/menus.js", "menus.js"],
   ["forge/components/static/runtime/utils.js", "utils.js"],
   ["forge/components/static/runtime/sliders.js", "sliders.js"],
   ["forge/components/static/runtime/navigation.js", "navigation.js"],
+ ["forge/components/static/runtime/button-groups.js", "button-groups.js"],
 ])
   await copyFile(path.join(source, from), path.join("public/material", to));
 
@@ -219,11 +223,13 @@ const files = [
   "forge/components/static/components.css",
   "forge/components/static/elevation.css",
   "forge/components/static/buttons.js",
+  "forge/components/static/menus.js",
   "forge/components/static/fields.js",
   "forge/components/static/motion.cjs",
   "forge/components/static/runtime/utils.js",
   "forge/components/static/runtime/sliders.js",
   "forge/components/static/runtime/navigation.js",
+ "forge/components/static/runtime/button-groups.js",
 ];
 await writeFile(
   "public/token-source.json",

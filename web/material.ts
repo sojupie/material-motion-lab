@@ -64,6 +64,8 @@ export async function installMaterialControls() {
     "utils.js",
     "navigation.js",
     "sliders.js",
+    "button-groups.js",
+    "menus.js",
   ]) {
     await new Promise<void>((resolve, reject) => {
       const script = document.createElement("script");

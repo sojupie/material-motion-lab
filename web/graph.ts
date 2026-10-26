@@ -235,6 +235,10 @@ export class MotionGraph {
     const ref = this.curve(),
       none = this.preset === "none";
     $("reference-controls").hidden = none;
+    $("no-reference").hidden = !none;
+    $("reference-summary").textContent = none
+      ? "Reference settings"
+      : ref.label || "Custom reference";
     $("bezier-controls").hidden = none || ref.kind !== "bezier";
     $("spring-controls").hidden = none || ref.kind !== "spring";
     $("spring-note").hidden = none || ref.kind !== "spring";
@@ -447,6 +451,8 @@ export class MotionGraph {
     };
   }
   paint() {
+    $("chart-measurement-summary").textContent =
+      `${this.axis === "x" ? "Horizontal" : this.axis === "y" ? "Vertical" : this.axis === "width" ? "Width" : "Height"} in ${this.progress ? "percent" : "pixels"}`;
     const svg = $("graph"),
       views = this.views().filter((v) => v.project);
     if (!views.length) {

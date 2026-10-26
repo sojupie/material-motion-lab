@@ -96,6 +96,14 @@ func validateVideo(p *Project, o VideoOptions) error {
 	return validateChart(p, o.Chart)
 }
 func (s Store) VideoWithOptions(id string, o VideoOptions) (string, error) {
+	return s.exportVideo(id, o, false)
+}
+
+// Preview uses the same renderer and options as the final video, for its first frame.
+func (s Store) Preview(id string, o VideoOptions) (string, error) {
+	return s.exportVideo(id, o, true)
+}
+func (s Store) exportVideo(id string, o VideoOptions, preview bool) (string, error) {
 	p, e := s.Load(id)
 	if e != nil {
 		return "", e
@@ -134,10 +142,33 @@ func (s Store) VideoWithOptions(id string, o VideoOptions) (string, error) {
 			return "", e
 		}
 	}
-	for i := o.First; i <= o.Last; i++ {
+	last := o.Last
+	if preview {
+		last = o.First
+	}
+	for i := o.First; i <= last; i++ {
 		if e = s.renderExportFrame(p, second, dir, work, i, o, data); e != nil {
 			return "", e
 		}
+	}
+	if preview {
+		data, e := os.ReadFile(filepath.Join(work, fmt.Sprintf("%06d.png", o.First)))
+		if e != nil {
+			return "", e
+		}
+		file, e := os.CreateTemp(dir, "preview-*.png")
+		if e != nil {
+			return "", e
+		}
+		_, e = file.Write(data)
+		closeErr := file.Close()
+		if e == nil {
+			e = closeErr
+		}
+		if e != nil {
+			os.Remove(file.Name())
+		}
+		return file.Name(), e
 	}
 	var concat strings.Builder
 	for repeat := 0; repeat < o.Repeat; repeat++ {

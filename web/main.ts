@@ -10,6 +10,7 @@ import {
 } from "./timing";
 import { VideoView, type ViewActions } from "./video";
 import { Timeline } from "./timeline";
+import { WorkspaceLayout } from "./layout";
 import { MotionGraph } from "./graph";
 import type { Entry, Project, Workspace, Playback } from "./types";
 let busy = false,
@@ -31,6 +32,7 @@ function playButton(active: boolean) {
   const button = $("play");
   button.setAttribute("aria-label", active ? "Pause" : "Play");
   button.title = active ? "Pause" : "Play";
+  const label=button.querySelector("[data-transport-label]");if(label)label.textContent=active?"Pause":"Play";
   button
     .querySelector("svg path")!
     .setAttribute(
@@ -104,8 +106,157 @@ const graph = new MotionGraph(
     changed(false);
   },
 );
-async function exportMedia(v: VideoView, kind: string) {
+const layout = new WorkspaceLayout(() => {
+  timeline.paint();
+  graph.paint();
+  if (selected.project) inspector();
+});
+const exportDialog = $<HTMLDialogElement>("export-dialog");
+let previewTimer: ReturnType<typeof setTimeout> | undefined,
+  previewRequest: AbortController | undefined,
+  previewURL: string | undefined;
+async function renderExportPreview() {
+  const v = exportVideo();
+  if (
+    !v.project ||
+    !exportDialog.open ||
+    $<HTMLSelectElement>("export-format").value !== "video"
+  )
+    return;
+  previewRequest?.abort();
+  const request = (previewRequest = new AbortController());
+  try {
+    const response = await fetch(
+      `/api/projects/${v.project.id}/export/preview`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(exportOptions(v)),
+        signal: request.signal,
+      },
+    );
+    if (!response.ok)
+      throw Error((await response.json()).detail || "Preview failed");
+    const url = URL.createObjectURL(await response.blob());
+    if (request.signal.aborted || !exportDialog.open) {
+      URL.revokeObjectURL(url);
+      return;
+    }
+    if (previewURL) URL.revokeObjectURL(previewURL);
+    previewURL = url;
+    $("export-error").textContent="";
+    v.el<HTMLImageElement>("export-preview").src = url;
+  } catch (e) {
+    if (!request.signal.aborted)
+      $("export-error").textContent =
+        `Preview: ${e instanceof Error ? e.message : String(e)}`;
+  }
+}
+function schedulePreview() {
+  clearTimeout(previewTimer);
+  previewTimer = setTimeout(() => void renderExportPreview(), 150);
+}
+function exportVideo() {
+  return $<HTMLSelectElement>("export-source").value === "b" ? b : a;
+}
+function exportPreview() {
+  const v = exportVideo();
   if (!v.project) return;
+  const format = $<HTMLSelectElement>("export-format").value;
+  for (const view of views()) view.el("export-panel").hidden = view !== v;
+  $("export-name").textContent =
+    `Video ${v.prefix.toUpperCase()}: ${v.project.name}`;
+  const first = Math.max(
+      0,
+      Math.min(
+        v.project.times.length - 1,
+        Number(v.input("export-first").value),
+      ),
+    ),
+    last = Math.max(
+      first,
+      Math.min(
+        v.project.times.length - 1,
+        Number(v.input("export-last").value),
+      ),
+    );
+
+  v.el("export-summary").textContent =
+    `Frames ${first} to ${last}. ${(v.project.times[first] / 1000).toFixed(3)} s to ${(v.project.times[last] / 1000).toFixed(3)} s source time.`;
+  v.el("export-preview").hidden = format !== "video";
+  v.el("export-summary").hidden = format !== "video";
+  v.el("export-panel").querySelector<HTMLElement>(".export-controls")!.hidden =
+    format === "json" || format === "csv";
+  for (const key of [
+    "first",
+    "last",
+    "range-tracking",
+    "range-playback",
+    "range-full",
+    "speed",
+    "repeat",
+    "tracking",
+    "plot",
+    "time",
+    "comparison",
+  ]) {
+    const el = v.el("export-" + key);
+    const root = el.closest<HTMLElement>(".field-row,.checkbox-label") || el;
+    root.hidden = format === "chart";
+  }
+  $("export-error").textContent = "";
+  schedulePreview();
+}
+$("open-export").onclick = () => {
+  if (!selected.project) return;
+  pause();
+  $<HTMLSelectElement>("export-source").value = selected.prefix;
+  syncMaterialControls();
+  exportPreview();
+  exportDialog.dataset.variant = innerWidth < 600 ? "full-screen" : "basic";
+  exportDialog.showModal();
+  layout.render();
+  schedulePreview();
+};
+$("export-close").onclick = () => exportDialog.close();
+exportDialog.addEventListener("close", () => {
+  clearTimeout(previewTimer);
+  previewRequest?.abort();
+  layout.render();
+});
+exportDialog.addEventListener("input", () => schedulePreview());
+for (const id of ["export-source", "export-format"])
+  $(id).onchange = () => {
+    if (exportVideo() === b && !b.project) {
+      $<HTMLSelectElement>("export-source").value = "a";
+      syncMaterialControls();
+    }
+    exportPreview();
+  };
+for (const v of views())
+  for (const key of ["first", "last"])
+    v.input("export-" + key).addEventListener("input", exportPreview);
+for (const v of views())
+  for (const key of ["tracking", "playback", "full"])
+    v.el("export-range-" + key).addEventListener("click", exportPreview);
+$("export-run").onclick = () =>
+  void job(async () => {
+    const v = exportVideo(),
+      kind = $<HTMLSelectElement>("export-format").value;
+    $("export-error").textContent = "";
+    $("export-status").textContent = "Exporting…";
+    try {
+      if (kind === "json" || kind === "csv") await v.download(kind);
+      else await exportMedia(v, kind);
+      $("export-status").textContent = "Export ready.";
+    } catch (e) {
+      $("export-error").textContent =
+        e instanceof Error ? e.message : String(e);
+      $("export-status").textContent = "";
+      throw e;
+    }
+  });
+function exportOptions(v: VideoView) {
   const checked = (key: string) => v.input("export-" + key).checked;
   const chart = {
     ...graph.exportOptions(v, checked("view")),
@@ -124,7 +275,7 @@ async function exportMedia(v: VideoView, kind: string) {
       offset: other.offset - v.offset,
     };
   }
-  const options = {
+  return {
     first: Number(v.input("export-first").value),
     last: Number(v.input("export-last").value),
     speed: Number(v.input("export-speed").value),
@@ -136,6 +287,10 @@ async function exportMedia(v: VideoView, kind: string) {
     time: checked("time"),
     chart,
   };
+}
+async function exportMedia(v: VideoView, kind: string) {
+  if (!v.project) return;
+  const options = exportOptions(v);
   status(kind === "video" ? "Rendering selected frames…" : "Preparing chart…");
   const response = await fetch(`/api/projects/${v.project.id}/export/${kind}`, {
     method: "POST",
@@ -161,13 +316,13 @@ function selectVideo(v: VideoView) {
     view.el("inspector").hidden = view !== v;
     if (view !== v) view.stopDrawing();
   }
-  $("inspector-title").textContent = `Video ${v.prefix.toUpperCase()}`;
   inspector();
   timeline.paint();
   graph.setActive(v);
 }
 function inspector() {
   if (!selected.project) return;
+  $("inspector-title").textContent = layout.state.mode === "reference" ? "Chart" : `${layout.state.mode === "alignment" ? "Align" : "Track"} video ${selected.prefix.toUpperCase()}`;
   $<HTMLInputElement>("clip-offset").value = selected.offset.toFixed(3);
   $("sync-info").textContent =
     selected.sync === null
@@ -177,6 +332,7 @@ function inspector() {
   $<HTMLButtonElement>("mark-sync").disabled = busy || selected.outside;
   $<HTMLButtonElement>("align-sync").disabled =
     busy || a.sync === null || b.sync === null || !b.project;
+  $("open-alignment").toggleAttribute("disabled", !b.project);
   for (const id of ["nudge-earlier", "nudge-later"])
     $<HTMLButtonElement>(id).disabled = busy;
 }
@@ -203,6 +359,10 @@ function controls() {
     "playback-reset",
   ])
     $<HTMLButtonElement>(id).disabled = busy || !a.project;
+  $<HTMLButtonElement>("open-export").disabled =
+    busy || !selected.project?.samples.length;
+  $<HTMLButtonElement>("export-run").disabled = busy;
+  $("export-close").textContent = busy ? "Close" : "Cancel";
   graph.controls(busy);
   inspector();
   syncMaterialControls();
@@ -233,8 +393,12 @@ function setPlaybackEdge(edge: "start" | "end", t: number, save: boolean) {
       : [Math.min(first, snapped), snapped];
   changed(save);
 }
-$("playback-start").onclick = () => setPlaybackEdge("start", time, true);
-$("playback-end").onclick = () => setPlaybackEdge("end", time, true);
+$("playback-start").onclick = () => {
+  setPlaybackEdge("start", time, true);
+};
+$("playback-end").onclick = () => {
+  setPlaybackEdge("end", time, true);
+};
 $("playback-reset").onclick = () => {
   pause();
   playback.range = null;
@@ -298,7 +462,7 @@ function saveWorkspace() {
 }
 async function refresh() {
   entries = await api<Entry[]>("/projects");
-  for (const group of ["projects", "mobile-projects"]) {
+  for (const group of ["projects"]) {
     $(group).replaceChildren();
     for (const entry of entries) {
       const item = $<HTMLTemplateElement>(
@@ -345,6 +509,8 @@ async function open(id: string) {
   }
   $("empty").hidden = true;
   $("workspace").hidden = false;
+  layout.projectLoaded();
+  layout.closeMedia();
   $("reference-pane").hidden = !b.project;
   $("video-panes").classList.toggle("comparing", !!b.project);
   playback = workspace?.playback || { range: null, speed: 1, loop: false };
@@ -535,17 +701,12 @@ void installMaterialControls()
   .then(refresh)
   .then(controls)
   .catch((e) => status(e.message, true));
-matchMedia("(min-width:1600px)").addEventListener("change", (e) => {
-  if (e.matches) {
-    const drawer = $<HTMLDialogElement>("recording-drawer");
-    if (drawer.open) drawer.close();
-  }
-});
 
 document.addEventListener("keydown", (e) => {
   if (
     e.defaultPrevented ||
     busy ||
+    !!document.querySelector("dialog:modal") ||
     !a.project ||
     (e.target as Element)?.closest(
       "input,select,textarea,button,summary,#timeline-pan",

@@ -20,11 +20,15 @@ OpenCV is a native dependency. On Fedora, install `opencv-devel`; on other platf
 
 Open a recording and choose a **Second video** to compare it. Both videos use one playhead and one time ruler. Play and frame stepping operate on the workspace; frame stepping follows the selected video’s timestamps.
 
-Click a viewer title or a clip to select its video. The inspector shows that video’s tracking settings. Viewer magnification sits above each image. Timeline zoom changes the visible time span in both the tracks and displacement graph. The horizontal scrollbar appears when zoomed in and pans that span. **Fit clips** restores the full span; **Fit range** frames the selected tracking range.
+Click a viewer title or a clip to select its video. Open **Tracking settings** for that video, **Alignment** for clip timing, or **Chart settings** for measurement and reference controls. The inspector shows one section at a time. Viewer magnification sits above each image. Timeline zoom changes the visible time span in both the tracks and displacement graph. The horizontal scrollbar appears when zoomed in and pans that span. **Fit clips** restores the full span; **Fit range** frames the selected tracking range.
 
 Drag the time ruler to scrub between recorded frames. The selected video defines the frame grid within its clip; outside it, the playhead snaps to the other video’s frames. Zoom in to see individual frame ticks. Drag a clip to change its offset. Drag its **In** and **Out** handles to choose a tracking range. The same boundaries appear in the displacement graph. Range handles and clips also support left/right arrow keys when focused. Space plays or pauses, and the arrow keys step frames outside text fields and other controls.
 
-Playback has its own range, separate from tracking. Seek to a frame and press **Set start** or **Set end** beside **Playback range**, or drag the handles on the **Play** row. **Full clips** clears the playback range. Playback resumes from the playhead inside the range and starts at the range beginning when outside it. **Loop** repeats that interval; **Speed** runs from ⅛× to 4×. Both videos follow the same playback clock. Frame stepping and scrubbing remain available outside the playback range.
+Playback has its own range, separate from tracking. Seek to a frame and open the playback interval menu and choose **Set start at playhead** or **Set end at playhead**, or drag the handles on the **Play** row. **Full clips** clears the playback range. Playback resumes from the playhead inside the range and starts at the range beginning when outside it. **Loop** repeats that interval; **Speed** runs from ⅛× to 4×. Both videos follow the same playback clock. Frame stepping and scrubbing remain available outside the playback range.
+
+The media and tools buttons show or hide the supporting panes. Drag their dividers to resize them. Drag the divider above the transport to divide space between viewers and chart. Focus a divider and use arrow keys to resize, Enter to collapse, or Home to reset its size. **Layout** provides maximize, restore and reset commands. Pane sizes, visibility and the selected inspector section save in browser storage. On narrow windows, the supporting panes open as modal sheets.
+
+**Export** opens a separate dialog with format, interval and annotation settings. Its preview renders the first export frame with the same settings as the output video. Export settings remain available when the dialog reopens.
 
 ## Track motion
 
@@ -38,7 +42,7 @@ Correction diamonds and tracking-loss marks appear on the clip. The inspector ha
 
 Image patches track position in two dimensions. Edge tracking follows one axis through a fixed strip; keep corners and other boundaries outside that strip. Both methods estimate subpixel positions. Similarity is the patch correlation score. Edge strength is a ratio to the last manual anchor. Neither score is a probability of correctness. Weak matches leave gaps.
 
-Existing recordings retain their saved measurements. Rerun tracking to replace older whole-pixel results with subpixel estimates. JSON, CSV and annotated video exports are under **Export** in the inspector.
+Existing recordings retain their saved measurements. Rerun tracking to replace older whole-pixel results with subpixel estimates. Use **Export** in the application toolbar for JSON, CSV, chart SVG or annotated video.
 
 ## Align videos
 
@@ -109,9 +113,9 @@ Choose **Width (opposing edges)** or **Height (opposing edges)** to measure a ch
 
 JSON and CSV store measured sizes separately from the tracking box dimensions (`measuredWidth` and `measuredHeight`). Weak matches have no measured value. Correct a size measurement by drawing the box around both edges at the affected frame and using **Set tracking position at playhead**.
 
-The Export section has its own first and last frame. **Tracking range**, **Playback range** and **Full video** fill those fields. Changing the export interval does not change the tracking range used for normalization and reference comparison. Exports start with the tracking range selected.
+The Export dialog has its own first and last frame. **Tracking range**, **Playback range** and **Full video** fill those fields. Changing the export interval does not change the tracking range used for normalization and reference comparison. Exports start with the tracking range selected.
 
-Choose speed and a finite number of repetitions. Switch the tracking outlines, displacement chart, reference curve, results, corrections, tracking loss and frame labels independently. **Include second video** uses the existing workspace alignment. **Use current chart window and scale** keeps the current plot bounds; otherwise the export fits the tracking range. **Save chart SVG** saves a standalone chart with the same settings. Reference parameters and errors are printed when enabled. Export timing follows source timestamps, including variable frame intervals.
+Choose speed and a finite number of repetitions. Switch the tracking outlines, displacement chart, reference curve, results, corrections, tracking loss and frame labels independently. **Include second video** uses the existing workspace alignment. **Use current chart window and scale** keeps the current plot bounds; otherwise the export fits the tracking range. Choose **Chart SVG** in the format menu to save a standalone chart with the same settings. Reference parameters and errors are printed when enabled. Export timing follows source timestamps, including variable frame intervals.
 
 ```sh
 ./scripts/run.sh track PROJECT_ID --method width --region 683,90,244,410 --start 120 --end 151
@@ -120,7 +124,7 @@ Choose speed and a finite number of repetitions. Switch the tracking outlines, d
 ./scripts/run.sh export PROJECT_ID --format video --export-options /tmp/export-options.json
 ```
 
-`POST /api/projects/{id}/export/video` and `/export/chart` accept the same JSON options as `--export-options`. The API returns the file directly. For example:
+`POST /api/projects/{id}/export/video`, `/export/chart` and `/export/preview` accept the same JSON options as `--export-options`. The API returns the file directly. For example:
 
 ```json
 {

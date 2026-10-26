@@ -40,10 +40,28 @@ func TestServerRenderedControlsAndAPI(t *testing.T) {
 		ids[match[1]] = true
 	}
 
-	for _, text := range []string{"data-navigation-modal", "data-field-combo", "md-outlined-text-field", "field-option-template", "recording-item-template", "/assets/main.js", "A &lt;script&gt;", `id="timeline"`, `id="playhead-time"`, `id="inspector-title"`, "Track selected range", "Mark sync point", "Viewer zoom", `id="reference-controls"`, `id="graph-fit"`, `id="graph-fit-end"`, `id="graph-zoom-in"`, `id="graph-scale-info"`, `aria-label="Clip alignment"`, `<h3>Export</h3>`, `id="playback-speed"`, `id="playback-loop"`, `id="playback-start"`, `id="playback-end"`, `id="playback-reset"`, `id="a-export-first"`, `id="a-export-last"`, `id="a-export-plot"`, `id="a-chart"`, "Width (opposing edges)"} {
+	for _, text := range []string{`id="media-panel"`, `id="export-dialog"`, `id="export-run"`, `aria-label="Playback controls"`, `id="viewer-splitter"`, "data-field-combo", "md-outlined-text-field", "field-option-template", "recording-item-template", "/assets/main.js", "A &lt;script&gt;", `id="timeline"`, `id="playhead-time"`, `id="inspector-title"`, "Track selected range", "Mark sync point", "Viewer zoom", `id="reference-controls"`, `id="graph-fit"`, `id="graph-fit-end"`, `id="graph-zoom-in"`, `id="graph-scale-info"`, `aria-label="Clip alignment"`, `id="playback-speed"`, `id="playback-loop"`, `id="playback-start"`, `id="playback-end"`, `id="playback-reset"`, `id="a-export-first"`, `id="a-export-last"`, `id="a-export-plot"`, "Width (opposing edges)"} {
 		if !strings.Contains(body, text) {
 			t.Fatal("missing server markup", text)
 		}
+	}
+
+	exportStart := strings.Index(body, `<dialog id="export-dialog"`)
+	if exportStart < 0 {
+		t.Fatal("export dialog absent")
+	}
+	exportEnd := strings.Index(body[exportStart:], `</dialog>`) + exportStart
+	for _, id := range []string{`id="a-export-first"`, `id="b-export-first"`, `id="export-run"`} {
+		at := strings.Index(body, id)
+		if at < exportStart || at > exportEnd {
+			t.Fatal("export control outside dialog", id)
+		}
+	}
+	if regexp.MustCompile(`<dialog id="export-dialog"[^>]*\sopen(?:[\s=>])`).MatchString(body) {
+		t.Fatal("export dialog opens by default")
+	}
+	if !regexp.MustCompile(`<button[^>]*class="md-button md-filled-button"[^>]*id="play"|<button[^>]*id="play"[^>]*class="md-button md-filled-button"`).MatchString(body) {
+		t.Fatal("play button lost shared component class")
 	}
 	if strings.Contains(body, "<script>alert(1)</script>") {
 		t.Fatal("filename was not escaped")

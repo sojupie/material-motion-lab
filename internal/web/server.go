@@ -242,8 +242,10 @@ func (s *Server) Handler() http.Handler {
 			path, e = s.Store.VideoWithOptions(r.PathValue("id"), o)
 		case "chart":
 			path, e = s.Store.Chart(r.PathValue("id"), o.Chart)
+		case "preview":
+			path, e = s.Store.Preview(r.PathValue("id"), o)
 		default:
-			return nil, fmt.Errorf("export kind must be chart or video")
+			return nil, fmt.Errorf("export kind must be chart, video or preview")
 		}
 		if e != nil {
 			return nil, e
