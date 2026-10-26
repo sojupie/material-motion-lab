@@ -8,59 +8,86 @@ templ action(id string, label string, disabled bool) {
 	}
 }
 
+templ iconAction(id string, label string, path string) {
+	@ui.Button(templ.Attributes{"id": id, "class": "md-icon-button md-standard-icon-button", "data-size": "small", "data-shape": "round", "data-width": "default", "aria-label": label, "title": label, "disabled": true}) {
+		<svg viewBox="0 -960 960 960" width="24" height="24" fill="currentColor" aria-hidden="true"><path d={ path }></path></svg>
+	}
+}
+
 templ videoPane(prefix string, label string) {
 	<section id={ prefix + "-pane" } class="video-pane" aria-label={ label }>
-		<h3 id={ prefix + "-name" }>{ label }</h3>
+		<div class="viewer-toolbar">
+			@ui.Button(templ.Attributes{"id": prefix + "-select", "class": "md-button md-text-button viewer-title", "aria-current": "false"}) {
+				<span id={ prefix + "-name" }>{ label }</span>
+			}
+			@ui.Select(prefix+"-zoom", "Viewer zoom", []ui.Option{{Value: "fit", Label: "Fit"}, {Value: "1", Label: "100%"}, {Value: "2", Label: "200%"}, {Value: "4", Label: "400%"}})
+		</div>
 		<p id={ prefix + "-meta" } class="help"></p>
-		<div class="image-wrap"><canvas id={ prefix + "-frame" } tabindex="0" aria-label={ label + " frame. Drag to select a tracking region." }></canvas></div>
-		<div class="transport">
-			@action(prefix+"-prev", "Previous", true)
-			@action(prefix+"-play", "Play", true)
-			@action(prefix+"-next", "Next", true)
-		</div>
-		<p id={ prefix + "-time" } class="time"></p>
-		@ui.Slider(prefix+"-scrub", label+" frame")
-		<div class="transport">
-			@action(prefix+"-zero", "Set alignment here", true)
-			@ui.Select(prefix+"-zoom", "Zoom", []ui.Option{{Value: "fit", Label: "Fit"}, {Value: "1", Label: "100%"}, {Value: "2", Label: "200%"}, {Value: "4", Label: "400%"}})
-		</div>
-		<p id={ prefix + "-quality" } class="help"></p>
-		<div class="mark-controls">
-			@ui.Select(prefix+"-marks", "Jump to", []ui.Option{{Value: "", Label: "Choose a mark"}})
-			@action(prefix+"-weak-prev", "Previous weak match", true)
-			@action(prefix+"-weak-next", "Next weak match", true)
-		</div>
-		<details class="tracking-controls">
-			<summary>Tracking</summary>
-			@ui.Select(prefix+"-method", "Method", []ui.Option{{Value: "feature", Label: "Image patch"}, {Value: "edge-x", Label: "Vertical edge (X)"}, {Value: "edge-y", Label: "Horizontal edge (Y)"}})
-			<p id={ prefix + "-method-help" } class="help">Select a distinct detail on the first frame.</p>
+		<div class="image-wrap"><canvas id={ prefix + "-frame" } tabindex="0" aria-label={ label + " frame" }></canvas></div>
+		<div class="viewer-status"><p id={ prefix + "-time" } class="time"></p><p id={ prefix + "-quality" } class="help"></p></div>
+	</section>
+}
+
+templ trackingInspector(prefix string) {
+	<div id={ prefix + "-inspector" } hidden>
+		<section aria-label="Tracking range">
+			<h3>Tracking range</h3>
 			<div class="field-grid">
-				<div>@ui.NumberField(prefix+"-start", "First frame", "0", "0", "")
-@action(prefix+"-start-here", "Set first frame here", true)
-</div>
-				<div>@ui.NumberField(prefix+"-end", "Last frame", "0", "0", "")
-@action(prefix+"-end-here", "Set last frame here", true)
-</div>
+				@ui.NumberField(prefix+"-start", "First frame", "0", "0", "")
+				@ui.NumberField(prefix+"-end", "Last frame", "0", "0", "")
+			</div>
+			<div class="inspector-actions">
+				@action(prefix+"-start-here", "Set start", true)
+				@action(prefix+"-end-here", "Set end", true)
+				@action(prefix+"-goto-start", "Go to start", true)
+				@action(prefix+"-goto-end", "Go to end", true)
+			</div>
+		</section>
+		<section aria-label="Tracking settings">
+			<h3>Tracking</h3>
+			@ui.Select(prefix+"-method", "Method", []ui.Option{{Value: "feature", Label: "Image patch"}, {Value: "edge-x", Label: "Vertical edge (X)"}, {Value: "edge-y", Label: "Horizontal edge (Y)"}})
+			<p id={ prefix + "-method-help" } class="help"></p>
+			@action(prefix+"-draw", "Draw tracking region", true)
+			<p id={ prefix + "-selection" } class="help"></p>
+			<div class="field-grid">
 				@ui.NumberField(prefix+"-search", "Search (px/frame)", "60", "4", "1000")
 				@ui.NumberField(prefix+"-threshold", "Minimum score", "0.65", "0", "1")
 			</div>
-			<p id={ prefix + "-selection" } class="help">Draw a region on the first frame.</p>
-			<div class="transport">@action(prefix+"-track", "Track interval", true)
-@action(prefix+"-correct", "Correct here", true)
-</div>
+			<p id={ prefix + "-dirty" } class="help"></p>
+			<div class="inspector-actions">
+				@action(prefix+"-track", "Track selected range", true)
+				@action(prefix+"-correct", "Set tracking position at playhead", true)
+			</div>
+		</section>
+		<section aria-label="Tracking marks">
+			<h3>Tracking marks</h3>
+			<div class="inspector-actions">
+				@action(prefix+"-anchor-prev", "Previous correction", true)
+				@action(prefix+"-anchor-next", "Next correction", true)
+				@action(prefix+"-weak-prev", "Previous tracking loss", true)
+				@action(prefix+"-weak-next", "Next tracking loss", true)
+			</div>
+		</section>
+		<details class="export-controls">
+			<summary>Export</summary>
+			<div class="inspector-actions">
+				@action(prefix+"-json", "Save JSON", true)
+				@action(prefix+"-csv", "Save CSV", true)
+				@action(prefix+"-export", "Export video", true)
+			</div>
 		</details>
-		<details class="export-controls"><summary>Export</summary><div class="transport">@action(prefix+"-json", "Save JSON", true)
-@action(prefix+"-csv", "Save CSV", true)
-@action(prefix+"-export", "Export video", true)
-</div></details>
-	</section>
+	</div>
 }
 
 templ Page(entries []Entry) {
 	<!DOCTYPE html>
 	<html lang="en">
-		<head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>UI Motion</title><link rel="stylesheet" href="/assets/main.css"/><script type="module" src="/assets/main.js"></script>
-</head>
+		<head>
+			<meta charset="UTF-8"/>
+			<meta name="viewport" content="width=device-width,initial-scale=1"/>
+			<title>UI Motion</title>
+			<link rel="stylesheet" href="/assets/main.css"/><script type="module" src="/assets/main.js"></script>
+		</head>
 		<body>
 			<div id="app">
 				<div class="shell">
@@ -89,49 +116,97 @@ templ Page(entries []Entry) {
 							<input id="file" type="file" accept="video/*,.gif" hidden/>
 						</div>
 						<div id="status" role="status" aria-live="polite"></div>
-						<section id="empty"><h2>Open a recording</h2><p>Track a detail or edge and inspect its movement frame by frame.</p>@action("empty-import", "Open video", false)
-<p class="help">Videos and measurements stay on this machine.</p></section>
+						<section id="empty">
+							<h2>Open a recording</h2>
+							<p>Track a detail or edge and inspect its movement frame by frame.</p>@action("empty-import", "Open video", false)
+							<p class="help">Videos and measurements stay on this machine.</p>
+						</section>
 						<div id="workspace" class="workspace-container" hidden>
-							<div class="comparison-controls">
+							<div class="workspace-toolbar">
 								@ui.Select("reference", "Second video", []ui.Option{{Value: "", Label: "None"}})
-								@action("align", "Align current frames", true)
-								@ui.Checkbox("linked", "Linked playback")
-								@action("play-both", "Play aligned", true)
+								<span id="save-state" class="help" role="status"></span>
 							</div>
-							<p id="alignment" class="help"></p>
-							<div id="video-panes" class="video-panes">
-								@videoPane("a", "First video")
-								<div id="reference-pane" hidden>@videoPane("b", "Second video")
-</div>
+							<div class="editing-layout">
+								<div class="editing-main">
+									<div id="video-panes" class="video-panes">
+										@videoPane("a", "Video A")
+										<div id="reference-pane" hidden>
+											@videoPane("b", "Video B")
+										</div>
+									</div>
+									<section class="timeline-panel" aria-label="Workspace timeline">
+										<div class="timeline-header">
+											<div class="transport">
+												@iconAction("previous-frame", "Previous frame", "M240-240v-480h80v480h-80Zm480 0L360-480l360-240v480Z")
+												@iconAction("play", "Play", "M320-200v-560l440 280-440 280Z")
+												@iconAction("next-frame", "Next frame", "M240-240v-480l360 240-360 240Zm400 0v-480h80v480h-80Z")
+												<output id="playhead-time"></output>
+											</div>
+											<div class="timeline-tools">
+												@iconAction("timeline-out", "Zoom out timeline", "M200-440v-80h560v80H200Z")
+												@iconAction("timeline-in", "Zoom in timeline", "M440-440H200v-80h240v-240h80v240h240v80H520v240h-80v-240Z")
+												@action("timeline-fit", "Fit clips", true)
+												@action("timeline-range", "Fit range", true)
+											</div>
+										</div>
+										<p class="visually-hidden" id="timeline-help">Drag the ruler to scrub. Drag a clip to move it. Drag range handles to choose which frames to track.</p>
+										<svg id="timeline" role="group" aria-describedby="timeline-help" aria-label="Video tracks and time ruler" viewBox="0 0 900 200"></svg>
+										<div id="timeline-pan" class="timeline-pan" tabindex="0" role="region" aria-label="Timeline horizontal scroll"><div></div></div>
+									</section>
+									<section class="graph-panel" aria-label="Displacement measurements">
+										<h2>Displacement</h2>
+										<div class="graph-controls">
+											@ui.Select("axis", "Position", []ui.Option{{Value: "x", Label: "Horizontal"}, {Value: "y", Label: "Vertical"}})
+											@ui.Select("units", "Units", []ui.Option{{Value: "px", Label: "Recording pixels"}, {Value: "progress", Label: "Progress (%)"}})
+											@ui.Select("vertical-scale", "Vertical scale", []ui.Option{{Value: "auto", Label: "Fit visible samples"}, {Value: "10", Label: "Target ±10 px"}, {Value: "1", Label: "Target ±1 px"}})
+										</div>
+										<p id="graph-note" class="help">Hover a sample for its measurements. Click a sample to inspect its frame.</p>
+										<div class="graph-wrap"><svg id="graph" viewBox="0 0 900 220" role="img" aria-label="Tracked displacement against workspace time. Use arrow keys to inspect frames." aria-describedby="sample-info" tabindex="0"></svg></div>
+										<output id="sample-info" class="sample-info help" aria-live="polite"></output>
+										<div id="legend" class="legend"><span>Video A</span><span class="ref" id="ref-legend" hidden>Video B</span><span class="expected" id="curve-legend" hidden>Reference curve</span></div>
+										<details class="reference-settings">
+											<summary>Curve comparison</summary>
+											<div class="reference-controls">
+												@ui.Select("curve", "Reference curve", []ui.Option{{Value: "none", Label: "None"}, {Value: "md3", Label: "MD3 standard"}, {Value: "linear", Label: "Linear"}})
+												@ui.NumberField("duration", "Reference duration (ms)", "300", "1", "60000")
+												@action("fit-a", "Fit duration to A", true)
+												@action("fit-b", "Fit duration to B", true)
+											</div>
+										</details>
+										<p id="curve-note" class="help" hidden>Reference curves run from each tracking range’s first position to its last position.</p>
+										<div class="measurement-results"><p id="a-result" class="help"></p><p id="b-result" class="help" hidden></p></div>
+									</section>
+								</div>
+								<aside class="inspector" aria-label="Selected video settings">
+									<h2 id="inspector-title">Video A</h2>
+									<details class="alignment-controls" aria-label="Clip alignment">
+										<summary>Alignment</summary>
+										<div class="inspector-actions">
+											@action("mark-sync", "Mark sync point", true)
+											@action("goto-sync", "Go to sync point", true)
+											@action("align-sync", "Align sync points", true)
+										</div>
+										<p id="sync-info" class="help"></p>
+										@ui.NumberField("clip-offset", "Clip offset (ms)", "0", "-86400000", "86400000")
+										<div class="inspector-actions">
+											@action("nudge-earlier", "Move one frame earlier", true)
+											@action("nudge-later", "Move one frame later", true)
+										</div>
+									</details>
+									@trackingInspector("a")
+									@trackingInspector("b")
+								</aside>
 							</div>
-							<section class="graph-panel" aria-label="Motion measurements">
-								<h2>Position over time</h2>
-								<div class="graph-controls">
-									@ui.Select("axis", "Position", []ui.Option{{Value: "x", Label: "Horizontal"}, {Value: "y", Label: "Vertical"}})
-									@ui.Select("units", "Units", []ui.Option{{Value: "px", Label: "Recording pixels"}, {Value: "progress", Label: "Progress (%)"}})
-									@action("zoom-interval", "Zoom to intervals", true)
-									@action("reset-zoom", "Full recording", true)
-								</div>
-								<p id="graph-note" class="help">Click to inspect. Drag across the graph to zoom.</p>
-								<div class="graph-wrap"><svg id="graph" viewBox="0 0 1000 300" role="img" aria-label="Tracked displacement against time" tabindex="0"></svg></div>
-								<div id="legend" class="legend"><span>First video</span><span class="ref" id="ref-legend" hidden>Second video</span><span class="expected" id="curve-legend" hidden>Reference curve</span></div>
-								<div class="reference-controls">
-									@ui.Select("curve", "Reference curve", []ui.Option{{Value: "none", Label: "None"}, {Value: "md3", Label: "MD3 standard"}, {Value: "linear", Label: "Linear"}})
-									@ui.NumberField("duration", "Reference duration (ms)", "300", "1", "60000")
-									@action("fit-a", "Fit duration to first", true)
-									@action("fit-b", "Fit duration to second", true)
-								</div>
-								<p id="curve-note" class="help" hidden>Reference curves start at each alignment frame and use its selected last frame as the target position.</p>
-								<div class="measurement-results"><p id="a-result" class="help"></p><p id="b-result" class="help" hidden></p></div>
-							</section>
 						</div>
 						<footer>Coordinates use recording pixels. Times use the original video frame timestamps.</footer>
 					</main>
 				</div>
-				<template id="recording-item-template">@ui.DrawerItem(templ.Attributes{"data-project-id": "", "aria-controls": "recording-content"}, "")
-</template>
-				<template id="field-option-template">@ui.SelectOption("", "", "", false)
-</template>
+				<template id="recording-item-template">
+					@ui.DrawerItem(templ.Attributes{"data-project-id": "", "aria-controls": "recording-content"}, "")
+				</template>
+				<template id="field-option-template">
+					@ui.SelectOption("", "", "", false)
+				</template>
 			</div>
 		</body>
 	</html>

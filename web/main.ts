@@ -1,25 +1,41 @@
 import "./style.css";
-import { nearest } from "./timing";
-import { $, api, post } from "./api";
+import { $, api } from "./api";
 import { installMaterialControls, syncMaterialControls } from "./material";
+import { nearest, sourceFrame, alignedOffset } from "./timing";
 import { VideoView, type ViewActions } from "./video";
+import { Timeline } from "./timeline";
 import { MotionGraph } from "./graph";
-import type { Entry, Project } from "./types";
-let playbackToken = 0;
+import type { Entry, Project, Workspace, WorkspaceTrack } from "./types";
 let busy = false,
-  entries: Entry[] = [],
-  playing: VideoView | "both" | null = null,
+  time = 0,
+  playing = false,
+  playbackToken = 0,
   clock = 0,
-  startTime = 0;
+  startTime = 0,
+  entries: Entry[] = [],
+  selected: VideoView;
+let saveChain: Promise<unknown> = Promise.resolve();
 function status(text: string, error = false) {
   $("status").textContent = text;
   $("status").classList.toggle("error", error);
 }
+function playButton(active: boolean) {
+  const button = $("play");
+  button.setAttribute("aria-label", active ? "Pause" : "Play");
+  button.title = active ? "Pause" : "Play";
+  button
+    .querySelector("svg path")!
+    .setAttribute(
+      "d",
+      active
+        ? "M280-200v-560h160v560H280Zm240 0v-560h160v560H520Z"
+        : "M320-200v-560l440 280-440 280Z",
+    );
+}
 function pause() {
+  playing = false;
   playbackToken++;
-  playing = null;
-  for (const view of [a, b]) view.el("play").textContent = "Play";
-  $("play-both").textContent = "Play aligned";
+  playButton(false);
 }
 async function job(fn: () => Promise<void>) {
   if (busy) return;
@@ -38,70 +54,128 @@ async function job(fn: () => Promise<void>) {
   }
 }
 const actions: ViewActions = {
-  seek,
-  play: togglePlay,
-  change: () => {
-    alignment();
-    a.marks();
-    b.marks();
-    void graph.refresh();
-  },
+  seek: (v, i) => seekFrame(v, i),
+  select: selectVideo,
+  change: () => changed(true),
   job,
   message: status,
-  align: async (view) => {
-    if (!view.project) return;
-    view.project = await post<Project>(`/projects/${view.project.id}/zero`, {
-      frame: view.index,
-    });
-    view.zero = view.index;
-    view.marks();
-    await saveComparison();
-    await view.show(view.index);
-    alignment();
-    await graph.refresh();
-  },
 };
 const a = new VideoView("a", actions),
   b = new VideoView("b", actions);
-const graph = new MotionGraph(
-  () => [a, b],
-  (time) => {
-    pause();
-    void showAligned(time).catch((e) => status(e.message, true));
-  },
+selected = a;
+const views = () => [a, b];
+const timeline = new Timeline(
+  views,
+  () => time,
+  () => selected,
+  (t) => seek(t),
+  selectVideo,
+  changed,
 );
-const linked = () => $<HTMLInputElement>("linked").checked && !!b.project;
-function controls() {
-  for (const id of ["import", "empty-import"])
+const graph = new MotionGraph(
+  views,
+  (t) => seek(t),
+  () => timeline.bounds(),
+  () => time,
+  selectVideo,
+);
+function selectVideo(v: VideoView) {
+  if (!v.project) return;
+  selected = v;
+  for (const view of views()) {
+    view.el("pane").classList.toggle("active-viewer", v === view);
+    view.el("select").setAttribute("aria-current", String(v === view));
+    view.el("inspector").hidden = view !== v;
+    if (view !== v) view.stopDrawing();
+  }
+  $("inspector-title").textContent = `Video ${v.prefix.toUpperCase()}`;
+  inspector();
+  timeline.paint();
+  graph.setActive(v);
+}
+function inspector() {
+  if (!selected.project) return;
+  $<HTMLInputElement>("clip-offset").value = selected.offset.toFixed(3);
+  $("sync-info").textContent =
+    selected.sync === null
+      ? "No sync point marked."
+      : `Sync point: frame ${selected.sync} at ${(selected.project.times[selected.sync] / 1000).toFixed(3)} s source.`;
+  $<HTMLButtonElement>("goto-sync").disabled = busy || selected.sync === null;
+  $<HTMLButtonElement>("mark-sync").disabled = busy || selected.outside;
+  $<HTMLButtonElement>("align-sync").disabled =
+    busy || a.sync === null || b.sync === null || !b.project;
+  for (const id of ["nudge-earlier", "nudge-later"])
     $<HTMLButtonElement>(id).disabled = busy;
-  for (const view of [a, b]) view.controls(busy);
+}
+function controls() {
   for (const control of document.querySelectorAll<
     HTMLInputElement | HTMLSelectElement
-  >("select,input[type=number],#linked"))
+  >("input,select"))
     control.disabled = busy;
-  for (const item of document.querySelectorAll<HTMLButtonElement>(
-    "[data-navigation-item]",
+  for (const control of document.querySelectorAll<HTMLButtonElement>(
+    "[data-navigation-item],#import,#empty-import",
   ))
-    item.disabled = busy;
-  $<HTMLButtonElement>("align").disabled = busy || !a.project || !b.project;
-  $<HTMLButtonElement>("play-both").disabled = busy || !a.project || !b.project;
+    control.disabled = busy;
+  for (const view of views()) view.controls(busy);
+  for (const id of [
+    "previous-frame",
+    "play",
+    "next-frame",
+    "timeline-out",
+    "timeline-in",
+    "timeline-fit",
+    "timeline-range",
+  ])
+    $<HTMLButtonElement>(id).disabled = busy || !a.project;
   graph.controls(busy);
+  inspector();
   syncMaterialControls();
+  timeline.paint();
 }
-function alignment() {
-  $("reference-pane").hidden = !b.project;
-  $("video-panes").classList.toggle("comparing", !!b.project);
-  $("alignment").textContent =
-    b.project && a.project
-      ? `A: frame ${a.zero}    B: frame ${b.zero}. Scrub independently, then align the current frames.`
-      : "";
-  syncMaterialControls();
+function changed(save: boolean) {
+  for (const v of views()) v.controls(busy);
+  timeline.paint();
+  if (save) void graph.refresh();
+  else graph.paint();
+  inspector();
+  if (save) saveWorkspace();
+}
+function queueSave() {
+  if (!a.project) return;
+  const id = a.project.id,
+    payload: Workspace = {
+      schema: 1,
+      tracks: views()
+        .filter((v) => v.project)
+        .map((v) => v.workspace()),
+    };
+  saveChain = saveChain
+    .catch(() => {})
+    .then(() =>
+      api(`/projects/${id}/workspace`, {
+        method: "PUT",
+        keepalive: true,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      }),
+    )
+    .then(() => {
+      if (a.project?.id === id)
+        $("save-state").textContent = "Workspace saved.";
+    })
+    .catch((e) => {
+      if (a.project?.id === id)
+        $("save-state").textContent = "Workspace not saved.";
+      status(e.message, true);
+    });
+}
+function saveWorkspace() {
+  if (!a.project) return;
+  $("save-state").textContent = "Saving workspace…";
+  queueSave();
 }
 async function refresh() {
   entries = await api<Entry[]>("/projects");
-  const focus = document.activeElement as HTMLElement | null,
-    focusID = focus?.dataset.projectId,
-    focusGroup = focus?.closest(".md-nav-items")?.id;
   for (const group of ["projects", "mobile-projects"]) {
     $(group).replaceChildren();
     for (const entry of entries) {
@@ -112,19 +186,8 @@ async function refresh() {
       item.title = entry.name;
       item.querySelector(".md-nav-label")!.textContent = entry.name;
       if (entry.id === a.project?.id) item.setAttribute("aria-current", "page");
-      item.onclick = () =>
-        void job(async () => {
-          await open(entry.id);
-          if (group === "projects")
-            for (const next of $(
-              "projects",
-            ).querySelectorAll<HTMLButtonElement>("[data-navigation-item]"))
-              if (next.dataset.projectId === entry.id)
-                next.focus({ preventScroll: true });
-        });
+      item.onclick = () => void job(() => open(entry.id));
       $(group).append(item);
-      if (group === focusGroup && entry.id === focusID)
-        item.focus({ preventScroll: true });
     }
   }
   const select = $<HTMLSelectElement>("reference");
@@ -139,163 +202,167 @@ async function refresh() {
 }
 async function open(id: string) {
   status("Opening video…");
+  await saveChain;
   const p = await api<Project>("/projects/" + id);
+  const workspace = await api<Workspace | null>(`/projects/${id}/workspace`);
   b.project = null;
+  await a.load(p, workspace?.tracks[0]);
+  const second = workspace?.tracks[1];
+  if (second)
+    await b.load(await api<Project>("/projects/" + second.id), second);
+  else if (!workspace && p.comparison && p.comparison.id !== p.id) {
+    const other = await api<Project>("/projects/" + p.comparison.id);
+    await b.load(other, {
+      id: other.id,
+      offset: p.times[p.zeroFrame] - other.times[p.comparison.zeroFrame],
+      sync: p.comparison.zeroFrame,
+      first: other.settings.start ?? 0,
+      last: other.settings.end ?? other.times.length - 1,
+    });
+    a.sync = p.zeroFrame;
+  }
   $("empty").hidden = true;
   $("workspace").hidden = false;
-  await a.load(p);
-  let comparisonError = "";
-  if (p.comparison) {
-    try {
-      const ref = await api<Project>("/projects/" + p.comparison.id);
-      if (ref.id !== p.id) await b.load(ref, p.comparison.zeroFrame);
-    } catch (e) {
-      b.project = null;
-      comparisonError = `Saved comparison could not be opened: ${e instanceof Error ? e.message : e}`;
-    }
-  }
-  $<HTMLInputElement>("linked").checked = !!b.project;
-  alignment();
+  $("reference-pane").hidden = !b.project;
+  $("video-panes").classList.toggle("comparing", !!b.project);
+  timeline.window = null;
+  time = a.offset;
+  selectVideo(a);
   await refresh();
   graph.reset();
-  status(comparisonError, !!comparisonError);
+  await show(time);
+  $("save-state").textContent = workspace ? "Workspace loaded." : "";
+  status("");
 }
-async function saveComparison() {
-  if (!a.project) return;
-  a.project = await post<Project>(`/projects/${a.project.id}/comparison`, {
-    reference: b.project?.id ?? null,
-    zero: b.zero,
-  });
-  alignment();
-}
-$("reference").onchange = () =>
-  void job(async () => {
-    const id = $<HTMLSelectElement>("reference").value;
-    b.project = null;
-    if (id) await b.load(await api<Project>("/projects/" + id));
-    $<HTMLInputElement>("linked").checked = false;
-    await saveComparison();
-    graph.reset();
-    controls();
-    status("");
-  });
-$("align").onclick = () =>
-  void job(async () => {
-    if (!a.project || !b.project) return;
-    a.project = await post<Project>(`/projects/${a.project.id}/zero`, {
-      frame: a.index,
-    });
-    a.zero = a.index;
-    b.zero = b.index;
-    await saveComparison();
-    a.marks();
-    b.marks();
-    $<HTMLInputElement>("linked").checked = true;
-    await showAligned(0);
-    await graph.refresh();
-    status("Current frames aligned.");
-  });
-$("linked").onchange = () => {
-  pause();
-  if (linked()) void showAligned(a.time).catch((e) => status(e.message, true));
-};
-async function showAligned(time: number) {
+async function show(t: number) {
+  time = t;
+  const generation = ++showGeneration;
   await Promise.all(
-    [a, b]
+    views()
       .filter((v) => v.project)
-      .map(async (view) => {
-        const p = view.project!,
-          absolute = time + p.times[view.zero];
-        view.outside = absolute < 0 || absolute > p.times.at(-1)!;
-        await view.show(nearest(p.times, absolute));
+      .map(async (v) => {
+        const p = v.project!,
+          source = t - v.offset;
+        v.outside = source < 0 || source > p.times.at(-1)!;
+        await v.show(sourceFrame(p.times, v.offset, t));
       }),
   );
+  if (generation !== showGeneration) return;
+  $("playhead-time").textContent = `${(time / 1000).toFixed(3)} s`;
+  inspector();
+  timeline.paint();
   graph.paint();
 }
-function seek(view: VideoView, index: number) {
+let showGeneration = 0;
+function seek(t: number) {
   if (busy) return;
   pause();
-  if (!view.project) return;
-  const i = Math.max(0, Math.min(view.project.times.length - 1, index));
-  if (linked())
-    void showAligned(
-      view.project.times[i] - view.project.times[view.zero],
-    ).catch((e) => status(e.message, true));
-  else {
-    view.outside = false;
-    void view
-      .show(i)
-      .then(() => graph.paint())
-      .catch((e) => status(e.message, true));
-  }
+  const [min, max] = timeline.full();
+  void show(Math.max(min, Math.min(max, t))).catch((e) =>
+    status(e.message, true),
+  );
 }
-function togglePlay(view: VideoView) {
+function seekFrame(v: VideoView, i: number) {
+  if (!v.project) return;
+  selectVideo(v);
+  const frame = Math.max(
+    0,
+    Math.min(v.project.times.length - 1, Math.round(i)),
+  );
+  seek(v.project.times[frame] + v.offset);
+}
+$("previous-frame").onclick = () => seekFrame(selected, selected.index - 1);
+$("next-frame").onclick = () => seekFrame(selected, selected.index + 1);
+$("play").onclick = () => {
   if (playing) {
     pause();
     return;
   }
-  if (!view.project) return;
-  playing = linked() ? "both" : view;
-  const p = view.project;
-  if (view.index >= view.last) view.index = view.first;
+  if (!a.project) return;
+  const [min, max] = timeline.full();
+  if (time >= max) time = min;
+  playing = true;
   clock = performance.now();
-  startTime =
-    playing === "both"
-      ? p.times[view.index] - p.times[view.zero]
-      : p.times[view.index];
-  view.el("play").textContent = "Pause";
-  if (playing === "both") {
-    $("play-both").textContent = "Pause aligned";
-    b.el("play").textContent = "Pause";
-    a.el("play").textContent = "Pause";
-  }
-  const token = playbackToken;
-  requestAnimationFrame((now) => tick(now, token));
-}
-$("play-both").onclick = () => {
-  if (playing) {
-    pause();
-    return;
-  }
-  $<HTMLInputElement>("linked").checked = true;
-  togglePlay(a);
+  startTime = time;
+  playButton(true);
+  const token = ++playbackToken;
+  requestAnimationFrame((now) => void tick(now, token));
 };
 async function tick(now: number, token: number) {
-  if (token !== playbackToken) return;
-  const target = playing;
-  if (!target) return;
+  if (token !== playbackToken || !playing) return;
+  const end = timeline.full()[1],
+    next = Math.min(end, startTime + now - clock);
   try {
-    const elapsed = startTime + now - clock;
-    if (target === "both") {
-      const end = Math.max(
-        ...[a, b]
-          .filter((v) => v.project)
-          .map((v) => v.project!.times[v.last] - v.project!.times[v.zero]),
-      );
-      await showAligned(Math.min(end, elapsed));
-      if (elapsed >= end) {
-        pause();
-        return;
-      }
-    } else {
-      const p = target.project!;
-      const end = p.times[target.last];
-      await target.show(nearest(p.times, Math.min(end, elapsed)));
-      graph.paint();
-      if (elapsed >= end) {
-        pause();
-        return;
-      }
+    await show(next);
+    if (token !== playbackToken) return;
+    if (next >= end) {
+      pause();
+      return;
     }
-    if (playing === target && token === playbackToken)
-      requestAnimationFrame((now) => tick(now, token));
+    requestAnimationFrame((now) => void tick(now, token));
   } catch (e) {
     pause();
     status(e instanceof Error ? e.message : String(e), true);
   }
 }
-for (const view of [a, b])
-  $(`fit-${view.prefix}`).onclick = () => void job(() => graph.fit(view));
+$("mark-sync").onclick = () => {
+  selected.sync = selected.index;
+  changed(true);
+};
+$("goto-sync").onclick = () => {
+  if (selected.sync !== null) seekFrame(selected, selected.sync);
+};
+$("align-sync").onclick = () => {
+  if (a.sync === null || b.sync === null || !a.project || !b.project) return;
+  pause();
+  b.offset = alignedOffset(
+    a.project.times[a.sync],
+    a.offset,
+    b.project.times[b.sync],
+  );
+  timeline.window = null;
+  changed(true);
+  void show(a.project.times[a.sync] + a.offset);
+  status("Sync points aligned.");
+};
+$("clip-offset").onchange = () => {
+  const n = Number($<HTMLInputElement>("clip-offset").value);
+  if (!Number.isFinite(n) || Math.abs(n) > 86400000) {
+    status("Clip offset must be within one day.", true);
+    inspector();
+    return;
+  }
+  pause();
+  selected.offset = n;
+  changed(true);
+  void show(time);
+};
+for (const [id, dir] of [
+  ["nudge-earlier", -1],
+  ["nudge-later", 1],
+] as const)
+  $(id).onclick = () => {
+    pause();
+    selected.offset += dir * timeline.frameStep(selected);
+    changed(true);
+    void show(time);
+  };
+$("reference").onchange = () =>
+  void job(async () => {
+    const id = $<HTMLSelectElement>("reference").value;
+    b.project = null;
+    if (id) await b.load(await api<Project>("/projects/" + id));
+    $("reference-pane").hidden = !b.project;
+    $("video-panes").classList.toggle("comparing", !!b.project);
+    timeline.window = null;
+    if (!b.project) selectVideo(a);
+    await show(time);
+    saveWorkspace();
+    graph.reset();
+    controls();
+  });
+for (const v of views())
+  $(`fit-${v.prefix}`).onclick = () => void job(() => graph.fit(v));
 for (const id of ["import", "empty-import"])
   $(id).onclick = () => $<HTMLInputElement>("file").click();
 $<HTMLInputElement>("file").onchange = () =>
@@ -303,22 +370,38 @@ $<HTMLInputElement>("file").onchange = () =>
     const file = $<HTMLInputElement>("file").files?.[0];
     if (!file) return;
     status("Importing video and extracting frames…");
-    const form = new FormData();
-    form.append("file", file);
-    const project = await api<Project>("/import", {
-      method: "POST",
-      body: form,
-    });
-    await open(project.id);
+    const body = new FormData();
+    body.append("file", file);
+    const p = await api<Project>("/import", { method: "POST", body });
+    await open(p.id);
     $<HTMLInputElement>("file").value = "";
   });
 void installMaterialControls()
   .then(refresh)
   .then(controls)
   .catch((e) => status(e.message, true));
-matchMedia("(min-width:1280px)").addEventListener("change", (e) => {
+matchMedia("(min-width:1600px)").addEventListener("change", (e) => {
   if (e.matches) {
     const drawer = $<HTMLDialogElement>("recording-drawer");
     if (drawer.open) drawer.close();
+  }
+});
+
+document.addEventListener("keydown", (e) => {
+  if (
+    e.defaultPrevented ||
+    busy ||
+    !a.project ||
+    (e.target as Element)?.closest(
+      "input,select,textarea,button,summary,#timeline-pan",
+    )
+  )
+    return;
+  if (e.key === " ") {
+    e.preventDefault();
+    $("play").click();
+  } else if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
+    e.preventDefault();
+    seekFrame(selected, selected.index + (e.key === "ArrowLeft" ? -1 : 1));
   }
 });

@@ -44,3 +44,11 @@ export type Measurement = {
   displacement: number;
   points: { t: number; value: number }[];
 };
+export type WorkspaceTrack = {
+  id: string;
+  offset: number;
+  sync: number | null;
+  first: number;
+  last: number;
+};
+export type Workspace = { schema: 1; tracks: WorkspaceTrack[] };

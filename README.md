@@ -16,29 +16,45 @@ Open http://127.0.0.1:8091. The Go executable serves the templ interface, API an
 
 OpenCV is a native dependency. On Fedora, install `opencv-devel`; on other platforms, follow the [GoCV installation instructions](https://gocv.io/getting-started/). This workstation also has an optional SDK under `.local/opencv/`. The build and run scripts use it when system development files are unavailable.
 
+## Workspace
+
+Open a recording and choose a **Second video** to compare it. Both videos use one playhead and one time ruler. Play and frame stepping operate on the workspace; frame stepping follows the selected video’s timestamps.
+
+Click a viewer title or a clip to select its video. The inspector shows that video’s tracking settings. Viewer magnification sits above each image. Timeline zoom changes the visible time span in both the tracks and displacement graph. The horizontal scrollbar appears when zoomed in and pans that span. **Fit clips** restores the full span; **Fit range** frames the selected tracking range.
+
+Drag the time ruler to scrub. Drag a clip to change its offset. Drag its **In** and **Out** handles to choose a tracking range. The same boundaries appear in the displacement graph. Range handles and clips also support left/right arrow keys when focused. Space plays or pauses, and the arrow keys step frames outside text fields and other controls.
+
 ## Track motion
 
-1. Open a video and find the first frame to track.
-2. Open **Tracking** and choose a method. Draw around a distinct detail for **Image patch**, or draw a narrow strip across a straight boundary for **Vertical edge (X)** or **Horizontal edge (Y)**.
-3. Set the first and last frames, then press **Track interval**.
-4. Step through frames or click the position graph to inspect the results. **Jump to** lists the interval boundaries, alignment and manual corrections. The weak-match buttons find frames where tracking was lost.
-5. Draw a corrected region on a bad frame and press **Correct here**. This adds a manual anchor and reruns the interval with those corrections.
+1. Select a video and choose its range with the timeline handles or inspector fields.
+2. Press **Go to start** in the inspector.
+3. Choose a tracking method and press **Draw tracking region**. Draw around a distinct detail for **Image patch**, or draw a narrow strip across a straight boundary for either edge method.
+4. Press **Track selected range**.
+5. To correct a result, go to the bad frame, draw the correct region and press **Set tracking position at playhead**. This adds a correction and recalculates tracking.
+
+Correction diamonds and tracking-loss marks appear on the clip. The inspector has previous/next actions for each. Changing a tracking method, search setting or region marks the measurements as needing an update. Selecting a smaller range can analyze existing measurements without retracking.
 
 Image patches track position in two dimensions. Edge tracking follows one axis through a fixed strip; keep corners and other boundaries outside that strip. Both methods estimate subpixel positions. Similarity is the patch correlation score. Edge strength is a ratio to the last manual anchor. Neither score is a probability of correctness. Weak matches leave gaps.
 
-Existing recordings retain their saved measurements. Rerun tracking to replace older whole-pixel results with subpixel estimates. JSON, CSV and annotated video exports are available under **Export** for each video.
+Existing recordings retain their saved measurements. Rerun tracking to replace older whole-pixel results with subpixel estimates. JSON, CSV and annotated video exports are under **Export** in the inspector.
 
-## Compare videos
+## Align videos
 
-Choose a **Second video** to show both recordings and their tracking controls. Each video can be tracked and corrected directly in this workspace.
+Select video A and scrub to the event you want to align. Open **Alignment** in the inspector and press **Mark sync point**. Repeat for B, then press **Align sync points**. Video B moves so the two markers coincide. Clip dragging, the offset field and frame-nudge actions provide manual adjustment.
 
-Turn off **Linked playback**, scrub each video to the event you want to compare, then press **Align current frames**. Those frames become time zero. Linked playback and graph inspection then use the original frame timestamps, including different frame rates and irregular frame intervals. Frames outside a recording hold at its boundary and are labeled accordingly. Alignment is saved with the comparison.
+Alignment, sync markers and selected ranges save in `workspace.json` beside the primary recording’s `project.json`. Moving clips does not change either recording’s stored time zero or tracking measurements. Existing comparisons supply the initial alignment when no workspace has been saved. `GET` and `PUT /api/projects/{id}/workspace` read and save this state.
 
-The graph shows displacement from alignment in recording pixels, or progress toward the selected last frame. Drag across the graph to zoom; its vertical scale follows the visible samples. **Zoom to intervals** shows the tracking ranges. **Full recording** resets the zoom.
+Playback uses the original timestamps, including different frame rates and irregular frame intervals. A viewer holds its boundary frame outside the clip and labels it accordingly.
 
-Choose an MD3 standard or linear reference curve to compare timing. The reference starts at the alignment frame and ends at the measured position of the selected last frame. Set a duration or fit it to either recording. Fitting changes duration only. RMS error and maximum error describe the difference from the curve across valid samples. Both endpoint frames need valid measurements and different positions.
+## Inspect displacement
 
-Video measurements remain limited by captured frames, compression and the selected detail. Subpixel estimates do not recover frames missing from a recording. Use a straight edge or a stable detail to measure translation; these trackers do not measure scale, opacity or text deformation.
+The graph below the tracks shares their visible time span and playhead. Hover a sample to see its frame, time, displacement and tracking score. Click a sample to move the playhead and inspect both videos. Click a trace to select its recording. Dragging the graph does not scrub or change the interval.
+
+Select horizontal or vertical displacement, recording pixels or progress, and an automatic or fixed vertical scale. Open **Curve comparison** for reference settings. Displacement starts from the first position in each selected tracking range. Fixed scales magnify motion around its final position.
+
+An MD3 standard or linear reference runs from the range’s first measured position to its last. Set a duration or fit it to either recording. Fitting changes duration only. RMS error and maximum error compare valid samples with the curve. Both endpoint frames need valid measurements and different positions.
+
+Video measurements remain limited by captured frames, compression and the selected detail. Subpixel estimates do not recover missing frames. These trackers measure translation rather than scale, opacity or text deformation.
 
 ## CLI
 
@@ -69,7 +85,7 @@ The CLI and HTTP API call the same Go analysis package.
 | `internal/analysis/` | Project files, FFmpeg import/export and GoCV tracking |
 | `internal/web/` | HTTP routes and templ page composition |
 | `../tokens/forge/components/ui/` | Shared templ controls and navigation anatomy |
-| `web/` | Playback, region selection, graph and control state synchronization |
+| `web/` | Workspace state, shared timeline, video viewers, tracking inspector and displacement graph |
 | `public/` | Token Catalog CSS, fonts and unmodified interaction runtimes |
 
 Go renders the control markup. Dynamic list entries clone templates rendered by those same components. TypeScript handles analysis interactions rather than rebuilding component anatomy. Vite builds the browser assets; it does not serve the application shell.
@@ -81,4 +97,4 @@ node scripts/import-material.mjs ../tokens
 make build
 ```
 
-`make test` checks known fractional motion, both edge axes, correction and tracking loss, curve fitting, variable frame timing, linked-time mapping, exports, HTTP validation, server-rendered controls, token references and shared runtime integrity. Generate templ code after editing templates with `make generate`.
+`make test` checks workspace persistence and recording preservation, alignment and source-frame mapping, known fractional motion, both edge axes, correction and tracking loss, curve fitting, variable frame timing, linked-time mapping, exports, HTTP validation, server-rendered controls, token references and shared runtime integrity. Generate templ code after editing templates with `make generate`.

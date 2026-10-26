@@ -31,7 +31,7 @@ func TestServerRenderedControlsAndAPI(t *testing.T) {
 		t.Fatal(page.Code, page.Body.String())
 	}
 	body := page.Body.String()
-	for _, text := range []string{"data-navigation-modal", "data-field-combo", "md-outlined-text-field", "field-option-template", "recording-item-template", "/assets/main.js", "A &lt;script&gt;"} {
+	for _, text := range []string{"data-navigation-modal", "data-field-combo", "md-outlined-text-field", "field-option-template", "recording-item-template", "/assets/main.js", "A &lt;script&gt;", `id="timeline"`, `id="playhead-time"`, `id="inspector-title"`, "Track selected range", "Mark sync point", "Viewer zoom"} {
 		if !strings.Contains(body, text) {
 			t.Fatal("missing server markup", text)
 		}
@@ -39,6 +39,24 @@ func TestServerRenderedControlsAndAPI(t *testing.T) {
 	if strings.Contains(body, "<script>alert(1)</script>") {
 		t.Fatal("filename was not escaped")
 	}
+	for _, obsolete := range []string{`id="a-scrub"`, `id="b-scrub"`, `id="a-play"`, `id="linked"`, "Track interval", "Correct here"} {
+		if strings.Contains(body, obsolete) {
+			t.Fatal("obsolete independent controls", obsolete)
+		}
+	}
+	if w := get("/api/projects/" + id + "/workspace"); w.Code != 200 || strings.TrimSpace(w.Body.String()) != "null" {
+		t.Fatal(w.Code, w.Body.String())
+	}
+	payload := `{"schema":1,"tracks":[{"id":"` + id + `","offset":-12.5,"sync":1,"first":0,"last":2}]}`
+	wWorkspace := httptest.NewRecorder()
+	server.ServeHTTP(wWorkspace, httptest.NewRequest("PUT", "/api/projects/"+id+"/workspace", strings.NewReader(payload)))
+	if wWorkspace.Code != 200 {
+		t.Fatal(wWorkspace.Code, wWorkspace.Body.String())
+	}
+	if w := get("/api/projects/" + id + "/workspace"); !strings.Contains(w.Body.String(), `"offset":-12.5`) {
+		t.Fatal(w.Body.String())
+	}
+
 	var saved map[string]any
 	if e := json.Unmarshal(get("/api/projects/"+id).Body.Bytes(), &saved); e != nil {
 		t.Fatal(e)

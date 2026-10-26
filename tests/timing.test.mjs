@@ -22,3 +22,18 @@ test("CSS durations convert seconds and milliseconds to milliseconds", () => {
   for (const token of ["300", "NaNms", "-1s", "garbage"])
     assert.throws(() => milliseconds(token));
 });
+
+test("workspace alignment and source-frame mapping preserve recorded timestamps", async () => {
+  const { sourceFrame, alignedOffset, clampRange } =
+    await import("../web/timing.ts");
+  const a = [0, 16.667, 33.333, 50],
+    b = [0, 40, 80, 120];
+  const offset = alignedOffset(a[2], 100, b[1]);
+  assert.equal(offset, 93.333);
+  assert.equal(sourceFrame(a, 100, 133.333), 2);
+  assert.equal(sourceFrame(b, offset, 133.333), 1);
+  assert.equal(sourceFrame(b, -100, -60), 1);
+  assert.deepEqual(clampRange(-4, 100, 30), [0, 29]);
+  assert.deepEqual(clampRange(12, 2, 30), [12, 12]);
+  assert.deepEqual(clampRange(1.2, 7.6, 30), [1, 8]);
+});
