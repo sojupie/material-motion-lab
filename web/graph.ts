@@ -1,3 +1,4 @@
+import { sampleValue, type Axis } from "./types";
 import { $, post, api } from "./api";
 import { fitScale, zoomScale, panScale, type ScaleRange } from "./graph-scale";
 import type { Measurement, Project, MotionReference } from "./types";
@@ -171,8 +172,23 @@ export class MotionGraph {
   get panning() {
     return $<HTMLInputElement>("graph-pan").checked;
   }
+  exportOptions(view: VideoView, currentView: boolean) {
+    const window = this.bounds();
+    return {
+      axis: this.axis,
+      units: this.progress ? "progress" : "px",
+      start: view.first,
+      end: view.last,
+      reference: this.preset === "none" ? undefined : this.curve(),
+      duration: Number($<HTMLInputElement>("duration").value),
+      window: currentView
+        ? [window[0] - view.offset, window[1] - view.offset]
+        : undefined,
+      scale: currentView ? [...this.visibleScale] : undefined,
+    };
+  }
   get axis() {
-    return $<HTMLSelectElement>("axis").value as "x" | "y";
+    return $<HTMLSelectElement>("axis").value as Axis;
   }
   get preset() {
     return $<HTMLSelectElement>("curve").value;
@@ -396,14 +412,20 @@ export class MotionGraph {
   } {
     const p = view.project;
     if (!p) return { points: [], distance: 0, origin: 0 };
-    const valid = p.samples.filter((s) => s.valid && s[this.axis] !== null),
+    const valid = p.samples.filter(
+        (s) => s.valid && sampleValue(s, this.axis) !== null,
+      ),
       origin =
-        valid.findLast((s) => s.frame <= view.first)?.[this.axis] ??
-        valid[0]?.[this.axis] ??
+        sampleValue(
+          valid.findLast((s) => s.frame <= view.first),
+          this.axis,
+        ) ??
+        sampleValue(valid[0], this.axis) ??
         0;
-    const target = p.samples.find((s) => s.frame === view.last && s.valid)?.[
-      this.axis
-    ];
+    const target = sampleValue(
+      p.samples.find((s) => s.frame === view.last && s.valid),
+      this.axis,
+    );
     const distance =
       target === null || target === undefined ? 0 : target - origin;
     return {
@@ -412,12 +434,12 @@ export class MotionGraph {
       points: p.samples.map((s) => ({
         t: s.t + view.offset,
         v:
-          s.valid && s[this.axis] !== null
+          s.valid && sampleValue(s, this.axis) !== null
             ? this.progress
               ? Math.abs(distance) > 1e-6
-                ? ((s[this.axis]! - origin) / distance) * 100
+                ? ((sampleValue(s, this.axis)! - origin) / distance) * 100
                 : null
-              : s[this.axis]! - origin
+              : sampleValue(s, this.axis)! - origin
             : null,
         frame: s.frame,
         manual: s.manual,
@@ -659,7 +681,7 @@ export class MotionGraph {
             (row) => row.frame === s.frame,
           )!;
           $("sample-info").textContent =
-            `${d.view.prefix.toUpperCase()}  Frame ${s.frame}  ${(s.t / 1000).toFixed(3)} s  ${s.v!.toFixed(3)} ${this.progress ? "%" : "px"}  ${d.view.project!.settings.method?.startsWith("edge") ? "Edge strength" : "Similarity"} ${sample.score.toFixed(3)}`;
+            `${d.view.prefix.toUpperCase()}  Frame ${s.frame}  ${(s.t / 1000).toFixed(3)} s  ${s.v!.toFixed(3)} ${this.progress ? "%" : "px"}  ${d.view.project!.settings.method && d.view.project!.settings.method !== "feature" ? "Edge strength" : "Similarity"} ${sample.score.toFixed(3)}`;
           dot.classList.add("hover-sample");
         });
         dot.addEventListener("pointerleave", () => {
@@ -805,21 +827,26 @@ export class MotionGraph {
       if (v.outside)
         $("sample-info").textContent =
           `${v.prefix.toUpperCase()} is outside the clip at the playhead.`;
-      else if (sample?.valid && sample[this.axis] !== null) {
+      else if (sample?.valid && sampleValue(sample, this.axis) !== null) {
         const first =
           p.samples.findLast(
-            (s) => s.valid && s.frame <= v.first && s[this.axis] !== null,
-          ) || p.samples.find((s) => s.valid && s[this.axis] !== null);
-        const origin = first?.[this.axis] ?? 0,
-          end = p.samples.find((s) => s.valid && s.frame === v.last)?.[
-            this.axis
-          ],
+            (s) =>
+              s.valid &&
+              s.frame <= v.first &&
+              sampleValue(s, this.axis) !== null,
+          ) ||
+          p.samples.find((s) => s.valid && sampleValue(s, this.axis) !== null);
+        const origin = sampleValue(first, this.axis) ?? 0,
+          end = sampleValue(
+            p.samples.find((s) => s.valid && s.frame === v.last),
+            this.axis,
+          ),
           distance = end === undefined || end === null ? 0 : end - origin;
         const value = this.progress
-          ? ((sample[this.axis]! - origin) / (distance || 1)) * 100
-          : sample[this.axis]! - origin;
+          ? ((sampleValue(sample, this.axis)! - origin) / (distance || 1)) * 100
+          : sampleValue(sample, this.axis)! - origin;
         $("sample-info").textContent =
-          `${v.prefix.toUpperCase()}  Frame ${v.index}  ${value.toFixed(3)} ${this.progress ? "%" : "px"}  ${sample.manual ? "Manual anchor" : `${p.settings.method?.startsWith("edge") ? "Edge strength" : "Similarity"} ${sample.score.toFixed(3)}`}`;
+          `${v.prefix.toUpperCase()}  Frame ${v.index}  ${value.toFixed(3)} ${this.progress ? "%" : "px"}  ${sample.manual ? "Manual anchor" : `${p.settings.method && p.settings.method !== "feature" ? "Edge strength" : "Similarity"} ${sample.score.toFixed(3)}`}`;
       } else
         $("sample-info").textContent =
           `${v.prefix.toUpperCase()}  Frame ${v.index}  No valid measurement.`;

@@ -102,3 +102,36 @@ make build
 ```
 
 `make test` checks workspace persistence and recording preservation, alignment and source-frame mapping, known fractional motion, both edge axes, correction and tracking loss, curve fitting, variable frame timing, linked-time mapping, exports, HTTP validation, server-rendered controls, token references and shared runtime integrity. Generate templ code after editing templates with `make generate`.
+
+## Size tracking and exports
+
+Choose **Width (opposing edges)** or **Height (opposing edges)** to measure a changing size. Draw a box with each opposing boundary near its corresponding side. The tracker follows the two edges independently through the central 60% of the box to avoid rounded corners. Use a strip that stays across straight edges throughout the motion. Width and height are available as chart measurements and reference comparisons.
+
+JSON and CSV store measured sizes separately from the tracking box dimensions (`measuredWidth` and `measuredHeight`). Weak matches have no measured value. Correct a size measurement by drawing the box around both edges at the affected frame and using **Set tracking position at playhead**.
+
+The Export section has its own first and last frame. **Tracking range**, **Playback range** and **Full video** fill those fields. Changing the export interval does not change the tracking range used for normalization and reference comparison. Exports start with the tracking range selected.
+
+Choose speed and a finite number of repetitions. Switch the tracking outlines, displacement chart, reference curve, results, corrections, tracking loss and frame labels independently. **Include second video** uses the existing workspace alignment. **Use current chart window and scale** keeps the current plot bounds; otherwise the export fits the tracking range. **Save chart SVG** saves a standalone chart with the same settings. Reference parameters and errors are printed when enabled. Export timing follows source timestamps, including variable frame intervals.
+
+```sh
+./scripts/run.sh track PROJECT_ID --method width --region 683,90,244,410 --start 120 --end 151
+./scripts/run.sh export PROJECT_ID --format video --start 120 --end 151 --speed 0.25 --repeat 2 --axis width
+./scripts/run.sh export PROJECT_ID --format chart --start 120 --end 131 --axis width
+./scripts/run.sh export PROJECT_ID --format video --export-options /tmp/export-options.json
+```
+
+`POST /api/projects/{id}/export/video` and `/export/chart` accept the same JSON options as `--export-options`. The API returns the file directly. For example:
+
+```json
+{
+  "first": 120, "last": 131, "speed": 0.25, "repeat": 1,
+  "tracking": true, "plot": true, "statistics": true, "markers": true, "time": true,
+  "chart": {
+    "axis": "width", "units": "px", "start": 120, "end": 131,
+    "reference": {"kind": "bezier", "curve": [0.2, 0, 0, 1]},
+    "duration": 200, "statistics": true, "markers": true
+  }
+}
+```
+
+Optional `chart.window` is a pair of source timestamps in milliseconds; `chart.scale` is a pair of axis values. `chart.comparison` takes `id`, `first`, `last` and `offset` (second video's workspace offset minus the primary video's offset, in milliseconds). Omit `reference` for measured traces alone. Spring references use the same stiffness, damping and velocity fields as the UI and measurement API.

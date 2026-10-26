@@ -730,3 +730,10 @@ canvas.drawing {
 .reference-editor {
   margin-block: var(--md-sys-measurement-space100);
 }
+
+.export-options {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--md-sys-measurement-space100);
+  margin-block: var(--md-sys-measurement-space200);
+}

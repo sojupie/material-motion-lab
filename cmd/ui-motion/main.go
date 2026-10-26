@@ -28,7 +28,7 @@ func run(args []string) error {
 	flags := flag.NewFlagSet(command, flag.ContinueOnError)
 	start := flags.Int("start", 0, "first frame")
 	end := flags.Int("end", -1, "last frame")
-	method := flags.String("method", "feature", "feature, edge-x or edge-y")
+	method := flags.String("method", "feature", "feature, edge-x, edge-y, width or height")
 	curve := flags.String("curve", "md3-standard", "reference preset ID, bezier, or spring; GET /api/references lists presets")
 	bezier := flags.String("bezier", "0.2,0,0,1", "custom cubic-bezier x1,y1,x2,y2")
 	stiffness := flags.Float64("stiffness", 380, "unit-mass spring stiffness")
@@ -41,8 +41,11 @@ func run(args []string) error {
 	frame := flags.Int("frame", 0, "frame")
 	step := flags.Int("step", 1, "frame step")
 	zero := flags.Int("zero-frame", 0, "comparison zero frame")
-	format := flags.String("format", "json", "json, csv or video")
-	axis := flags.String("axis", "x", "x or y")
+	format := flags.String("format", "json", "json, csv, chart or video")
+	axis := flags.String("axis", "x", "x, y, width or height")
+	exportOptions := flags.String("export-options", "", "JSON file containing video/chart options (same payload as POST export)")
+	speed := flags.Float64("speed", 1, "video export speed")
+	repeat := flags.Int("repeat", 1, "video export repetitions")
 	port := flags.Int("port", 8091, "local server port")
 	root := flags.String("root", ".", "application directory")
 	projects := flags.String("projects", "", "saved projects directory")
@@ -194,8 +197,37 @@ func run(args []string) error {
 		switch *format {
 		case "csv":
 			result, e = store.CSV(id)
-		case "video":
-			result, e = store.Video(id, *axis)
+		case "video", "chart":
+			p, err := store.Load(id)
+			if err != nil {
+				return err
+			}
+			o := analysis.DefaultVideoOptions(p, *axis)
+			o.First = *start
+			if *end >= 0 {
+				o.Last = *end
+			}
+			o.Speed = *speed
+			o.Repeat = *repeat
+			o.Chart.Start = o.First
+			o.Chart.End = o.Last
+			if *exportOptions != "" {
+				f, err := os.Open(*exportOptions)
+				if err != nil {
+					return err
+				}
+				defer f.Close()
+				decoder := json.NewDecoder(f)
+				decoder.DisallowUnknownFields()
+				if err = decoder.Decode(&o); err != nil {
+					return err
+				}
+			}
+			if *format == "chart" {
+				result, e = store.Chart(id, o.Chart)
+			} else {
+				result, e = store.VideoWithOptions(id, o)
+			}
 		case "json":
 			_, e = store.Load(id)
 			if e == nil {
@@ -204,7 +236,7 @@ func run(args []string) error {
 				result = filepath.Join(folder, "project.json")
 			}
 		default:
-			e = fmt.Errorf("format must be json, csv or video")
+			e = fmt.Errorf("format must be json, csv, chart or video")
 		}
 	default:
 		e = fmt.Errorf("unknown command: %s", command)

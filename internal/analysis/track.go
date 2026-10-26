@@ -35,8 +35,8 @@ func (s Store) TrackMethod(id string, values []float64, start int, end *int, anc
 	if method == "" {
 		method = "feature"
 	}
-	if method != "feature" && method != "edge-x" && method != "edge-y" {
-		return nil, fmt.Errorf("tracking method must be feature, edge-x or edge-y")
+	if method != "feature" && method != "edge-x" && method != "edge-y" && method != "width" && method != "height" {
+		return nil, fmt.Errorf("tracking method must be feature, edge-x, edge-y, width or height")
 	}
 	p, e := s.Load(id)
 	if e != nil {
@@ -71,6 +71,9 @@ func (s Store) TrackMethod(id string, values []float64, start int, end *int, anc
 		}
 	}
 	fixed[start] = selection
+	if method == "width" || method == "height" {
+		return s.trackSpan(p, selection, start, last, fixed, search, threshold, method)
+	}
 	if method != "feature" {
 		return s.trackEdge(p, selection, start, last, fixed, search, threshold, method)
 	}

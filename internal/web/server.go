@@ -230,6 +230,29 @@ func (s *Server) Handler() http.Handler {
 		}
 		return s.Store.Compare(r.PathValue("id"), payload.Reference, payload.Zero)
 	})
+	api("POST /api/projects/{id}/export/{kind}", func(w http.ResponseWriter, r *http.Request) (any, error) {
+		var o analysis.VideoOptions
+		if e := decode(r, &o); e != nil {
+			return nil, e
+		}
+		var path string
+		var e error
+		switch r.PathValue("kind") {
+		case "video":
+			path, e = s.Store.VideoWithOptions(r.PathValue("id"), o)
+		case "chart":
+			path, e = s.Store.Chart(r.PathValue("id"), o.Chart)
+		default:
+			return nil, fmt.Errorf("export kind must be chart or video")
+		}
+		if e != nil {
+			return nil, e
+		}
+		defer os.Remove(path)
+		w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%q", filepath.Base(path)))
+		http.ServeFile(w, r, path)
+		return nil, nil
+	})
 	api("GET /api/projects/{id}/download/{kind}", func(w http.ResponseWriter, r *http.Request) (any, error) {
 		id := r.PathValue("id")
 		var path string

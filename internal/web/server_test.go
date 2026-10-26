@@ -6,6 +6,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 )
@@ -31,7 +32,15 @@ func TestServerRenderedControlsAndAPI(t *testing.T) {
 		t.Fatal(page.Code, page.Body.String())
 	}
 	body := page.Body.String()
-	for _, text := range []string{"data-navigation-modal", "data-field-combo", "md-outlined-text-field", "field-option-template", "recording-item-template", "/assets/main.js", "A &lt;script&gt;", `id="timeline"`, `id="playhead-time"`, `id="inspector-title"`, "Track selected range", "Mark sync point", "Viewer zoom", `id="reference-controls"`, `id="graph-fit"`, `id="graph-fit-end"`, `id="graph-zoom-in"`, `id="graph-scale-info"`, `aria-label="Clip alignment"`, `<h3>Export</h3>`, `id="playback-speed"`, `id="playback-loop"`, `id="playback-start"`, `id="playback-end"`, `id="playback-reset"`} {
+	ids := map[string]bool{}
+	for _, match := range regexp.MustCompile(` id="([^"]+)"`).FindAllStringSubmatch(body, -1) {
+		if ids[match[1]] {
+			t.Fatal("duplicate control ID", match[1])
+		}
+		ids[match[1]] = true
+	}
+
+	for _, text := range []string{"data-navigation-modal", "data-field-combo", "md-outlined-text-field", "field-option-template", "recording-item-template", "/assets/main.js", "A &lt;script&gt;", `id="timeline"`, `id="playhead-time"`, `id="inspector-title"`, "Track selected range", "Mark sync point", "Viewer zoom", `id="reference-controls"`, `id="graph-fit"`, `id="graph-fit-end"`, `id="graph-zoom-in"`, `id="graph-scale-info"`, `aria-label="Clip alignment"`, `<h3>Export</h3>`, `id="playback-speed"`, `id="playback-loop"`, `id="playback-start"`, `id="playback-end"`, `id="playback-reset"`, `id="a-export-first"`, `id="a-export-last"`, `id="a-export-plot"`, `id="a-chart"`, "Width (opposing edges)"} {
 		if !strings.Contains(body, text) {
 			t.Fatal("missing server markup", text)
 		}
@@ -74,6 +83,14 @@ func TestServerRenderedControlsAndAPI(t *testing.T) {
 		server.ServeHTTP(w, httptest.NewRequest("POST", "/api/references/validate", strings.NewReader(body)))
 		if w.Code != 400 {
 			t.Fatal("invalid reference accepted", w.Code, w.Body.String())
+		}
+	}
+
+	for _, body := range []string{`{"first":-1}`, `{"first":0,"last":99,"speed":1,"repeat":1}`, `{"first":0,"last":1,"speed":0,"repeat":1}`, `{"unknown":true}`} {
+		w := httptest.NewRecorder()
+		server.ServeHTTP(w, httptest.NewRequest("POST", "/api/projects/"+id+"/export/video", strings.NewReader(body)))
+		if w.Code != 400 {
+			t.Fatal("invalid export accepted", w.Code, w.Body.String())
 		}
 	}
 

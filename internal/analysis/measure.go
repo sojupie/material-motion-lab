@@ -74,8 +74,8 @@ func (s Store) MeasureReference(id, axis string, start, end int, ref Reference, 
 }
 func MeasureReference(p *Project, axis string, start, end int, ref Reference, duration float64, fit bool) (Measurement, error) {
 	var result Measurement
-	if axis != "x" && axis != "y" {
-		return result, fmt.Errorf("axis must be x or y")
+	if axis != "x" && axis != "y" && axis != "width" && axis != "height" {
+		return result, fmt.Errorf("axis must be x, y, width or height")
 	}
 	if e := ref.Validate(); e != nil {
 		return result, e

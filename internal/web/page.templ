@@ -54,7 +54,7 @@ templ trackingInspector(prefix string) {
 		</section>
 		<section aria-label="Tracking settings">
 			<h3>Tracking</h3>
-			@ui.Select(prefix+"-method", "Method", []ui.Option{{Value: "feature", Label: "Image patch"}, {Value: "edge-x", Label: "Vertical edge (X)"}, {Value: "edge-y", Label: "Horizontal edge (Y)"}})
+			@ui.Select(prefix+"-method", "Method", []ui.Option{{Value: "feature", Label: "Image patch"}, {Value: "edge-x", Label: "Vertical edge (X)"}, {Value: "edge-y", Label: "Horizontal edge (Y)"}, {Value: "width", Label: "Width (opposing edges)"}, {Value: "height", Label: "Height (opposing edges)"}})
 			<p id={ prefix + "-method-help" } class="help"></p>
 			@action(prefix+"-draw", "Draw tracking region", true)
 			<p id={ prefix + "-selection" } class="help"></p>
@@ -79,10 +79,34 @@ templ trackingInspector(prefix string) {
 		</section>
 		<section class="export-controls" aria-label="Export">
 			<h3>Export</h3>
+			<div class="field-grid">
+				@ui.NumberField(prefix+"-export-first", "First frame", "0", "0", "")
+				@ui.NumberField(prefix+"-export-last", "Last frame", "0", "0", "")
+			</div>
+			<div class="inspector-actions">
+				@action(prefix+"-export-range-tracking", "Tracking range", true)
+				@action(prefix+"-export-range-playback", "Playback range", true)
+				@action(prefix+"-export-range-full", "Full video", true)
+			</div>
+			<div class="field-grid">
+				@ui.NumberField(prefix+"-export-speed", "Speed", "1", "0.125", "4")
+				@ui.NumberField(prefix+"-export-repeat", "Repetitions", "1", "1", "10")
+			</div>
+			<div class="export-options">
+				@ui.Checkbox(prefix+"-export-tracking", "Tracking outlines")
+				@ui.Checkbox(prefix+"-export-plot", "Displacement chart")
+				@ui.Checkbox(prefix+"-export-reference", "Reference curve")
+				@ui.Checkbox(prefix+"-export-statistics", "Measurement results")
+				@ui.Checkbox(prefix+"-export-markers", "Corrections and tracking loss")
+				@ui.Checkbox(prefix+"-export-time", "Frame and source time")
+				@ui.Checkbox(prefix+"-export-comparison", "Include second video")
+				@ui.Checkbox(prefix+"-export-view", "Use current chart window and scale")
+			</div>
 			<div class="inspector-actions">
 				@action(prefix+"-json", "Save JSON", true)
 				@action(prefix+"-csv", "Save CSV", true)
 				@action(prefix+"-export", "Export video", true)
+				@action(prefix+"-chart", "Save chart SVG", true)
 			</div>
 		</section>
 	</div>
@@ -174,7 +198,7 @@ templ Page(entries []Entry) {
 									<section class="graph-panel" aria-label="Displacement measurements">
 										<h2>Displacement</h2>
 										<div class="graph-controls">
-											@ui.Select("axis", "Position", []ui.Option{{Value: "x", Label: "Horizontal"}, {Value: "y", Label: "Vertical"}})
+											@ui.Select("axis", "Position", []ui.Option{{Value: "x", Label: "Horizontal"}, {Value: "y", Label: "Vertical"}, {Value: "width", Label: "Width"}, {Value: "height", Label: "Height"}})
 											@ui.Select("units", "Units", []ui.Option{{Value: "px", Label: "Recording pixels"}, {Value: "progress", Label: "Progress (%)"}})
 											@ui.Select("curve", "Reference curve", referenceOptions())
 										</div>

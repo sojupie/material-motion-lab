@@ -62,6 +62,17 @@ async function job(fn: () => Promise<void>) {
   }
 }
 const actions: ViewActions = {
+  export: exportMedia,
+  exportRange: (v) => {
+    const range = playbackRange();
+    const times = v.project!.times;
+    if (range[1] < times[0] + v.offset || range[0] > times.at(-1)! + v.offset)
+      throw Error("Playback interval does not overlap this video.");
+    return [
+      sourceFrame(times, v.offset, range[0]),
+      sourceFrame(times, v.offset, range[1]),
+    ];
+  },
   seek: (v, i) => seekFrame(v, i),
   select: selectVideo,
   change: () => changed(true),
@@ -93,6 +104,54 @@ const graph = new MotionGraph(
     changed(false);
   },
 );
+async function exportMedia(v: VideoView, kind: string) {
+  if (!v.project) return;
+  const checked = (key: string) => v.input("export-" + key).checked;
+  const chart = {
+    ...graph.exportOptions(v, checked("view")),
+    statistics: checked("statistics"),
+    markers: checked("markers"),
+    comparison: undefined as object | undefined,
+  };
+  if (!checked("reference")) chart.reference = undefined;
+  if (checked("comparison")) {
+    const other = views().find((other) => other !== v && other.project);
+    if (!other) throw Error("Load a second video to include it in the export.");
+    chart.comparison = {
+      id: other.project!.id,
+      first: other.first,
+      last: other.last,
+      offset: other.offset - v.offset,
+    };
+  }
+  const options = {
+    first: Number(v.input("export-first").value),
+    last: Number(v.input("export-last").value),
+    speed: Number(v.input("export-speed").value),
+    repeat: Number(v.input("export-repeat").value),
+    tracking: checked("tracking"),
+    plot: checked("plot"),
+    statistics: checked("statistics"),
+    markers: checked("markers"),
+    time: checked("time"),
+    chart,
+  };
+  status(kind === "video" ? "Rendering selected frames…" : "Preparing chart…");
+  const response = await fetch(`/api/projects/${v.project.id}/export/${kind}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(options),
+  });
+  if (!response.ok)
+    throw Error((await response.json()).detail || "Export failed");
+  const url = URL.createObjectURL(await response.blob()),
+    link = document.createElement("a");
+  link.href = url;
+  link.download = kind === "video" ? "annotated.mp4" : "motion-chart.svg";
+  link.click();
+  setTimeout(() => URL.revokeObjectURL(url), 30000);
+  status("Export ready.");
+}
 function selectVideo(v: VideoView) {
   if (!v.project) return;
   selected = v;

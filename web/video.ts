@@ -3,6 +3,8 @@ import { syncMaterialControls } from "./material";
 import { clampRange } from "./timing";
 import type { Project, Region, Method, WorkspaceTrack } from "./types";
 export type ViewActions = {
+  export: (view: VideoView, kind: string) => Promise<void>;
+  exportRange: (view: VideoView) => [number, number];
   seek: (view: VideoView, index: number) => void;
   select: (view: VideoView) => void;
   change: () => void;
@@ -82,8 +84,36 @@ export class VideoView {
       ["json", "json"],
       ["csv", "csv"],
       ["export", "video"],
+      ["chart", "chart"],
     ])
-      this.el(key).onclick = () => actions.job(() => this.download(kind));
+      this.el(key).onclick = () =>
+        actions.job(() =>
+          kind === "video" || kind === "chart"
+            ? actions.export(this, kind)
+            : this.download(kind),
+        );
+    for (const key of [
+      "tracking",
+      "plot",
+      "reference",
+      "statistics",
+      "markers",
+      "time",
+    ])
+      this.input("export-" + key).checked = true;
+    this.input("export-speed").step = ".125";
+    for (const mode of ["tracking", "playback", "full"])
+      this.el("export-range-" + mode).onclick = () => {
+        if (!this.project) return;
+        const range =
+          mode === "tracking"
+            ? [this.first, this.last]
+            : mode === "full"
+              ? [0, this.project.times.length - 1]
+              : actions.exportRange(this);
+        this.input("export-first").value = String(range[0]);
+        this.input("export-last").value = String(range[1]);
+      };
     this.canvas.onpointerdown = (e) => {
       if (!this.project || document.body.hasAttribute("aria-busy")) return;
       actions.select(this);
@@ -194,6 +224,10 @@ export class VideoView {
       track?.first ?? p.settings.start ?? 0,
       track?.last ?? p.settings.end ?? p.times.length - 1,
     );
+    for (const key of ["first", "last"])
+      this.input("export-" + key).max = String(p.times.length - 1);
+    this.input("export-first").value = String(this.first);
+    this.input("export-last").value = String(this.last);
     this.input("search").value = String(p.settings.search ?? 60);
     this.input("threshold").value = String(p.settings.threshold ?? 0.65);
     this.el<HTMLSelectElement>("method").value = p.settings.method || "feature";
@@ -213,7 +247,9 @@ export class VideoView {
     this.el("method-help").textContent =
       this.method === "feature"
         ? "Select a distinct detail at the range start. To correct a result, draw its position at the current frame."
-        : "Draw a narrow strip across a straight edge. Keep corners and other boundaries outside it.";
+        : this.method === "width" || this.method === "height"
+          ? "Draw a box around both opposing edges. Tracking uses the central strip to avoid rounded corners."
+          : "Draw a narrow strip across a straight edge. Keep corners and other boundaries outside it.";
   }
   controls(busy: boolean) {
     busy = busy || document.body.hasAttribute("aria-busy");
@@ -242,7 +278,15 @@ export class VideoView {
       : p?.samples.length
         ? `Tracked frames ${p.settings.start}–${p.settings.end}.${this.first !== p.settings.start && !this.roi ? " Go to the range start and draw a region to retrack this range." : ""}`
         : "No measurements yet. Select a region at the range start, then track the range.";
-    for (const key of ["json", "csv", "export"])
+    for (const key of [
+      "json",
+      "csv",
+      "export",
+      "chart",
+      "export-range-tracking",
+      "export-range-playback",
+      "export-range-full",
+    ])
       this.el<HTMLButtonElement>(key).disabled = busy || !p?.samples.length;
     for (const kind of ["anchor", "weak"])
       for (const direction of [-1, 1])
@@ -302,7 +346,7 @@ export class VideoView {
         ? "Manual anchor"
         : !sample.valid
           ? "Tracking lost"
-          : p.settings.method?.startsWith("edge")
+          : p.settings.method && p.settings.method !== "feature"
             ? `Edge strength: ${sample.score.toFixed(3)}× anchor`
             : `Similarity: ${sample.score.toFixed(3)}`;
     const token = ++this.version,
@@ -353,6 +397,26 @@ export class VideoView {
         ctx.moveTo(sample.x, sample.y);
         ctx.lineTo(sample.x + sample.width, sample.y);
         ctx.stroke();
+      } else if (
+        p.settings.method === "width" &&
+        sample.measuredWidth != null
+      ) {
+        for (const x of [sample.x, sample.x + sample.measuredWidth]) {
+          ctx.beginPath();
+          ctx.moveTo(x, sample.y);
+          ctx.lineTo(x, sample.y + sample.height);
+          ctx.stroke();
+        }
+      } else if (
+        p.settings.method === "height" &&
+        sample.measuredHeight != null
+      ) {
+        for (const y of [sample.y, sample.y + sample.measuredHeight]) {
+          ctx.beginPath();
+          ctx.moveTo(sample.x, y);
+          ctx.lineTo(sample.x + sample.width, y);
+          ctx.stroke();
+        }
       } else ctx.strokeRect(sample.x, sample.y, sample.width, sample.height);
     }
     if (this.roi) {
@@ -420,6 +484,11 @@ export class VideoView {
     this.actions.message(
       `Tracked ${result.samples.length} frames; ${weak} weak ${weak === 1 ? "match" : "matches"}.`,
     );
+    if (this.method === "width" || this.method === "height") {
+      $<HTMLSelectElement>("axis").value = this.method;
+      $("axis").dispatchEvent(new Event("change"));
+      syncMaterialControls();
+    }
     this.actions.change();
   }
   async download(kind: string) {

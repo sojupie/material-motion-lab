@@ -6,12 +6,14 @@ export type Sample = {
   y: number | null;
   width: number;
   height: number;
+  measuredWidth?: number | null;
+  measuredHeight?: number | null;
   score: number;
   valid: boolean;
   manual: boolean;
 };
 export type Anchor = { frame: number; region: Region };
-export type Method = "feature" | "edge-x" | "edge-y";
+export type Method = "feature" | "edge-x" | "edge-y" | "width" | "height";
 export type Project = {
   id: string;
   name: string;
@@ -72,3 +74,13 @@ export type Workspace = {
   tracks: WorkspaceTrack[];
   playback?: Playback;
 };
+
+export type Axis = "x" | "y" | "width" | "height";
+export function sampleValue(s: Sample | undefined, axis: Axis): number | null {
+  if (!s) return null;
+  return axis === "width"
+    ? (s.measuredWidth ?? null)
+    : axis === "height"
+      ? (s.measuredHeight ?? null)
+      : s[axis];
+}
