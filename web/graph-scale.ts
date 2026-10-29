@@ -1,14 +1,14 @@
 export type ScaleRange = [number, number];
 export function fitScale(values: number[], minimumPadding: number): ScaleRange {
-  const finite = values.filter(Number.isFinite);
-  const low = finite.length ? Math.min(...finite) : 0;
-  const high = finite.length ? Math.max(...finite) : 0;
+  const finite = values.filter((value) => Number.isFinite(value));
+  const low = finite.length > 0 ? Math.min(...finite) : 0;
+  const high = finite.length > 0 ? Math.max(...finite) : 0;
   const padding = Math.max(minimumPadding, (high - low) * 0.1);
   return [low - padding, high + padding];
 }
 export function zoomScale([low, high]: ScaleRange, factor: number): ScaleRange {
-  const center = (low + high) / 2,
-    half = ((high - low) * factor) / 2;
+  const center = (low + high) / 2;
+  const half = ((high - low) * factor) / 2;
   return [center - half, center + half];
 }
 export function panScale(

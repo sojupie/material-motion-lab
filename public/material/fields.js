@@ -1,7 +1,7 @@
 (() => {
  const matches=(values,query)=>values.map((value,index)=>({value,index})).filter(({value})=>value.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase())).map(({index})=>index);
- function popupPosition(rect,viewport,height,gap) {
-  const width=Math.min(rect.width,Math.max(0,viewport.width-2*gap)),below=Math.max(0,viewport.height-rect.bottom-gap),above=Math.max(0,rect.top-gap),up=below<Math.min(height,above),available=up?above:below;
+ function popupPosition(rect,viewport,height,gap,contentWidth=0) {
+  const width=Math.min(Math.max(rect.width,contentWidth),Math.max(0,viewport.width-2*gap)),below=Math.max(0,viewport.height-rect.bottom-gap),above=Math.max(0,rect.top-gap),up=below<Math.min(height,above),available=up?above:below;
   return {left:Math.max(gap,Math.min(rect.left,viewport.width-gap-width)),top:up?Math.max(gap,rect.top-Math.min(height,available)):rect.bottom,width,height:available};
  }
  function typeahead(values,current,query) {
@@ -24,10 +24,17 @@
  }
  function position(state) {
   const style=getComputedStyle(state.root),gap=Number.parseFloat(style.getPropertyValue('--md-sys-measurement-space100')),rect=state.root.getBoundingClientRect(),viewport={width:document.documentElement.clientWidth,height:window.innerHeight};
+  // Chip labels can be shorter than their options. Text fields retain field width.
+  let contentWidth=0;
+  if(state.input.classList?.contains('md-filter-chip')){
+   state.menu.style.setProperty('--_field-popup-width','max-content');
+   contentWidth=state.menu.scrollWidth;
+   state.menu.style.setProperty('--_field-popup-width',popupPosition(rect,viewport,0,gap,contentWidth).width+'px');
+  }
   // Measure the CSS-capped surface before choosing which side of the field to use.
   state.menu.style.setProperty('--_field-popup-height',Math.max(0,viewport.height-2*gap)+'px');
   const height=Math.min(state.menu.scrollHeight,state.menu.offsetHeight||state.menu.scrollHeight);
-  const p=popupPosition(rect,viewport,height,gap);state.menu.dataset.menuAbove=String(p.top<rect.top);state.menu.style.setProperty('--_menu-origin-x',Math.max(0,Math.min(100,(rect.left+rect.width/2-p.left)/p.width*100))+'%');for(const [key,value]of Object.entries(p))state.menu.style.setProperty('--_field-popup-'+key,value+'px');
+  const p=popupPosition(rect,viewport,height,gap,contentWidth);state.menu.dataset.menuAbove=String(p.top<rect.top);state.menu.style.setProperty('--_menu-origin-x',Math.max(0,Math.min(100,(rect.left+rect.width/2-p.left)/p.width*100))+'%');for(const [key,value]of Object.entries(p))state.menu.style.setProperty('--_field-popup-'+key,value+'px');
  }
  function open(state,query='') {
   if(state.input.disabled)return;filter(state,query);if(!state.menu.matches(':popover-open'))state.menu.showPopover();position(state);state.input.setAttribute('aria-expanded','true');

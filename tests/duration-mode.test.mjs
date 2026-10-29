@@ -1,0 +1,33 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import vm from 'node:vm';
+import ts from 'typescript';
+
+test('auto-fit updates its dependencies, ignores stale responses, and reports unavailable tracking', async () => {
+  const fields = { 'duration-mode': {value:'a'}, duration:{value:'300'}, 'duration-status':{textContent:''} };
+  let calls=0, resolve;
+  const exports={};
+  const code=ts.transpileModule(fs.readFileSync('web/graph.ts','utf8'), {compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
+  vm.runInNewContext(code,{exports,require: name => name==='./api' ? {$:id=>fields[id],post:async()=>{calls++;return resolve ? new Promise(r=>{resolve=r}) : {duration:250};}} : {}});
+  const graph=Object.create(exports.MotionGraph.prototype);
+  const view={prefix:'a',first:10,last:30,project:{samples:[{}]},dirty:false};
+  let curve={kind:'bezier',curve:[0.2,0,0,1]};
+  Object.assign(graph,{revision:1,views:()=>[view],reference:{curve:()=>curve}});
+  Object.defineProperties(graph,{preset:{value:'standard'},axis:{value:'x'}});
+  assert.equal(await graph.updateDuration(1),true);
+  assert.equal(fields.duration.value,'250.00');
+  assert.match(fields['duration-status'].textContent,/Auto-fit A · 250.0 ms/);
+  await graph.updateDuration(1); assert.equal(calls,1);
+  view.last=40; await graph.updateDuration(1); assert.equal(calls,2);
+  curve={kind:'bezier',curve:[0.4,0,1,1]}; await graph.updateDuration(1); assert.equal(calls,3);
+  view.dirty=true; assert.equal(await graph.updateDuration(1),false);
+  assert.match(fields['duration-status'].textContent,/unavailable/);
+  view.dirty=false; view.last=50; resolve=true;
+  const pending=graph.updateDuration(1); graph.revision=2;
+  resolve({duration:999}); assert.equal(await pending,false);
+  assert.equal(fields.duration.value,'250.00');
+  fields['duration-mode'].value='manual';
+  assert.equal(await graph.updateDuration(2),true);
+  assert.match(fields['duration-status'].textContent,/Manual/);
+});

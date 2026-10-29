@@ -1,7 +1,7 @@
 # Motion references
 
 The reference list covers MD3 easing and motion schemes. Definitions live in
-`internal/analysis/reference.go`; the page, HTTP API and CLI use that list.
+`internal/analysis/reference.go`; the static build exports that list for the browser; the native CLI also uses it.
 
 Values were checked on 2026-10-26 against these primary sources:
 
@@ -50,13 +50,11 @@ schema version, reference parameters and easing duration. Loading a spring or
 Bézier makes it custom, so edited values cannot inherit an official preset label.
 Imported references are validated by the same Go code used for measurement.
 
-## API and CLI
+## Native CLI and browser measurements
 
 `GET /api/references` lists preset IDs, parameters and source links.
 `POST /api/references/validate` validates a reference object.
-`POST /api/projects/{id}/measure` accepts `reference` alongside `axis`, `start`,
-`end`, `duration` and `fit`. The existing four-number `curve` field still works.
-Measurement output includes the evaluated reference, expected points and errors.
+The browser evaluates references and fits durations in its processing worker. The static deployment has no measurement endpoint.
 
 ```sh
 ./scripts/run.sh measure PROJECT_ID --start 30 --end 90 --curve expressive-fast-spatial

@@ -1,17 +1,14 @@
-export const $ = <T extends HTMLElement = HTMLElement>(id: string) =>
-  document.getElementById(id) as T;
-export async function api<T>(path: string, options?: RequestInit): Promise<T> {
-  const response = await fetch("/api" + path, options);
-  if (!response.ok) {
-    let message = `Request failed (${response.status})`;
-    try {
-      message = (await response.json()).detail || message;
-    } catch {}
-    throw Error(
-      typeof message === "string" ? message : JSON.stringify(message),
-    );
+import { localRequest } from "./local-client";
+
+export function $<T extends HTMLElement = HTMLElement>(id: string): T {
+  const element = document.querySelector<T>(`#${CSS.escape(id)}`);
+  if (!element) {
+    throw new Error(`Missing workspace element: ${id}`);
   }
-  return response.json();
+  return element;
+}
+export function api<T>(path: string, options?: RequestInit): Promise<T> {
+  return localRequest<T>(path, options);
 }
 export function post<T>(path: string, data: unknown) {
   return api<T>(path, {

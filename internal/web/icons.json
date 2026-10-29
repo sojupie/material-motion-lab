@@ -1,0 +1,203 @@
+{
+  "add": {
+    "path": "M440-440H200v-80h240v-240h80v240h240v80H520v240h-80v-240Z",
+    "source": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/add/materialsymbolsoutlined/add_24px.svg",
+    "viewBox": "0 -960 960 960"
+  },
+  "download": {
+    "path": "M480-320 280-520l56-58 104 104v-326h80v326l104-104 56 58-200 200ZM240-160q-33 0-56.5-23.5T160-240v-120h80v120h480v-120h80v120q0 33-23.5 56.5T720-160H240Z",
+    "source": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/download/materialsymbolsoutlined/download_24px.svg",
+    "viewBox": "0 -960 960 960"
+  },
+  "close": {
+    "path": "m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z",
+    "source": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/close/materialsymbolsoutlined/close_24px.svg",
+    "viewBox": "0 -960 960 960"
+  },
+  "line_start": {
+    "path": "M180-380q-42 0-71-29t-29-71q0-42 29-71t71-29q31 0 56 17t36 43h608v80H272q-11 26-36 43t-56 17Z",
+    "source": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/line_start/materialsymbolsoutlined/line_start_24px.svg",
+    "viewBox": "0 -960 960 960"
+  },
+  "line_end": {
+    "path": "M780-380q-31 0-56-17t-36-43H80v-80h608q11-26 36-43t56-17q42 0 71 29t29 71q0 42-29 71t-71 29Z",
+    "source": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/line_end/materialsymbolsoutlined/line_end_24px.svg",
+    "viewBox": "0 -960 960 960"
+  },
+  "edit": {
+    "path": "M200-200h57l391-391-57-57-391 391v57Zm-80 80v-170l528-527q12-11 26.5-17t30.5-6q16 0 31 6t26 18l55 56q12 11 17.5 26t5.5 30q0 16-5.5 30.5T817-647L290-120H120Zm640-584-56-56 56 56Zm-141 85-28-29 57 57-29-28Z",
+    "source": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/edit/materialsymbolsoutlined/edit_24px.svg",
+    "viewBox": "0 -960 960 960"
+  },
+  "navigate_before": {
+    "path": "M560-240 320-480l240-240 56 56-184 184 184 184-56 56Z",
+    "source": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/navigate_before/materialsymbolsoutlined/navigate_before_24px.svg",
+    "viewBox": "0 -960 960 960"
+  },
+  "navigate_next": {
+    "path": "M504-480 320-664l56-56 240 240-240 240-56-56 184-184Z",
+    "source": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/navigate_next/materialsymbolsoutlined/navigate_next_24px.svg",
+    "viewBox": "0 -960 960 960"
+  },
+  "skip_previous": {
+    "path": "M220-240v-480h80v480h-80Zm520 0L380-480l360-240v480Zm-80-240Zm0 90v-180l-136 90 136 90Z",
+    "source": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/skip_previous/materialsymbolsoutlined/skip_previous_24px.svg",
+    "viewBox": "0 -960 960 960"
+  },
+  "skip_next": {
+    "path": "M660-240v-480h80v480h-80Zm-440 0v-480l360 240-360 240Zm80-240Zm0 90 136-90-136-90v180Z",
+    "source": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/skip_next/materialsymbolsoutlined/skip_next_24px.svg",
+    "viewBox": "0 -960 960 960"
+  },
+  "play_arrow": {
+    "path": "M320-200v-560l440 280-440 280Zm80-280Zm0 134 210-134-210-134v268Z",
+    "source": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/play_arrow/materialsymbolsoutlined/play_arrow_24px.svg",
+    "viewBox": "0 -960 960 960"
+  },
+  "pause": {
+    "path": "M520-200v-560h240v560H520Zm-320 0v-560h240v560H200Zm400-80h80v-400h-80v400Zm-320 0h80v-400h-80v400Zm0-400v400-400Zm320 0v400-400Z",
+    "source": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/pause/materialsymbolsoutlined/pause_24px.svg",
+    "viewBox": "0 -960 960 960"
+  },
+  "zoom_in": {
+    "path": "M784-120 532-372q-30 24-69 38t-83 14q-109 0-184.5-75.5T120-580q0-109 75.5-184.5T380-840q109 0 184.5 75.5T640-580q0 44-14 83t-38 69l252 252-56 56ZM380-400q75 0 127.5-52.5T560-580q0-75-52.5-127.5T380-760q-75 0-127.5 52.5T200-580q0 75 52.5 127.5T380-400Zm-40-60v-80h-80v-80h80v-80h80v80h80v80h-80v80h-80Z",
+    "source": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/zoom_in/materialsymbolsoutlined/zoom_in_24px.svg",
+    "viewBox": "0 -960 960 960"
+  },
+  "zoom_out": {
+    "path": "M784-120 532-372q-30 24-69 38t-83 14q-109 0-184.5-75.5T120-580q0-109 75.5-184.5T380-840q109 0 184.5 75.5T640-580q0 44-14 83t-38 69l252 252-56 56ZM380-400q75 0 127.5-52.5T560-580q0-75-52.5-127.5T380-760q-75 0-127.5 52.5T200-580q0 75 52.5 127.5T380-400ZM280-540v-80h200v80H280Z",
+    "source": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/zoom_out/materialsymbolsoutlined/zoom_out_24px.svg",
+    "viewBox": "0 -960 960 960"
+  },
+  "fit_page_width": {
+    "path": "M160-160q-33 0-56.5-23.5T80-240v-480q0-33 23.5-56.5T160-800h640q33 0 56.5 23.5T880-720v480q0 33-23.5 56.5T800-160H160Zm640-560H160v480h640v-480Zm-640 0v480-480Zm200 360v-240L240-480l120 120Zm360-120L600-600v240l120-120Z",
+    "source": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/fit_page_width/materialsymbolsoutlined/fit_page_width_24px.svg",
+    "viewBox": "0 -960 960 960"
+  },
+  "center_focus_strong": {
+    "path": "M200-120q-33 0-56.5-23.5T120-200v-160h80v160h160v80H200Zm400 0v-80h160v-160h80v160q0 33-23.5 56.5T760-120H600ZM120-600v-160q0-33 23.5-56.5T200-840h160v80H200v160h-80Zm640 0v-160H600v-80h160q33 0 56.5 23.5T840-760v160h-80ZM480-280q-83 0-141.5-58.5T280-480q0-83 58.5-141.5T480-680q83 0 141.5 58.5T680-480q0 83-58.5 141.5T480-280Zm0-80q50 0 85-35t35-85q0-50-35-85t-85-35q-50 0-85 35t-35 85q0 50 35 85t85 35Zm0-120Z",
+    "source": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/center_focus_strong/materialsymbolsoutlined/center_focus_strong_24px.svg",
+    "viewBox": "0 -960 960 960"
+  },
+  "align_horizontal_center": {
+    "path": "M440-80v-200H240v-120h200v-160H120v-120h320v-200h80v200h320v120H520v160h200v120H520v200h-80Z",
+    "source": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/align_horizontal_center/materialsymbolsoutlined/align_horizontal_center_24px.svg",
+    "viewBox": "0 -960 960 960"
+  },
+  "arrow_back": {
+    "path": "m313-440 224 224-57 56-320-320 320-320 57 56-224 224h487v80H313Z",
+    "source": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/arrow_back/materialsymbolsoutlined/arrow_back_24px.svg",
+    "viewBox": "0 -960 960 960"
+  },
+  "arrow_forward": {
+    "path": "M647-440H160v-80h487L423-744l57-56 320 320-320 320-57-56 224-224Z",
+    "source": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/arrow_forward/materialsymbolsoutlined/arrow_forward_24px.svg",
+    "viewBox": "0 -960 960 960"
+  },
+  "upload_file": {
+    "path": "M440-200h80v-167l64 64 56-57-160-160-160 160 57 56 63-63v167ZM240-80q-33 0-56.5-23.5T160-160v-640q0-33 23.5-56.5T240-880h320l240 240v480q0 33-23.5 56.5T720-80H240Zm280-520v-200H240v640h480v-440H520ZM240-800v200-200 640-640Z",
+    "source": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/upload_file/materialsymbolsoutlined/upload_file_24px.svg",
+    "viewBox": "0 -960 960 960"
+  },
+  "expand_content": {
+    "path": "M200-200v-240h80v160h160v80H200Zm480-320v-160H520v-80h240v240h-80Z",
+    "source": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/expand_content/materialsymbolsoutlined/expand_content_24px.svg",
+    "viewBox": "0 -960 960 960"
+  },
+  "collapse_content": {
+    "path": "M440-440v240h-80v-160H200v-80h240Zm160-320v160h160v80H520v-240h80Z",
+    "source": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/collapse_content/materialsymbolsoutlined/collapse_content_24px.svg",
+    "viewBox": "0 -960 960 960"
+  },
+  "pan_tool": {
+    "path": "M402-40q-30 0-56-13.5T303-92L48-465l24-23q19-19 45-22t47 12l116 81v-383q0-17 11.5-28.5T320-840q17 0 28.5 11.5T360-800v537L212-367l157 229q5 8 14 13t19 5h278q33 0 56.5-23.5T760-200v-560q0-17 11.5-28.5T800-800q17 0 28.5 11.5T840-760v560q0 66-47 113T680-40H402Zm38-440v-400q0-17 11.5-28.5T480-920q17 0 28.5 11.5T520-880v400h-80Zm160 0v-360q0-17 11.5-28.5T640-880q17 0 28.5 11.5T680-840v360h-80ZM486-300Z",
+    "source": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/pan_tool/materialsymbolsoutlined/pan_tool_24px.svg",
+    "viewBox": "0 -960 960 960"
+  },
+  "expand_more": {
+    "path": "M480-345 240-585l56-56 184 184 184-184 56 56-240 240Z",
+    "source": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/expand_more/materialsymbolsoutlined/expand_more_24px.svg",
+    "viewBox": "0 -960 960 960"
+  },
+  "compress_horizontal": {
+    "path": "M160-400v-80h640v80H160Zm0-120v-80h640v80H160ZM440-80v-128l-64 64-56-56 160-160 160 160-56 56-64-62v126h-80Zm40-560L320-800l56-56 64 64v-128h80v128l64-64 56 56-160 160Z",
+    "source": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/compress/materialsymbolsoutlined/compress_24px.svg",
+    "viewBox": "0 -960 960 960",
+    "transform": "rotate(90 480 -480)"
+  },
+  "linear_scale": {
+    "path": "M680-280q-72 0-127-45.5T484-440H272q-12 27-37 43.5T180-380q-42 0-71-29t-29-71q0-42 29-71t71-29q30 0 55 16.5t37 43.5h212q14-69 69-114.5T680-680q83 0 141.5 58.5T880-480q0 83-58.5 141.5T680-280Zm0-80q50 0 85-35t35-85q0-50-35-85t-85-35q-50 0-85 35t-35 85q0 50 35 85t85 35Z",
+    "source": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/linear_scale/materialsymbolsoutlined/linear_scale_24px.svg",
+    "viewBox": "0 -960 960 960"
+  },
+  "jump_to_element": {
+    "path": "M440-440v-160h80v80h80v80H440Zm280 0v-80h80v-80h80v160H720ZM440-720v-160h160v80h-80v80h-80Zm360 0v-80h-80v-80h160v160h-80ZM136-80l-56-56 224-224H120v-80h320v320h-80v-184L136-80Z",
+    "source": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/jump_to_element/materialsymbolsoutlined/jump_to_element_24px.svg",
+    "viewBox": "0 -960 960 960"
+  },
+  "text_select_jump_to_beginning": {
+    "path": "M760-760v-80h80v80h-80Zm0 640v-80h80v80h-80ZM600-760v-80h80v80h-80Zm0 640v-80h80v80h-80ZM440-760v-80h80v80h-80Zm-160 0v-80h80v80h-80Zm0 640v-80h80v80h-80Zm-160 0v-720h80v720h-80Zm440-200L400-480l160-160 56 56-63 64h287v80H553l63 64-56 56ZM440-120v-80h80v80h-80Z",
+    "source": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/text_select_jump_to_beginning/materialsymbolsoutlined/text_select_jump_to_beginning_24px.svg",
+    "viewBox": "0 -960 960 960"
+  },
+  "text_select_jump_to_end": {
+    "path": "M120-120v-80h80v80h-80Zm0-640v-80h80v80h-80Zm160 640v-80h80v80h-80Zm0-640v-80h80v80h-80Zm160 640v-80h80v80h-80Zm160 0v-80h80v80h-80Zm0-640v-80h80v80h-80Zm160 640v-720h80v720h-80ZM400-320l-56-56 63-64H120v-80h287l-63-64 56-56 160 160-160 160Zm40-440v-80h80v80h-80Z",
+    "source": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/text_select_jump_to_end/materialsymbolsoutlined/text_select_jump_to_end_24px.svg",
+    "viewBox": "0 -960 960 960"
+  },
+  "ink_selection": {
+    "path": "M440-120v-400h400v80H576l264 264-56 56-264-264v264h-80Zm-160 0v-80h80v80h-80Zm-80-640h-80q0-33 23.5-56.5T200-840v80Zm80 0v-80h80v80h-80Zm160 0v-80h80v80h-80Zm160 0v-80h80v80h-80Zm160 0v-80q33 0 56.5 23.5T840-760h-80ZM200-200v80q-33 0-56.5-23.5T120-200h80Zm-80-80v-80h80v80h-80Zm0-160v-80h80v80h-80Zm0-160v-80h80v80h-80Zm640 0v-80h80v80h-80Z",
+    "source": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/ink_selection/materialsymbolsoutlined/ink_selection_24px.svg",
+    "viewBox": "0 -960 960 960"
+  },
+  "fit_page": {
+    "path": "M120-120v-720h80v720h-80Zm640 0v-720h80v720h-80ZM280-440v-80h80v80h-80Zm160 320v-80h80v80h-80Zm0-160v-80h80v80h-80Zm0-160v-80h80v80h-80Zm0-160v-80h80v80h-80Zm0-160v-80h80v80h-80Zm160 320v-80h80v80h-80Z",
+    "source": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/fit_page/materialsymbolsoutlined/fit_page_24px.svg",
+    "viewBox": "0 -960 960 960"
+  },
+  "add_diamond": {
+    "path": "M440-320h80v-120h120v-80H520v-120h-80v120H320v80h120v120Zm40 240q-16 0-30.5-5.5T424-103L105-423q-11-12-18-26.5T80-480q0-16 7-30.5t18-25.5l319-320q12-12 26-18t30-6q16 0 31 6t26 18l318 320q11 12 18 26t7 30q0 16-6.5 30.5T855-423L537-103q-11 11-26 17t-31 6Zm0-80 319-320-319-320-319 320 319 320Zm0-320Z",
+    "source": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/add_diamond/materialsymbolsoutlined/add_diamond_24px.svg",
+    "viewBox": "0 -960 960 960"
+  },
+  "check": {
+    "path": "M382-240 154-468l57-57 171 171 367-367 57 57-424 424Z",
+    "source": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/check/materialsymbolsoutlined/check_24px.svg",
+    "viewBox": "0 -960 960 960"
+  },
+  "chevron_right": {
+    "path": "M504-480 320-664l56-56 240 240-240 240-56-56 184-184Z",
+    "source": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/chevron_right/materialsymbolsoutlined/chevron_right_24px.svg",
+    "viewBox": "0 -960 960 960"
+  },
+  "show_chart": {
+    "path": "m140-220-60-60 300-300 160 160 284-320 56 56-340 384-160-160-240 240Z",
+    "source": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/show_chart/materialsymbolsoutlined/show_chart_24px.svg",
+    "viewBox": "0 -960 960 960"
+  },
+  "save": {
+    "path": "M840-680v480q0 33-23.5 56.5T760-120H200q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h480l160 160Zm-80 34L646-760H200v560h560v-446ZM480-240q50 0 85-35t35-85q0-50-35-85t-85-35q-50 0-85 35t-35 85q0 50 35 85t85 35ZM240-560h360v-160H240v160Zm-40-86v446-560 114Z",
+    "viewBox": "0 -960 960 960",
+    "source": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/save/materialsymbolsoutlined/save_24px.svg"
+  },
+  "folder_open": {
+    "path": "M160-160q-33 0-56.5-23.5T80-240v-480q0-33 23.5-56.5T160-800h240l80 80h320q33 0 56.5 23.5T880-640H447l-80-80H160v480l96-320h684L837-217q-8 26-29.5 41.5T760-160H160Zm84-80h516l72-240H316l-72 240Zm0 0 72-240-72 240Zm-84-400v-80 80Z",
+    "viewBox": "0 -960 960 960",
+    "source": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/folder_open/materialsymbolsoutlined/folder_open_24px.svg"
+  },
+  "video_library": {
+    "path": "m460-380 280-180-280-180v360ZM320-240q-33 0-56.5-23.5T240-320v-480q0-33 23.5-56.5T320-880h480q33 0 56.5 23.5T880-800v480q0 33-23.5 56.5T800-240H320Zm0-80h480v-480H320v480ZM160-80q-33 0-56.5-23.5T80-160v-560h80v560h560v80H160Zm160-720v480-480Z",
+    "viewBox": "0 -960 960 960",
+    "source": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/video_library/materialsymbolsoutlined/video_library_24px.svg"
+  },
+  "video_frame_save": {
+    "path": "M800-560v-160H640v-80h160q33 0 56.5 23.5T880-720v160h-80Zm-720 0v-160q0-33 23.5-56.5T160-800h160v80H160v160H80Zm80 400q-33 0-56.5-23.5T80-240v-160h80v160h160v80H160Zm220-140v-360l280 180-280 180ZM600-1v-80h320v80H600Zm160-119L600-280l56-56 64 62v-166h80v166l64-62 56 56-160 160Z",
+    "viewBox": "0 -960 960 960",
+    "source": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/video_frame_save/materialsymbolsoutlined/video_frame_save_24px.svg"
+  },
+  "delete": {
+    "path": "M280-120q-33 0-56.5-23.5T200-200v-520h-40v-80h200v-40h240v40h200v80h-40v520q0 33-23.5 56.5T680-120H280Zm400-600H280v520h400v-520ZM360-280h80v-360h-80v360Zm160 0h80v-360h-80v360ZM280-720v520-520Z",
+    "source": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/delete/materialsymbolsoutlined/delete_24px.svg",
+    "viewBox": "0 -960 960 960"
+  }
+}

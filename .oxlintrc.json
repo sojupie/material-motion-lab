@@ -1,0 +1,99 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["typescript", "unicorn", "oxc", "import", "promise"],
+  "categories": {
+    "correctness": "error",
+    "suspicious": "error",
+    "pedantic": "error",
+    "perf": "error",
+    "style": "error",
+    "restriction": "off",
+    "nursery": "error"
+  },
+  "options": {
+    "typeAware": true,
+    "typeCheck": true
+  },
+  "env": {
+    "browser": true,
+    "worker": true,
+    "es2023": true
+  },
+  "rules": {
+    "typescript/no-explicit-any": "error",
+    "typescript/no-unsafe-assignment": "error",
+    "typescript/no-unsafe-argument": "error",
+    "typescript/no-unsafe-member-access": "error",
+    "typescript/no-unsafe-return": "error",
+    "typescript/no-unsafe-call": "error",
+    "eslint/no-magic-numbers": "off",
+    "eslint/id-length": "off",
+    "typescript/prefer-readonly-parameter-types": "off",
+    "typescript/explicit-function-return-type": "off",
+    "typescript/explicit-module-boundary-types": "off",
+    "eslint/sort-vars": "off",
+    "eslint/sort-keys": "off",
+    "eslint/sort-imports": "off",
+    "typescript/explicit-member-accessibility": "off",
+    "eslint/max-statements": "off",
+    "eslint/max-lines-per-function": "off",
+    "eslint/no-ternary": "off",
+    "import/no-named-export": "off",
+    "import/group-exports": "off",
+    "import/exports-last": "off",
+    "unicorn/new-for-builtins": "off",
+    "unicorn/no-null": "off",
+    "typescript/no-unsafe-type-assertion": "off",
+    "eslint/new-cap": "off",
+    "eslint/init-declarations": "off",
+    "typescript/parameter-properties": "off",
+    "eslint/no-continue": "off",
+    "eslint/no-await-in-loop": "off",
+    "promise/avoid-new": "off",
+    "eslint/prefer-destructuring": "off",
+    "eslint/no-nested-ternary": "off",
+    "unicorn/consistent-function-scoping": "off",
+    "unicorn/max-nested-calls": "off",
+    "unicorn/no-await-expression-member": "off",
+    "eslint/no-inline-comments": "off",
+    "eslint/no-void": "off",
+    "eslint/no-undefined": "off",
+    "unicorn/prefer-add-event-listener": "off",
+    "eslint/one-var": ["error", "never"],
+    "eslint/func-style": [
+      "error",
+      "declaration",
+      {
+        "allowArrowFunctions": true
+      }
+    ],
+    "eslint/max-lines": [
+      "error",
+      {
+        "max": 650,
+        "skipBlankLines": true,
+        "skipComments": true
+      }
+    ],
+    "eslint/max-params": ["error", 8],
+    "import/prefer-default-export": "off",
+    "eslint/prefer-named-capture-group": "off",
+    "unicorn/prefer-number-coercion": "off",
+    "promise/prefer-await-to-callbacks": "off",
+    "promise/always-return": "off",
+    "unicorn/no-nested-ternary": "off",
+    "eslint/require-unicode-regexp": "off",
+    "unicorn/require-post-message-target-origin": "off",
+    "eslint/no-duplicate-imports": "off",
+    "unicorn/prefer-top-level-await": "off",
+    "import/max-dependencies": "off",
+    "eslint/no-shadow": "off",
+    "import/no-unassigned-import": [
+      "error",
+      {
+        "allow": ["**/*.css", "**/forge/site/site.js"]
+      }
+    ],
+    "typescript/no-unnecessary-type-parameters": "off"
+  }
+}

@@ -22,14 +22,14 @@ func main() {
 }
 func run(args []string) error {
 	if len(args) == 0 {
-		return fmt.Errorf("usage: ui-motion <serve|inspect|import|track|correct|frames|zero|compare|measure|export> [arguments]")
+		return fmt.Errorf("usage: ui-motion <serve|web-static|inspect|import|track|correct|frames|zero|compare|measure|export> [arguments]")
 	}
 	command := args[0]
 	flags := flag.NewFlagSet(command, flag.ContinueOnError)
 	start := flags.Int("start", 0, "first frame")
 	end := flags.Int("end", -1, "last frame")
 	method := flags.String("method", "feature", "feature, edge-x, edge-y, width or height")
-	curve := flags.String("curve", "md3-standard", "reference preset ID, bezier, or spring; GET /api/references lists presets")
+	curve := flags.String("curve", "md3-standard", "reference preset ID, bezier, or spring; see docs/references.md")
 	bezier := flags.String("bezier", "0.2,0,0,1", "custom cubic-bezier x1,y1,x2,y2")
 	stiffness := flags.Float64("stiffness", 380, "unit-mass spring stiffness")
 	damping := flags.Float64("damping", .8, "spring damping ratio")
@@ -41,7 +41,7 @@ func run(args []string) error {
 	frame := flags.Int("frame", 0, "frame")
 	step := flags.Int("step", 1, "frame step")
 	zero := flags.Int("zero-frame", 0, "comparison zero frame")
-	format := flags.String("format", "json", "json, csv, chart or video")
+	format := flags.String("format", "json", "json, csv, chart, video or project")
 	axis := flags.String("axis", "x", "x, y, width or height")
 	exportOptions := flags.String("export-options", "", "JSON file containing video/chart options (same payload as POST export)")
 	speed := flags.Float64("speed", 1, "video export speed")
@@ -96,14 +96,17 @@ func run(args []string) error {
 		return values, nil
 	}
 	var result any
+	if command == "web-static" {
+		return web.ExportStatic(filepath.Join(abs, "dist"))
+	}
 	if command == "serve" {
 		if *port < 1 || *port > 65535 {
 			return fmt.Errorf("invalid port")
 		}
-		s := &web.Server{Store: store, Dist: filepath.Join(abs, "dist")}
+		s := web.StaticHandler(filepath.Join(abs, "dist"))
 		addr := fmt.Sprintf("127.0.0.1:%d", *port)
-		log.Printf("UI Motion: http://%s", addr)
-		return http.ListenAndServe(addr, s.Handler())
+		log.Printf("Material Motion Lab: http://%s", addr)
+		return http.ListenAndServe(addr, s)
 	}
 	if command == "compare" {
 		if e = need(2); e != nil {
@@ -195,6 +198,8 @@ func run(args []string) error {
 		}
 	case "export":
 		switch *format {
+		case "project":
+			result, e = store.ExportProject(id)
 		case "csv":
 			result, e = store.CSV(id)
 		case "video", "chart":
@@ -236,7 +241,7 @@ func run(args []string) error {
 				result = filepath.Join(folder, "project.json")
 			}
 		default:
-			e = fmt.Errorf("format must be json, csv, chart or video")
+			e = fmt.Errorf("format must be json, csv, chart, video or project")
 		}
 	default:
 		e = fmt.Errorf("unknown command: %s", command)

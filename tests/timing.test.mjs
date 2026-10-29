@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { nearest, milliseconds } from "../web/timing.ts";
+import {webModule} from "./helpers/web-module.mjs";
+const {nearest,milliseconds,clipOffset,frameDuration}=webModule("timing");
 
 test("aligned playback uses timestamps across different frame rates", () => {
   const a = [0, 16.667, 33.333, 50, 66.667, 83.333, 100];
@@ -25,7 +26,7 @@ test("CSS durations convert seconds and milliseconds to milliseconds", () => {
 
 test("workspace alignment and source-frame mapping preserve recorded timestamps", async () => {
   const { sourceFrame, alignedOffset, clampRange } =
-    await import("../web/timing.ts");
+    webModule("timing");
   const a = [0, 16.667, 33.333, 50],
     b = [0, 40, 80, 120];
   const offset = alignedOffset(a[2], 100, b[1]);
@@ -39,7 +40,7 @@ test("workspace alignment and source-frame mapping preserve recorded timestamps"
 });
 
 test("scrubbing snaps to recorded frames with clip offsets and irregular intervals", async () => {
-  const { snapTime } = await import("../web/timing.ts");
+  const { snapTime } = webModule("timing");
   const times = [0, 10, 70, 90];
   assert.equal(snapTime(times, 100, 165), 170);
   assert.equal(snapTime(times, -50, -32), -40);
@@ -48,7 +49,7 @@ test("scrubbing snaps to recorded frames with clip offsets and irregular interva
 });
 
 test("playback respects range, speed, looping and the final frame's duration", async () => {
-  const { playbackPosition: at } = await import("../web/timing.ts");
+  const { playbackPosition: at } = webModule("timing");
   assert.deepEqual(at(100, 50, 0.5, [100, 200], false, 20), {
     time: 125,
     done: false,
@@ -76,7 +77,7 @@ test("playback respects range, speed, looping and the final frame's duration", a
 });
 
 test("workspace frame grid handles mixed rates, clip gaps and range endpoints", async () => {
-  const { workspaceFrame: snap } = await import("../web/timing.ts");
+  const { workspaceFrame: snap } = webModule("timing");
   const tracks = [
     { times: [0, 10, 70, 90], offset: 100 },
     { times: [0, 40, 80], offset: 300 },
@@ -86,4 +87,21 @@ test("workspace frame grid handles mixed rates, clip gaps and range endpoints", 
   assert.equal(snap(tracks, 0, 250), 300); // gap snaps to a real frame
   assert.equal(snap(tracks, 0, 185, [110, 175]), 170); // no frame outside range
   assert.equal(snap(tracks, 0, 340, [300, 380]), 340);
+});
+
+test("clip placement cannot cross zero through dragging, nudging or restored offsets", () => {
+  assert.equal(clipOffset(-1), 0);
+  assert.equal(clipOffset(-5000), 0);
+  assert.equal(clipOffset(0), 0);
+  assert.equal(clipOffset(123.5), 123.5);
+  assert.equal(clipOffset(90000000), 86400000);
+  assert.equal(clipOffset(NaN), 0);
+});
+
+test("export timing retains the last recorded frame and single-frame fallback",()=>{
+ assert.equal(frameDuration([0,10,70,90],0),10);
+ assert.equal(frameDuration([0,10,70,90],2),20);
+ assert.equal(frameDuration([0,10,70,90],3),20);
+ assert.equal(frameDuration([0],0),1000/60);
+ assert.equal(frameDuration([0,0],1),1000/60);
 });

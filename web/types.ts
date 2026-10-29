@@ -1,5 +1,7 @@
+import type { ProjectView } from "./project-view";
+
 export type Region = [number, number, number, number];
-export type Sample = {
+export interface Sample {
   frame: number;
   t: number;
   x: number | null;
@@ -11,10 +13,14 @@ export type Sample = {
   score: number;
   valid: boolean;
   manual: boolean;
-};
-export type Anchor = { frame: number; region: Region };
+}
+export interface Anchor {
+  frame: number;
+  region: Region;
+}
 export type Method = "feature" | "edge-x" | "edge-y" | "width" | "height";
-export type Project = {
+export interface Project {
+  example?: string;
   id: string;
   name: string;
   width: number;
@@ -33,9 +39,12 @@ export type Project = {
     precision?: string;
   };
   comparison?: { id: string; zeroFrame: number } | null;
-};
-export type Entry = { id: string; name: string };
-export type MotionReference = {
+}
+export interface Entry {
+  id: string;
+  name: string;
+}
+export interface MotionReference {
   id?: string;
   label?: string;
   kind: "bezier" | "emphasized" | "spring";
@@ -44,8 +53,8 @@ export type MotionReference = {
   damping?: number;
   velocity?: number;
   source?: string;
-};
-export type Measurement = {
+}
+export interface Measurement {
   reference?: MotionReference;
   start: number;
   end: number;
@@ -56,28 +65,33 @@ export type Measurement = {
   weak: number;
   displacement: number;
   points: { t: number; value: number }[];
-};
-export type WorkspaceTrack = {
+}
+export interface WorkspaceTrack {
   id: string;
   offset: number;
   sync: number | null;
   first: number;
   last: number;
-};
-export type Playback = {
+}
+export interface Playback {
   range: [number, number] | null;
   speed: number;
   loop: boolean;
-};
-export type Workspace = {
+}
+export interface Workspace {
+  id: string;
+  name: string;
+  view?: ProjectView;
   schema: 1;
   tracks: WorkspaceTrack[];
   playback?: Playback;
-};
+}
 
 export type Axis = "x" | "y" | "width" | "height";
 export function sampleValue(s: Sample | undefined, axis: Axis): number | null {
-  if (!s) return null;
+  if (!s) {
+    return null;
+  }
   return axis === "width"
     ? (s.measuredWidth ?? null)
     : axis === "height"

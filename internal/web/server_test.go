@@ -1,6 +1,8 @@
 package web
 
 import (
+	"bytes"
+	"context"
 	"encoding/json"
 	"github.com/sojupie/ui-motion/internal/analysis"
 	"net/http/httptest"
@@ -32,6 +34,9 @@ func TestServerRenderedControlsAndAPI(t *testing.T) {
 		t.Fatal(page.Code, page.Body.String())
 	}
 	body := page.Body.String()
+	if strings.Contains(body, `id="open-dialog"`) {
+		t.Fatal("video library must be visible in the workspace, without a project chooser")
+	}
 	ids := map[string]bool{}
 	for _, match := range regexp.MustCompile(` id="([^"]+)"`).FindAllStringSubmatch(body, -1) {
 		if ids[match[1]] {
@@ -40,10 +45,17 @@ func TestServerRenderedControlsAndAPI(t *testing.T) {
 		ids[match[1]] = true
 	}
 
-	for _, text := range []string{`id="app-navigation"`, `id="open-dialog"`, `id="recent-projects"`, `role="tablist"`, `id="export-dialog"`, `id="export-run"`, `aria-label="Playback controls"`, `id="viewer-splitter"`, "data-field-combo", "md-outlined-text-field", "field-option-template", "recording-item-template", "/assets/main.js", "A &lt;script&gt;", `id="timeline"`, `id="playhead-time"`, `id="inspector-title"`, "Track selected range", "Mark sync point", "Viewer zoom", `id="reference-controls"`, `id="graph-fit"`, `id="graph-fit-end"`, `id="graph-zoom-in"`, `id="graph-scale-info"`, `aria-label="Clip alignment"`, `id="playback-speed"`, `id="playback-loop"`, `id="playback-start"`, `id="playback-end"`, `id="playback-reset"`, `id="a-export-first"`, `id="a-export-last"`, `id="a-export-plot"`, "Width (opposing edges)"} {
+	for _, text := range []string{`aria-label="Workspace actions"`, `id="a-remove"`, `id="b-remove"`, `aria-label="Remove Video A from workspace"`, `id="inspector" class="inspector"`, `class="video-library"`, `id="recent-projects"`, `id="empty-viewer"`, `class="tool-accordion"`, `id="export-dialog"`, `id="export-run"`, `aria-label="Playback controls"`, `id="viewer-splitter"`, `id="graph-pan"`, `aria-label="Chart navigation"`, `aria-label="Vertical zoom"`, `class="timeline-tracks"`, "data-field-combo", "md-outlined-text-field", "field-option-template", "recording-item-template", "/assets/main.js", "A &lt;script&gt;", `id="timeline"`, `id="playhead-time"`, `id="inspector-title"`, "Track range", `id="duration-mode"`, `id="duration-status"`, "Auto-fit A", "Auto-fit B", "Mark sync point", "Viewer zoom", `id="reference-controls"`, `id="graph-fit"`, `id="graph-fit-end"`, `id="graph-zoom-in"`, `id="graph-scale-info"`, `aria-label="Clip alignment"`, `id="playback-speed"`, `id="playback-loop"`, `id="playback-start"`, `id="playback-end"`, `id="playback-reset"`, `id="a-export-first"`, `id="a-export-last"`, `id="a-export-plot"`, "Width (opposing edges)"} {
 		if !strings.Contains(body, text) {
 			t.Fatal("missing server markup", text)
 		}
+	}
+
+	if !regexp.MustCompile(`<button[^>]*aria-pressed="false"[^>]*id="graph-pan"|<button[^>]*id="graph-pan"[^>]*aria-pressed="false"`).MatchString(body) {
+		t.Fatal("chart pan must be a toggle action")
+	}
+	if strings.Contains(body, `type="checkbox" id="graph-pan"`) {
+		t.Fatal("chart pan is still an inspector checkbox")
 	}
 
 	exportStart := strings.Index(body, `<dialog id="export-dialog"`)
@@ -66,14 +78,14 @@ func TestServerRenderedControlsAndAPI(t *testing.T) {
 
 	for _, id := range []string{"previous-frame", "play", "next-frame"} {
 		match := regexp.MustCompile(`<button[^>]*id="` + id + `"[^>]*>`).FindString(body)
-		if !strings.Contains(match, `class="md-button md-`) {
+		if !strings.Contains(match, `data-group-button="`+id+`"`) {
 			t.Fatal("transport child excluded by shared group runtime", id, match)
 		}
 	}
-	if !regexp.MustCompile(`<aside[^>]*id="app-navigation"[^>]*hidden`).MatchString(body) {
-		t.Fatal("application rail visible on start screen")
+	if regexp.MustCompile(`<div[^>]*id="workspace"[^>]*hidden`).MatchString(body) {
+		t.Fatal("workspace hidden before video selection")
 	}
-	for _, old := range []string{`id="media-panel"`, `id="toggle-media"`, `id="toggle-inspector"`, `id="layout-menu"`, `data-control="connected"`} {
+	for _, old := range []string{`id="timeline-splitter"`, `class="application-toolbar"`, `id="home"`, `id="empty-import"`, `class="editor-header"`, `id="media-panel"`, `id="toggle-media"`, `id="toggle-sidebar"`, `id="app-navigation"`, `id="layout-menu"`} {
 		if strings.Contains(body, old) {
 			t.Fatal("obsolete global workspace control", old)
 		}
@@ -86,7 +98,7 @@ func TestServerRenderedControlsAndAPI(t *testing.T) {
 			t.Fatal("obsolete independent controls", obsolete)
 		}
 	}
-	if w := get("/api/projects/" + id + "/workspace"); w.Code != 200 || strings.TrimSpace(w.Body.String()) != "null" {
+	if w := get("/api/projects/" + id + "/workspace"); w.Code != 200 || !strings.Contains(w.Body.String(), `"tracks"`) {
 		t.Fatal(w.Code, w.Body.String())
 	}
 	payload := `{"schema":1,"tracks":[{"id":"` + id + `","offset":-12.5,"sync":1,"first":0,"last":2}]}`
@@ -212,5 +224,48 @@ func TestMeasurementsAreReadOnlyAndValidateInput(t *testing.T) {
 	after, _ := os.ReadFile(filepath.Join(folder, "project.json"))
 	if string(before) != string(after) {
 		t.Fatal("measurement or rejected input changed project")
+	}
+}
+
+// Prevent another app-local button or popup imitation from entering the page.
+func TestAllWorkspaceButtonsUseSharedComponentAnatomy(t *testing.T) {
+	var out bytes.Buffer
+	if err := Page(nil).Render(context.Background(), &out); err != nil {
+		t.Fatal(err)
+	}
+	for _, button := range regexp.MustCompile(`<button\b[^>]*>`).FindAllString(out.String(), -1) {
+		class := regexp.MustCompile(`class="([^"]+)"`).FindStringSubmatch(button)
+		if len(class) != 2 || !regexp.MustCompile(`(?:^| )(?:md-button|md-icon-button|md-filter-chip|md-menu-item|md-list-item)(?: |$)`).MatchString(class[1]) {
+			t.Fatal("button bypasses shared anatomy", button)
+		}
+	}
+	for _, obsolete := range []string{"tokens-catalog-menu", "md-sheet-content", "md-sheet-body", "inspector-tabs", "show-status", "@ui."} {
+		if strings.Contains(out.String(), obsolete) {
+			t.Fatal("obsolete or unrendered component", obsolete)
+		}
+	}
+}
+
+func TestPageVersionsAssetsWhenBuildChanges(t *testing.T) {
+	dir := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(dir, "assets"), 0700); err != nil {
+		t.Fatal(err)
+	}
+	script := filepath.Join(dir, "assets", "main.js")
+	version := func(content string) string {
+		if err := os.WriteFile(script, []byte(content), 0600); err != nil {
+			t.Fatal(err)
+		}
+		handler := (&Server{Store: analysis.Store{Dir: t.TempDir()}, Dist: dir}).Handler()
+		response := httptest.NewRecorder()
+		handler.ServeHTTP(response, httptest.NewRequest("GET", "/", nil))
+		match := regexp.MustCompile(`/assets/main.js\?v=([a-f0-9]+)`).FindStringSubmatch(response.Body.String())
+		if len(match) != 2 || !strings.Contains(response.Body.String(), `/assets/main.css?v=`+match[1]) {
+			t.Fatal("page must load matching versioned assets")
+		}
+		return match[1]
+	}
+	if version("old build") == version("new build") {
+		t.Fatal("rebuilt scripts kept their old cache key")
 	}
 }

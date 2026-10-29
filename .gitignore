@@ -8,3 +8,6 @@ __pycache__/
 
 .local/
 bin/
+
+# Local implementation audit, not release documentation.
+/docs/icon-review.md

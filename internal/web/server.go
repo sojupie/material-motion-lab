@@ -1,9 +1,14 @@
+//go:build !staticweb
+
 package web
 
 import (
+	"bytes"
+	"crypto/sha256"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/sojupie/tokens/forge/site"
 	"github.com/sojupie/ui-motion/internal/analysis"
 	"io"
 	"net/http"
@@ -20,11 +25,6 @@ type Server struct {
 	Store analysis.Store
 	Dist  string
 	locks sync.Map
-}
-type Entry struct {
-	ID       string `json:"id"`
-	Name     string `json:"name"`
-	modified time.Time
 }
 
 func (s *Server) entries() ([]Entry, error) {
@@ -62,6 +62,16 @@ func decode(r *http.Request, dest any) error {
 }
 func (s *Server) Handler() http.Handler {
 	mux := http.NewServeMux()
+	assetHash := sha256.New()
+	for _, name := range []string{"main.css", "main.js"} {
+		if contents, err := os.ReadFile(filepath.Join(s.Dist, "assets", name)); err == nil {
+			assetHash.Write(contents)
+		}
+	}
+	assetVersion := fmt.Sprintf("%x", assetHash.Sum(nil)[:8])
+	if _, err := s.Store.Workspaces(); err != nil {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { http.Error(w, "Cannot load project library", 500) })
+	}
 	api := func(pattern string, fn func(http.ResponseWriter, *http.Request) (any, error)) {
 		mux.HandleFunc(pattern, func(w http.ResponseWriter, r *http.Request) {
 			if r.Method != "GET" && r.Header.Get("Origin") != "" {
@@ -94,6 +104,67 @@ func (s *Server) Handler() http.Handler {
 			}
 		})
 	}
+	api("POST /api/examples/carousel", func(w http.ResponseWriter, r *http.Request) (any, error) { return s.Store.CreateExample() })
+	api("POST /api/import-project", func(w http.ResponseWriter, r *http.Request) (any, error) {
+		r.Body = http.MaxBytesReader(w, r.Body, (512<<20)+(1<<20))
+		if err := r.ParseMultipartForm(8 << 20); err != nil {
+			return nil, err
+		}
+		defer r.MultipartForm.RemoveAll()
+		input, _, err := r.FormFile("file")
+		if err != nil {
+			return nil, err
+		}
+		defer input.Close()
+		file, err := os.CreateTemp("", "motion-project-upload-*.motion")
+		if err != nil {
+			return nil, err
+		}
+		defer os.Remove(file.Name())
+		_, err = io.Copy(file, input)
+		closeErr := file.Close()
+		if err != nil {
+			return nil, err
+		}
+		if closeErr != nil {
+			return nil, closeErr
+		}
+		return s.Store.ImportProject(file.Name())
+	})
+	api("GET /api/workspaces/{id}/project-file", func(w http.ResponseWriter, r *http.Request) (any, error) {
+		file, err := s.Store.ExportProject(r.PathValue("id"))
+		if err != nil {
+			return nil, err
+		}
+		defer os.Remove(file)
+		w.Header().Set("Content-Disposition", `attachment; filename="motion-project.motion"`)
+		w.Header().Set("Content-Type", "application/zip")
+		http.ServeFile(w, r, file)
+		return nil, nil
+	})
+	api("GET /api/workspaces", func(w http.ResponseWriter, r *http.Request) (any, error) { return s.Store.Workspaces() })
+	api("POST /api/workspaces", func(w http.ResponseWriter, r *http.Request) (any, error) {
+		var body struct {
+			Name string `json:"name"`
+		}
+		if err := decode(r, &body); err != nil {
+			return nil, err
+		}
+		return s.Store.NewWorkspace(body.Name)
+	})
+	api("GET /api/workspaces/{id}", func(w http.ResponseWriter, r *http.Request) (any, error) {
+		return s.Store.LoadWorkspace(r.PathValue("id"))
+	})
+	api("PUT /api/workspaces/{id}", func(w http.ResponseWriter, r *http.Request) (any, error) {
+		if _, err := s.Store.LoadWorkspace(r.PathValue("id")); err != nil {
+			return nil, err
+		}
+		var body analysis.Workspace
+		if err := decode(r, &body); err != nil {
+			return nil, err
+		}
+		return s.Store.SaveWorkspace(r.PathValue("id"), &body)
+	})
 	api("GET /api/projects", func(w http.ResponseWriter, r *http.Request) (any, error) { return s.entries() })
 	api("POST /api/import", func(w http.ResponseWriter, r *http.Request) (any, error) {
 		r.Body = http.MaxBytesReader(w, r.Body, (256<<20)+(1<<20))
@@ -286,14 +357,24 @@ func (s *Server) Handler() http.Handler {
 		return nil, nil
 	})
 	mux.HandleFunc("GET /{$}", func(w http.ResponseWriter, r *http.Request) {
-		entries, e := s.entries()
+		projects, e := s.Store.Workspaces()
+		entries := []Entry{}
+		for _, p := range projects {
+			entries = append(entries, Entry{ID: p.ID, Name: p.Name})
+		}
 		if e != nil {
 			http.Error(w, e.Error(), 500)
 			return
 		}
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		Page(entries).Render(r.Context(), w)
+		Page(entries, assetVersion).Render(r.Context(), w)
 	})
+	for target, name := range map[string]string{"site-logo.svg": "logo.svg", "site-logo.png": "logo-250x250.png", "site-logo.webp": "logo-250x250.webp"} {
+		mux.HandleFunc("GET /"+target, func(w http.ResponseWriter, r *http.Request) {
+			data, _ := site.Files.ReadFile(name)
+			http.ServeContent(w, r, target, time.Time{}, bytes.NewReader(data))
+		})
+	}
 	mux.Handle("GET /assets/", http.FileServer(http.Dir(s.Dist)))
 	mux.Handle("GET /material/", http.FileServer(http.Dir(s.Dist)))
 	for _, name := range []string{"material.css", "roboto-latin.woff2", "OFL.txt", "token-source.json"} {

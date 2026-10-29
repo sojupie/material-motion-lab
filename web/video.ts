@@ -1,8 +1,12 @@
-import { $, post } from "./api";
-import { syncMaterialControls } from "./material";
-import { clampRange } from "./timing";
-import type { Project, Region, Method, WorkspaceTrack } from "./types";
-export type ViewActions = {
+import { $,post } from "./api";
+import { reportFailure,required } from "./errors";
+import { responseError } from "./json";
+import { localFetch,localFrame } from "./local-client";
+import { setButtonToggle,syncMaterialControls } from "./material";
+import { clampRange,clipOffset } from "./timing";
+import type { Method,Project,Region,WorkspaceTrack } from "./types";
+
+export interface ViewActions {
   export: (view: VideoView, kind: string) => Promise<void>;
   exportRange: (view: VideoView) => [number, number];
   seek: (view: VideoView, index: number) => void;
@@ -10,64 +14,79 @@ export type ViewActions = {
   change: () => void;
   job: (fn: () => Promise<void>) => Promise<void>;
   message: (text: string, error?: boolean) => void;
-};
+}
 export class VideoView {
   project: Project | null = null;
   index = 0;
-  offset = 0;
+  private clipStart = 0;
+  get offset() {
+    return this.clipStart;
+  }
+  set offset(value: number) {
+    this.clipStart = clipOffset(value);
+  }
   sync: number | null = null;
   outside = false;
   roi: Region | null = null;
   drawing = false;
   readonly canvas: HTMLCanvasElement;
-  private ctx: CanvasRenderingContext2D;
+  private readonly ctx: CanvasRenderingContext2D;
   private picture: HTMLImageElement | null = null;
-  private cache = new Map<number, Promise<HTMLImageElement>>();
+  private readonly cache = new Map<number, Promise<HTMLImageElement>>();
   private version = 0;
   private drag: { x: number; y: number } | null = null;
   constructor(
     readonly prefix: string,
-    private actions: ViewActions,
+    private readonly actions: ViewActions,
   ) {
     this.canvas = this.el<HTMLCanvasElement>("frame");
     this.ctx = this.canvas.getContext("2d")!;
-    this.el("select").onclick = () => actions.select(this);
-    this.el("zoom").onchange = () => this.zoom();
+    this.el("select").onclick = () => {
+      actions.select(this);
+    };
+    this.el("zoom").onchange = () => {
+      this.zoom();
+    };
     for (const key of ["start", "end"]) {
       this.input(key).onchange = () => {
         this.setRange(this.first, this.last);
         actions.change();
       };
-      this.el(key + "-here").onclick = () => {
+      this.el(`${key}-here`).onclick = () => {
         this.setRange(
           key === "start" ? this.index : this.first,
           key === "end" ? this.index : this.last,
         );
         actions.change();
       };
-      this.el("goto-" + key).onclick = () =>
+      this.el(`goto-${key}`).onclick = () => {
         actions.seek(this, key === "start" ? this.first : this.last);
+      };
     }
-    for (const key of ["method", "search", "threshold"])
+    for (const key of ["method", "search", "threshold"]) {
       this.el(key).onchange = () => {
         this.methodHelp();
         this.controls(false);
         actions.change();
       };
+    }
     this.input("threshold").step = ".01";
     this.el("draw").onclick = () => {
       this.drawing = !this.drawing;
       this.canvas.classList.toggle("drawing", this.drawing);
-      this.el("draw").setAttribute("aria-pressed", String(this.drawing));
-      this.el("draw").textContent = this.drawing
+      setButtonToggle(this.el("draw"), this.drawing);
+      this.el("draw").querySelector("span")!.textContent = this.drawing
         ? "Cancel region selection"
         : "Draw tracking region";
-      if (this.drawing) this.actions.seek(this, this.index);
-      if (this.drawing)
+      if (this.drawing) {
+        this.actions.seek(this, this.index);
+      }
+      if (this.drawing) {
         this.el("pane").scrollIntoView({
           block: "nearest",
           behavior: "instant",
         });
+      }
       actions.message(
         this.drawing
           ? "Drag over the video to select a detail or straight edge."
@@ -76,10 +95,13 @@ export class VideoView {
     };
     this.el("track").onclick = () => actions.job(() => this.track(false));
     this.el("correct").onclick = () => actions.job(() => this.track(true));
-    for (const kind of ["anchor", "weak"])
-      for (const direction of [-1, 1])
-        this.el(`${kind}-${direction < 0 ? "prev" : "next"}`).onclick = () =>
+    for (const kind of ["anchor", "weak"]) {
+      for (const direction of [-1, 1]) {
+        this.el(`${kind}-${direction < 0 ? "prev" : "next"}`).onclick = () => {
           this.jump(kind, direction);
+        };
+      }
+    }
     for (const key of [
       "tracking",
       "plot",
@@ -87,12 +109,15 @@ export class VideoView {
       "statistics",
       "markers",
       "time",
-    ])
-      this.input("export-" + key).checked = true;
+    ]) {
+      this.input(`export-${key}`).checked = true;
+    }
     this.input("export-speed").step = ".125";
-    for (const mode of ["tracking", "playback", "full"])
-      this.el("export-range-" + mode).onclick = () => {
-        if (!this.project) return;
+    for (const mode of ["tracking", "playback", "full"]) {
+      this.el(`export-range-${mode}`).onclick = () => {
+        if (!this.project) {
+          return;
+        }
         const range =
           mode === "tracking"
             ? [this.first, this.last]
@@ -102,16 +127,23 @@ export class VideoView {
         this.input("export-first").value = String(range[0]);
         this.input("export-last").value = String(range[1]);
       };
+    }
     this.canvas.onpointerdown = (e) => {
-      if (!this.project || document.body.hasAttribute("aria-busy")) return;
+      if (!this.project || Object.hasOwn(document.body.dataset, "processing")) {
+        return;
+      }
       actions.select(this);
-      if (!this.drawing) return;
+      if (!this.drawing) {
+        return;
+      }
       this.drag = this.point(e);
       this.roi = null;
       this.canvas.setPointerCapture(e.pointerId);
     };
     this.canvas.onpointermove = (e) => {
-      if (!this.drag) return;
+      if (!this.drag) {
+        return;
+      }
       const p = this.point(e);
       this.roi = [
         Math.round(Math.min(p.x, this.drag.x)),
@@ -122,16 +154,21 @@ export class VideoView {
       this.overlay();
     };
     this.canvas.onpointerup = () => {
-      if (!this.drag) return;
+      if (!this.drag) {
+        return;
+      }
       this.drag = null;
-      if (this.roi && (this.roi[2] < 4 || this.roi[3] < 4)) this.roi = null;
+      if (this.roi && (this.roi[2] < 4 || this.roi[3] < 4)) {
+        this.roi = null;
+      }
       this.el("selection").textContent = this.roi
         ? `Selected at frame ${this.index}: x ${this.roi[0]}, y ${this.roi[1]}, ${this.roi[2]} × ${this.roi[3]} px`
         : "Select a region at least 4 × 4 px.";
       this.drawing = false;
       this.canvas.classList.remove("drawing");
-      this.el("draw").setAttribute("aria-pressed", "false");
-      this.el("draw").textContent = "Draw tracking region";
+      setButtonToggle(this.el("draw"), false);
+      this.el("draw").querySelector("span")!.textContent =
+        "Draw tracking region";
       this.controls(false);
       this.actions.change();
     };
@@ -147,7 +184,9 @@ export class VideoView {
         actions.seek(this, this.index + (e.key === "ArrowLeft" ? -1 : 1));
       }
     };
-    new ResizeObserver(() => this.zoom()).observe(this.canvas.parentElement!);
+    new ResizeObserver(() => {
+      this.zoom();
+    }).observe(this.canvas.parentElement!);
   }
   el<T extends HTMLElement = HTMLElement>(key: string) {
     return $<T>(`${this.prefix}-${key}`);
@@ -162,7 +201,9 @@ export class VideoView {
     return Number(this.input("end").value);
   }
   get time() {
-    return this.project ? this.project.times[this.index] + this.offset : 0;
+    return this.project
+      ? required(this.project.times[this.index]) + this.offset
+      : 0;
   }
   get method() {
     return this.el<HTMLSelectElement>("method").value as Method;
@@ -170,11 +211,12 @@ export class VideoView {
   get dirty() {
     const s = this.project?.settings;
     return (
-      !!this.project?.samples.length &&
-      (!!this.roi ||
-        this.method !== (s?.method || "feature") ||
+      this.project !== null &&
+      this.project.samples.length > 0 &&
+      (this.roi !== null ||
+        this.method !== (s?.method ?? "feature") ||
         Number(this.input("search").value) !== s?.search ||
-        Number(this.input("threshold").value) !== s?.threshold)
+        Number(this.input("threshold").value) !== s.threshold)
     );
   }
   workspace(): WorkspaceTrack {
@@ -187,11 +229,22 @@ export class VideoView {
     };
   }
   setRange(first: number, last: number) {
-    if (!this.project) return;
+    if (!this.project) {
+      return;
+    }
     const range = clampRange(first, last, this.project.times.length);
     this.input("start").value = String(range[0]);
     this.input("end").value = String(range[1]);
     this.controls(false);
+  }
+  clear() {
+    this.stopDrawing();
+    this.project = null;
+    this.picture = null;
+    this.roi = null;
+    this.version++;
+    this.cache.clear();
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
   }
   async load(p: Project, track?: WorkspaceTrack) {
     this.project = p;
@@ -206,19 +259,21 @@ export class VideoView {
     this.el("name").textContent = `${this.prefix.toUpperCase()}: ${p.name}`;
     this.el("meta").textContent =
       `${p.width} × ${p.height} px, ${p.times.length} frames`;
-    for (const key of ["start", "end"])
+    for (const key of ["start", "end"]) {
       this.input(key).max = String(p.times.length - 1);
+    }
     this.setRange(
       track?.first ?? p.settings.start ?? 0,
       track?.last ?? p.settings.end ?? p.times.length - 1,
     );
-    for (const key of ["first", "last"])
-      this.input("export-" + key).max = String(p.times.length - 1);
+    for (const key of ["first", "last"]) {
+      this.input(`export-${key}`).max = String(p.times.length - 1);
+    }
     this.input("export-first").value = String(this.first);
     this.input("export-last").value = String(this.last);
     this.input("search").value = String(p.settings.search ?? 60);
     this.input("threshold").value = String(p.settings.threshold ?? 0.65);
-    this.el<HTMLSelectElement>("method").value = p.settings.method || "feature";
+    this.el<HTMLSelectElement>("method").value = p.settings.method ?? "feature";
     this.methodHelp();
     syncMaterialControls();
     await this.show(0);
@@ -228,8 +283,8 @@ export class VideoView {
     this.drawing = false;
     this.drag = null;
     this.canvas.classList.remove("drawing");
-    this.el("draw").setAttribute("aria-pressed", "false");
-    this.el("draw").textContent = "Draw tracking region";
+    setButtonToggle(this.el("draw"), false);
+    this.el("draw").querySelector("span")!.textContent = "Draw tracking region";
   }
   methodHelp() {
     this.el("method-help").textContent =
@@ -240,47 +295,44 @@ export class VideoView {
           : "Draw a narrow strip across a straight edge. Keep corners and other boundaries outside it.";
   }
   controls(busy: boolean) {
-    busy = busy || document.body.hasAttribute("aria-busy");
+    busy ||= Object.hasOwn(document.body.dataset, "processing");
     const p = this.project;
-    for (const key of ["draw", "start-here", "end-here"])
+    for (const key of ["draw", "start-here", "end-here"]) {
       this.el<HTMLButtonElement>(key).disabled = busy || !p || this.outside;
-    for (const key of ["goto-start", "goto-end"])
+    }
+    for (const key of ["goto-start", "goto-end"]) {
       this.el<HTMLButtonElement>(key).disabled = busy || !p;
+    }
     this.el<HTMLButtonElement>("track").disabled =
       busy ||
       !p ||
       (!this.roi && !p.selection) ||
-      (!!this.roi && this.index !== this.first) ||
+      (this.roi !== null && this.index !== this.first) ||
       (!this.roi &&
         (this.first !== p.settings.start ||
-          this.method !== (p.settings.method || "feature")));
+          this.method !== (p.settings.method ?? "feature")));
     this.el<HTMLButtonElement>("correct").disabled =
       busy ||
       !this.roi ||
-      !p?.samples.length ||
-      this.method !== (p.settings.method || "feature") ||
+      !(p !== null && p.samples.length > 0) ||
+      this.method !== (p.settings.method ?? "feature") ||
       this.index < (p.settings.start ?? 0) ||
       this.index > (p.settings.end ?? 0);
     this.el("dirty").textContent = this.dirty
       ? "Tracking settings changed. Run tracking to update measurements."
-      : p?.samples.length
+      : p !== null && p.samples.length > 0
         ? `Tracked frames ${p.settings.start}–${p.settings.end}.${this.first !== p.settings.start && !this.roi ? " Go to the range start and draw a region to retrack this range." : ""}`
         : "No measurements yet. Select a region at the range start, then track the range.";
     for (const key of [
       "export-range-tracking",
       "export-range-playback",
       "export-range-full",
-    ])
-      this.el<HTMLButtonElement>(key).disabled = busy || !p?.samples.length;
-    const corrections = this.markFrames("anchor").length,
-      losses = this.markFrames("weak").length;
-    this.el("marks-empty").hidden = !!(corrections + losses);
-    for (const kind of ["anchor", "weak"])
-      for (const direction of [-1, 1])
-        this.el(`${kind}-${direction < 0 ? "prev" : "next"}`).hidden =
-          !(kind === "anchor" ? corrections : losses);
-    for (const kind of ["anchor", "weak"])
-      for (const direction of [-1, 1])
+    ]) {
+      this.el<HTMLButtonElement>(key).disabled =
+        busy || !(p !== null && p.samples.length > 0);
+    }
+    for (const kind of ["anchor", "weak"]) {
+      for (const direction of [-1, 1]) {
         this.el<HTMLButtonElement>(
           `${kind}-${direction < 0 ? "prev" : "next"}`,
         ).disabled =
@@ -288,61 +340,90 @@ export class VideoView {
           !this.markFrames(kind).some((i) =>
             direction < 0 ? i < this.index : i > this.index,
           );
+      }
+    }
   }
   markFrames(kind: string) {
     return kind === "anchor"
-      ? this.project?.anchors.slice(1).map((a) => a.frame) || []
-      : this.project?.samples.filter((s) => !s.valid).map((s) => s.frame) || [];
+      ? (this.project?.anchors.slice(1).map((a) => a.frame) ?? [])
+      : (this.project?.samples.filter((s) => !s.valid).map((s) => s.frame) ??
+          []);
   }
   jump(kind: string, direction: number) {
     const rows = this.markFrames(kind).filter((i) =>
       direction < 0 ? i < this.index : i > this.index,
     );
-    if (rows.length)
-      this.actions.seek(this, direction < 0 ? rows.at(-1)! : rows[0]);
+    if (rows.length > 0) {
+      this.actions.seek(
+        this,
+        direction < 0 ? required(rows.at(-1)) : required(rows[0]),
+      );
+    }
   }
   private getPicture(i: number) {
     let pending = this.cache.get(i);
     if (!pending) {
-      const id = this.project!.id;
+      const { id } = this.project!;
       pending = new Promise<HTMLImageElement>((resolve, reject) => {
         const image = new Image();
-        image.onload = () => resolve(image);
-        image.onerror = () => {
-          this.cache.delete(i);
-          reject(Error("Frame failed to load"));
+        let frameURL: string | undefined;
+        image.onload = () => {
+          if (frameURL !== undefined && frameURL !== "") {
+            URL.revokeObjectURL(frameURL);
+          }
+          resolve(image);
         };
-        image.src = `/api/projects/${id}/frames/${i}`;
+        image.onerror = () => {
+          if (frameURL !== undefined && frameURL !== "") {
+            URL.revokeObjectURL(frameURL);
+          }
+          this.cache.delete(i);
+          reject(new Error("Frame failed to load"));
+        };
+        void (async () => {
+          try {
+            const blob = await localFrame(id, i);
+            frameURL = URL.createObjectURL(blob);
+            image.src = frameURL;
+          } catch (error: unknown) {
+            reject(error instanceof Error ? error : new Error(String(error)));
+          }
+        })();
       });
       this.cache.set(i, pending);
-      if (this.cache.size > 90)
+      if (this.cache.size > 90) {
         this.cache.delete(this.cache.keys().next().value!);
+      }
     }
     return pending;
   }
   async show(i: number) {
     const p = this.project;
-    if (!p) return;
+    if (!p) {
+      return;
+    }
     this.index = Math.max(0, Math.min(p.times.length - 1, Math.round(i)));
     this.roi = null;
     this.el("selection").textContent = p.selection
       ? `Saved region at frame ${p.settings.start}: x ${p.selection[0]}, y ${p.selection[1]}, ${p.selection[2]} × ${p.selection[3]} px`
       : "No tracking region selected.";
     this.el("time").textContent =
-      `Frame ${this.index} / ${p.times.length - 1}   ${(p.times[this.index] / 1000).toFixed(3)} s source${this.outside ? " (outside clip)" : ""}`;
+      `Frame ${this.index} / ${p.times.length - 1}   ${(required(p.times[this.index]) / 1000).toFixed(3)} s source${this.outside ? " (outside clip)" : ""}`;
     const sample = p.samples.find((s) => s.frame === this.index);
-    this.el("quality").textContent = !sample
-      ? ""
-      : sample.manual
+    this.el("quality").textContent = sample
+      ? sample.manual
         ? "Manual anchor"
-        : !sample.valid
-          ? "Tracking lost"
-          : p.settings.method && p.settings.method !== "feature"
+        : sample.valid
+          ? p.settings.method && p.settings.method !== "feature"
             ? `Edge strength: ${sample.score.toFixed(3)}× anchor`
-            : `Similarity: ${sample.score.toFixed(3)}`;
-    const token = ++this.version,
-      picture = await this.getPicture(this.index);
-    if (token !== this.version) return;
+            : `Similarity: ${sample.score.toFixed(3)}`
+          : "Tracking lost"
+      : "";
+    const token = ++this.version;
+    const picture = await this.getPicture(this.index);
+    if (token !== this.version) {
+      return;
+    }
     this.picture = picture;
     this.canvas.width = p.width;
     this.canvas.height = p.height;
@@ -353,30 +434,35 @@ export class VideoView {
       let n = this.index + 1;
       n <= Math.min(this.index + 3, p.times.length - 1);
       n++
-    )
-      void this.getPicture(n).catch(() => {});
+    ) {
+      void reportFailure(this.getPicture(n), () => {});
+    }
   }
   zoom() {
     const p = this.project;
-    if (!p) return;
-    const wrap = this.canvas.parentElement!,
-      bounds = getComputedStyle(wrap),
-      value = this.el<HTMLSelectElement>("zoom").value,
-      scale = Math.min(
-        parseFloat(bounds.width) / p.width,
-        parseFloat(bounds.height) / p.height,
-      );
+    if (!p) {
+      return;
+    }
+    const wrap = this.canvas.parentElement!;
+    const bounds = getComputedStyle(wrap);
+    const { value } = this.el<HTMLSelectElement>("zoom");
+    const scale = Math.min(
+      parseFloat(bounds.width) / p.width,
+      parseFloat(bounds.height) / p.height,
+    );
     wrap.style.overflow = value === "fit" ? "hidden" : "auto";
     this.canvas.style.width = `${value === "fit" ? Math.max(1, scale * p.width) : p.width * Number(value)}px`;
   }
   overlay() {
     const p = this.project;
-    if (!p || !this.picture) return;
-    const ctx = this.ctx;
+    if (!p || !this.picture) {
+      return;
+    }
+    const { ctx } = this;
     ctx.drawImage(this.picture, 0, 0, p.width, p.height);
     const sample = p.samples.find((s) => s.frame === this.index);
     ctx.lineWidth = Math.max(1, p.width / 500);
-    if (sample?.valid && sample.x !== null && sample.y !== null) {
+    if (sample?.valid === true && sample.x !== null && sample.y !== null) {
       ctx.strokeStyle = "#39d877";
       if (p.settings.method === "edge-x") {
         ctx.beginPath();
@@ -390,7 +476,8 @@ export class VideoView {
         ctx.stroke();
       } else if (
         p.settings.method === "width" &&
-        sample.measuredWidth != null
+        sample.measuredWidth !== null &&
+        sample.measuredWidth !== undefined
       ) {
         for (const x of [sample.x, sample.x + sample.measuredWidth]) {
           ctx.beginPath();
@@ -400,7 +487,8 @@ export class VideoView {
         }
       } else if (
         p.settings.method === "height" &&
-        sample.measuredHeight != null
+        sample.measuredHeight !== null &&
+        sample.measuredHeight !== undefined
       ) {
         for (const y of [sample.y, sample.y + sample.measuredHeight]) {
           ctx.beginPath();
@@ -408,7 +496,9 @@ export class VideoView {
           ctx.lineTo(sample.x + sample.width, y);
           ctx.stroke();
         }
-      } else ctx.strokeRect(sample.x, sample.y, sample.width, sample.height);
+      } else {
+        ctx.strokeRect(sample.x, sample.y, sample.width, sample.height);
+      }
     }
     if (this.roi) {
       ctx.strokeStyle = "#ffd54f";
@@ -436,14 +526,21 @@ export class VideoView {
   }
   async track(correct: boolean) {
     const p = this.project;
-    if (!p) return;
-    let start = this.first,
-      end = this.last,
-      selection = this.roi || p.selection,
-      anchors: typeof p.anchors = [];
-    if (!selection) throw Error("Draw a tracking region at the range start.");
-    if (this.roi && !correct && this.index !== start)
-      throw Error("Go to the range start and draw the tracking region there.");
+    if (!p) {
+      return;
+    }
+    let start = this.first;
+    let end = this.last;
+    let selection = this.roi ?? p.selection;
+    let anchors: typeof p.anchors = [];
+    if (!selection) {
+      throw new Error("Draw a tracking region at the range start.");
+    }
+    if (this.roi && !correct && this.index !== start) {
+      throw new Error(
+        "Go to the range start and draw the tracking region there.",
+      );
+    }
     if (correct) {
       start = p.settings.start!;
       end = p.settings.end!;
@@ -465,10 +562,10 @@ export class VideoView {
       anchors,
       search: Number(this.input("search").value),
       threshold: Number(this.input("threshold").value),
-      method: correct ? p.settings.method || "feature" : this.method,
+      method: correct ? (p.settings.method ?? "feature") : this.method,
     });
-    const index = this.index,
-      workspace = this.workspace();
+    const { index } = this;
+    const workspace = this.workspace();
     await this.load(result, workspace);
     await this.show(index);
     const weak = result.samples.filter((s) => !s.valid).length;
@@ -483,22 +580,24 @@ export class VideoView {
     this.actions.change();
   }
   async download(kind: string) {
-    if (!this.project) return;
+    if (!this.project) {
+      return;
+    }
     this.actions.message(
       kind === "video"
         ? "Rendering annotated video…"
         : "Preparing measurements…",
     );
-    const response = await fetch(
+    const response = await localFetch(
       `/api/projects/${this.project.id}/download/${kind}?axis=${$<HTMLSelectElement>("axis").value}`,
     );
     if (!response.ok) {
-      let error = await response.json();
-      throw Error(error.detail || "Export failed");
+      const detail = await responseError(response, "Download failed.");
+      throw new Error(detail);
     }
-    const blob = await response.blob(),
-      url = URL.createObjectURL(blob),
-      link = document.createElement("a");
+    const blob = await response.blob();
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
     link.href = url;
     link.download =
       kind === "video"
@@ -507,7 +606,9 @@ export class VideoView {
           ? "measurements.csv"
           : "project.json";
     link.click();
-    setTimeout(() => URL.revokeObjectURL(url), 30000);
+    setTimeout(() => {
+      URL.revokeObjectURL(url);
+    }, 30_000);
     this.actions.message("Export ready.");
   }
 }

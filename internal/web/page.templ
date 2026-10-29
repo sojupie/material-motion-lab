@@ -1,11 +1,14 @@
 package web
 
+import "strconv"
+
 import "github.com/sojupie/tokens/forge/components/ui"
-import "github.com/sojupie/ui-motion/internal/analysis"
+import "github.com/sojupie/tokens/forge/site"
+import "github.com/sojupie/ui-motion/internal/motion"
 
 func referenceOptions() []ui.Option {
 	result := []ui.Option{{Value: "none", Label: "None"}}
-	for _, ref := range analysis.ReferencePresets() {
+	for _, ref := range motion.ReferencePresets() {
 		result = append(result, ui.Option{Value: ref.ID, Label: ref.Label})
 	}
 	return append(result, ui.Option{Value: "custom-bezier", Label: "Custom Bézier"}, ui.Option{Value: "custom-spring", Label: "Custom spring"})
@@ -17,9 +20,34 @@ templ action(id string, label string, disabled bool) {
 	}
 }
 
-templ iconAction(id string, label string, path string) {
+templ command(id string, label string, symbol string) {
+	@ui.Button(templ.Attributes{"id": id, "class": "md-button md-text-button", "disabled": id != "reference-save" && id != "reference-load"}) {
+		if symbol == "line_end" || symbol == "text_select_jump_to_end" {
+			<span>{ label }</span>@icon(symbol, 18)
+		} else {
+			@icon(symbol, 18)
+			<span>{ label }</span>
+		}
+	}
+}
+
+templ groupedCommand(id string, label string, symbol string, description string, color string) {
+	@ui.Button(templ.Attributes{"id": id, "class": "md-button md-" + color + "-button", "data-size": "small", "data-group-button": id, "aria-label": description, "title": description, "disabled": true}) {
+		if symbol == "navigate_next" || symbol == "line_end" || symbol == "text_select_jump_to_end" {
+			<span>{ label }</span>@icon(symbol, 18)
+		} else {
+			@icon(symbol, 18)<span>{ label }</span>
+		}
+	}
+}
+
+templ icon(name string, size int) {
+	<svg viewBox="0 -960 960 960" width={ size } height={ size } fill="currentColor" aria-hidden="true" data-icon={ name }><path d={ iconPath(name) } transform={ iconTransform(name) }></path></svg>
+}
+
+templ iconAction(id string, label string, symbol string) {
 	@ui.Button(templ.Attributes{"id": id, "class": "md-icon-button md-standard-icon-button", "data-size": "small", "data-shape": "round", "data-width": "default", "aria-label": label, "title": label, "disabled": true}) {
-		<svg viewBox="0 -960 960 960" width="24" height="24" fill="currentColor" aria-hidden="true"><path d={ path }></path></svg>
+		@icon(symbol, 24)
 	}
 }
 
@@ -29,34 +57,49 @@ templ videoPane(prefix string, label string) {
 			@ui.Button(templ.Attributes{"id": prefix + "-select", "class": "md-button md-text-button viewer-title", "aria-current": "false"}) {
 				<span id={ prefix + "-name" }>{ label }</span>
 			}
-			@ui.Select(prefix+"-zoom", "Viewer zoom", []ui.Option{{Value: "fit", Label: "Fit"}, {Value: "1", Label: "100%"}, {Value: "2", Label: "200%"}, {Value: "4", Label: "400%"}})
+			<div class="viewer-controls">
+				@ui.Select(prefix+"-zoom", "Viewer zoom", []ui.Option{{Value: "fit", Label: "Fit"}, {Value: "1", Label: "100%"}, {Value: "2", Label: "200%"}, {Value: "4", Label: "400%"}})
+				if prefix == "a" {
+					@ui.Button(templ.Attributes{"id": "maximize-viewer", "class": "md-button md-outlined-button", "data-size": "xsmall", "aria-pressed": "false"}) {
+						@icon("expand_content", 18)<span>Expand viewer</span>
+					}
+				}
+			</div>
 		</div>
 		<p id={ prefix + "-meta" } class="help"></p>
-		<div class="image-wrap"><canvas id={ prefix + "-frame" } tabindex="0" aria-label={ label + " frame" }></canvas></div>
+		<div class="image-wrap">
+			<canvas id={ prefix + "-frame" } tabindex="0" aria-label={ label + " frame" }></canvas>
+		</div>
 		<div class="viewer-status"><p id={ prefix + "-time" } class="time"></p><p id={ prefix + "-quality" } class="help"></p></div>
 	</section>
 }
 
 templ trackingInspector(prefix string) {
 	<div id={ prefix + "-inspector" } hidden>
-		<section aria-label="Tracking range">
+		<section class="inspector-section" aria-label="Tracking range">
 			<h3>Tracking range</h3>
+			<p class="help">Enter frame numbers or set boundaries at the playhead.</p>
 			<div class="field-grid">
 				@ui.NumberField(prefix+"-start", "First frame", "0", "0", "")
 				@ui.NumberField(prefix+"-end", "Last frame", "0", "0", "")
 			</div>
-			<div class="inspector-actions">
-				@action(prefix+"-start-here", "Set start", true)
-				@action(prefix+"-end-here", "Set end", true)
-				@action(prefix+"-goto-start", "Go to start", true)
-				@action(prefix+"-goto-end", "Go to end", true)
-			</div>
+			@ui.ButtonGroup("tracking-boundaries "+prefix+"-set-range", templ.Attributes{"data-control": "standard", "data-size": "small", "aria-label": "Set tracking boundaries"}) {
+				@groupedCommand(prefix+"-start-here", "Set start", "line_start", "Set start", "tonal")
+				@groupedCommand(prefix+"-end-here", "Set end", "line_end", "Set end", "tonal")
+			}
+			@ui.ButtonGroup("tracking-boundaries "+prefix+"-jump-range", templ.Attributes{"data-control": "standard", "data-size": "small", "aria-label": "Inspect tracking boundary"}) {
+				@groupedCommand(prefix+"-goto-start", "Go to start", "text_select_jump_to_beginning", "Go to start", "text")
+				@groupedCommand(prefix+"-goto-end", "Go to end", "text_select_jump_to_end", "Go to end", "text")
+			}
 		</section>
-		<section aria-label="Tracking settings">
+		<section class="inspector-section" aria-label="Tracking settings">
 			<h3>Tracking</h3>
 			@ui.Select(prefix+"-method", "Method", []ui.Option{{Value: "feature", Label: "Image patch"}, {Value: "edge-x", Label: "Vertical edge (X)"}, {Value: "edge-y", Label: "Horizontal edge (Y)"}, {Value: "width", Label: "Width (opposing edges)"}, {Value: "height", Label: "Height (opposing edges)"}})
 			<p id={ prefix + "-method-help" } class="help"></p>
-			@action(prefix+"-draw", "Draw tracking region", true)
+			@ui.Button(templ.Attributes{"id": prefix + "-draw", "class": "md-button md-filled-button", "data-size": "small", "aria-pressed": "false", "disabled": true}) {
+				@icon("ink_selection", 18)
+				<span>Draw tracking region</span>
+			}
 			<p id={ prefix + "-selection" } class="help"></p>
 			<div class="field-grid">
 				@ui.NumberField(prefix+"-search", "Search (px/frame)", "60", "4", "1000")
@@ -64,20 +107,31 @@ templ trackingInspector(prefix string) {
 			</div>
 			<p id={ prefix + "-dirty" } class="help"></p>
 			<div class="inspector-actions">
-				@ui.Button(templ.Attributes{"id": prefix + "-track", "class": "md-button md-filled-button", "disabled": true}) {
-					Track selected range
+				@ui.Button(templ.Attributes{"id": prefix + "-track", "class": "md-button md-tonal-button", "data-size": "small", "disabled": true}) {
+					Track range
 				}
-				@action(prefix+"-correct", "Set tracking position at playhead", true)
+				@ui.Button(templ.Attributes{"id": prefix + "-correct", "class": "md-button md-tonal-button", "data-size": "small", "disabled": true}) {
+					@icon("edit", 18)<span>Correct position here</span>
+				}
 			</div>
 		</section>
-		<section aria-label="Tracking marks" id={ prefix + "-marks" }>
-			<p id={ prefix + "-marks-empty" } class="help">No corrections or tracking losses.</p>
+		<section class="inspector-section" aria-label="Tracking marks" id={ prefix + "-marks" }>
 			<h3>Tracking marks</h3>
-			<div class="inspector-actions">
-				@action(prefix+"-anchor-prev", "Previous correction", true)
-				@action(prefix+"-anchor-next", "Next correction", true)
-				@action(prefix+"-weak-prev", "Previous tracking loss", true)
-				@action(prefix+"-weak-next", "Next tracking loss", true)
+			<div class="mark-navigation">
+				<h4>Corrections</h4>
+				<p class="help">Jump to a frame you corrected manually.</p>
+				@ui.ButtonGroup("tracking-boundaries", templ.Attributes{"data-control": "standard", "data-size": "small", "aria-label": "Navigate corrections"}) {
+					@groupedCommand(prefix+"-anchor-prev", "Previous", "navigate_before", "Previous correction", "text")
+					@groupedCommand(prefix+"-anchor-next", "Next", "navigate_next", "Next correction", "text")
+				}
+			</div>
+			<div class="mark-navigation">
+				<h4>Tracking loss</h4>
+				<p class="help">Jump to a frame where tracking lost its target.</p>
+				@ui.ButtonGroup("tracking-boundaries", templ.Attributes{"data-control": "standard", "data-size": "small", "aria-label": "Navigate tracking loss"}) {
+					@groupedCommand(prefix+"-weak-prev", "Previous", "navigate_before", "Previous tracking loss", "text")
+					@groupedCommand(prefix+"-weak-next", "Next", "navigate_next", "Next tracking loss", "text")
+				}
 			</div>
 		</section>
 	</div>
@@ -115,22 +169,16 @@ templ exportSettings(prefix string) {
 	</div>
 }
 
-templ tool(id string, label string, path string) {
-	@ui.Button(templ.Attributes{"id": id, "class": "md-icon-button md-standard-icon-button", "data-size": "small", "data-shape": "round", "data-width": "default", "aria-label": label, "title": label}) {
-		<svg viewBox="0 -960 960 960" width="24" height="24" fill="currentColor" aria-hidden="true"><path d={ path }></path></svg>
-	}
-}
-
 func transportClass(primary bool) string {
 	if primary {
 		return "md-button md-filled-button"
 	}
-	return "md-button md-tonal-button"
+	return "md-icon-button md-tonal-icon-button"
 }
 
-templ transportButton(id string, label string, path string, primary bool) {
+templ transportButton(id string, label string, symbol string, primary bool) {
 	@ui.Button(templ.Attributes{"id": id, "class": transportClass(primary), "data-size": "small", "data-shape": "round", "data-width": "default", "data-group-button": id, "aria-label": label, "title": label, "disabled": true}) {
-		<svg viewBox="0 -960 960 960" width="24" height="24" fill="currentColor" aria-hidden="true"><path d={ path }></path></svg>
+		@icon(symbol, 24)
 		if primary {
 			<span data-transport-label>Play</span>
 		}
@@ -138,69 +186,123 @@ templ transportButton(id string, label string, path string, primary bool) {
 }
 
 templ splitter(id string, label string, orientation string) {
-	<div id={ id } class="pane-splitter" role="separator" tabindex="0" aria-label={ label } aria-orientation={ orientation } aria-valuemin="0" aria-valuemax="100" aria-valuenow="50" title={ label + ". Drag or use arrow keys. Enter collapses or restores." }></div>
-}
-
-templ railCommand(id string, label string, path string) {
-	@ui.Button(templ.Attributes{"id": id, "class": "md-nav-item", "aria-label": label, "title": label}) {
-		<span class="md-nav-indicator"><svg viewBox="0 -960 960 960" width="24" height="24" fill="currentColor" aria-hidden="true"><path d={ path }></path></svg><span class="md-nav-label">{ label }</span></span>
-	}
+	<div id={ id } class="pane-splitter" role="separator" tabindex="0" aria-label={ label } aria-orientation={ orientation } aria-valuemin="0" aria-valuemax="100" aria-valuenow="50" title={ label + ". Drag or use arrow keys. Home resets size." }></div>
 }
 
 templ recordingItem(id string, name string) {
-	<li><button type="button" class="md-list-item" data-project-id={ id } disabled><span class="md-list-body"><span class="md-list-label">{ name }</span></span></button></li>
+	<li>
+		<div class="md-list-row">
+   @ui.ListItem(templ.Attributes{"data-project-id": id, "disabled": true}, name)
+   @ui.Button(templ.Attributes{"class":"md-icon-button md-standard-icon-button md-list-action", "data-size":"small", "data-delete-project":"", "aria-label":"Delete project", "disabled":true}) { @icon("delete", 24) }
+  </div>
+	</li>
 }
 
-templ Page(entries []Entry) {
+templ processingStatus(id string) {
+	<section id={ id } class="processing-status" data-processing-status hidden aria-label="Current operation">
+		<div class="processing-heading">
+			<p data-processing-label role="status" aria-live="polite" aria-atomic="true">Working…</p>
+			<span data-processing-percent aria-hidden="true"></span>
+			@ui.Button(templ.Attributes{"class":"md-button md-text-button", "data-size":"small", "data-cancel-processing":"", "aria-label":"Cancel processing"}) { Cancel }
+		</div>
+		@ui.ProgressIndicator(templ.Attributes{"data-processing-bar":"", "data-variant":"linear", "data-shape":"flat", "data-size":"normal", "data-control":"indeterminate", "aria-label":"Current operation progress"})
+	</section>
+}
+
+templ inlineLoading(id string, label string) {
+	<span id={ id } class="inline-loading" hidden>
+		@ui.LoadingIndicator(templ.Attributes{"aria-label":label})
+		<span>{ label }</span>
+	</span>
+}
+
+templ Page(entries []Entry, version ...string) {
 	<!DOCTYPE html>
 	<html lang="en">
 		<head>
 			<meta charset="UTF-8"/>
 			<meta name="viewport" content="width=device-width,initial-scale=1"/>
-			<title>UI Motion</title>
-			<link rel="stylesheet" href="/assets/main.css"/><script type="module" src="/assets/main.js"></script>
+			<title>Material Motion Lab</title>
+			<link rel="icon" type="image/svg+xml" href="/site-logo.svg"/>
+			<link rel="apple-touch-icon" href="/site-logo.png"/>
+			<link rel="preload" href="/roboto-latin.woff2" as="font" type="font/woff2" crossorigin="anonymous"/>
+			<link id="workspace-styles" rel="stylesheet" href={ versionedAsset("/assets/main.css", version) }/>
+            <script src="/material/utils.js" defer></script>
+            <script src="/material/motion.js" defer></script>
+            <script src="/material/buttons.js" defer></script>
+            <script src="/material/fields.js" defer></script>
+            <script src="/material/button-groups.js" defer></script>
+            <script src="/material/snackbars.js" defer></script>
+            <script src="/material/toolbars.js" defer></script>
+            <script src="/material/menus.js" defer></script>
+            <script src="/material/progress.js" defer></script>
+            <script src="/material/loading.js" defer></script>
+			<script src="/material/navigation.js" defer></script>
+			<script type="module" src={ versionedAsset("/assets/main.js", version) }></script>
 		</head>
 		<body>
+			@site.Header(toolSiteConfig())
 			<div id="app">
-				<input id="file" type="file" accept="video/*,.gif" hidden/>
-				<div id="status" role="status" aria-live="polite"></div>
+				<input id="file" type="file" accept=".mp4,.mov,.webm,.mkv,.avi,.gif" hidden/><input id="project-file" type="file" accept=".motion,application/zip" hidden/>
+				<div data-snackbar-demo>
+					@ui.Snackbar("status", icon("close", 24))
+				</div>
 				<div class="shell">
-					<aside id="app-navigation" class="md-navigation md-navigation-rail app-navigation" data-variant="collapsed" data-size="short" data-orientation="vertical" aria-label="Application" hidden>
-						<div class="md-nav-items">
-							@railCommand("home", "Recordings", "M120-240v-480h720v480H120Zm80-80h160v-320H200v320Zm240 0h320v-320H440v320Z")
-							@railCommand("open-recording", "Open", "M120-160v-640h280l80 80h360v560H120Zm80-80h560v-400H447l-80-80H200v480Z")
-							@railCommand("open-export", "Export", "M440-320v-326L336-542l-56-58 200-200 200 200-56 58-104-104v326h-80ZM200-160v-240h80v160h400v-160h80v240H200Z")
-						</div>
-					</aside>
 					<main id="recording-content">
-						<section id="empty" aria-labelledby="home-title">
-							<header class="home-header"><div><h1 id="home-title">UI Motion</h1><p>Measure UI motion from video.</p></div>@ui.Button(templ.Attributes{"id": "empty-import", "class": "md-button md-filled-button", "disabled":true}) {
-	Open video
-}
-</header>
-							<h2>Recordings</h2>
-							<ul id="projects" class="md-list recording-list" data-variant="standard" data-size="one-line" data-shape="baseline" data-divider="full-width" aria-label="Saved recordings">
-								for _, entry := range entries {
-									@recordingItem(entry.ID, entry.Name)
-								}
-							</ul>
-							<p id="no-recordings" class="help" hidden>Open a video to begin.</p>
-						</section>
-						<div id="workspace" class="workspace-container" hidden>
-							<header class="editor-header">
-								<div class="recording-heading"><span class="help">UI Motion</span><h1 id="workspace-name"></h1></div><span id="save-state" class="help" role="status"></span>@action("restore-layout", "Back to workspace", false)
-							</header>
+						<div id="workspace" class="workspace-container">
+							<span id="save-state" class="visually-hidden" role="status"></span>
+							@processingStatus("processing-status")
 							<div class="editing-main">
 								<section id="viewer-area" aria-label="Video viewers">
-									<div class="workspace-toolbar">
-										@ui.Select("reference", "Second video", []ui.Option{{Value: "", Label: "None"}})
+									<div class="workspace-toolbar" id="viewer-tools" hidden>
+										<h2 class="current-project-name" id="loaded-project-name"></h2>
 										<div class="viewer-actions">
-											@action("open-tracking", "Tracking settings", false)
-											@action("open-alignment", "Alignment", true)
-											@tool("maximize-viewer", "Expand viewer", "M120-120v-240h80v160h160v80H120Zm480 0v-80h160v-160h80v240H600ZM120-600v-240h240v80H200v160h-80Zm640 0v-160H600v-80h240v240h-80Z")
+											@iconAction("a-remove", "Remove Video A from workspace", "close")
+											@iconAction("b-remove", "Remove Video B from workspace", "close")
 										</div>
 									</div>
-									<div id="video-panes" class="video-panes">
+									<div id="empty-viewer" class="empty-viewer">
+										<header class="video-library-header">
+											<div><h2 id="project-title">Measure motion in a video</h2><p class="help">Import a video, or explore the example below.</p><p id="offline-state" class="help" role="status" hidden></p></div>
+											@ui.Button(templ.Attributes{"id": "empty-add", "class": "md-button md-filled-button", "data-size": "medium", "disabled": true}) {
+												@icon("video_library", 18)
+												<span>Import video</span>
+											}
+										</header>
+										<div class="video-library">
+											<section class="project-section" aria-labelledby="example-heading">
+												<h3 id="example-heading">Example project</h3>
+												<article class="md-card md-outlined-card project-example">
+													<img src="/assets/example-carousel.webp" alt="Carousel cards with one card changing width" width="480" height="213"/>
+													<div class="project-example-content">
+														<h4>Carousel press</h4>
+														<p class="help">Inspect a card’s measured width change and compare it with an MD3 motion curve.</p>
+														@ui.Button(templ.Attributes{"id": "open-example", "disabled": true, "class": "md-button md-tonal-button", "data-size": "small"}) {
+															@icon("play_arrow", 18)
+															<span>Open example</span>
+														}
+													</div>
+												</article>
+											</section>
+											<section class="project-section" aria-labelledby="recent-heading">
+												<h3 id="recent-heading">Recent projects</h3>
+												<p id="recent-empty" class="help">Projects autosave in this browser. Save a project file to keep a portable copy.</p>
+												<ul id="recent-projects" class="md-list recording-list" data-variant="standard" data-control="actions" data-size="one-line" data-shape="baseline" data-divider="full-width" aria-label="Recent projects">
+													for _,entry:=range entries {
+														@recordingItem(entry.ID, entry.Name)
+													}
+												</ul>
+											</section>
+										</div>
+									</div>
+                                    <section id="empty-project" class="empty-project" hidden aria-labelledby="empty-project-heading">
+                                        <h3 id="empty-project-heading">No videos in this project</h3>
+                                        <p class="help">Import a video to start measuring motion.</p>
+                                        @ui.Button(templ.Attributes{"id":"empty-project-add", "class":"md-button md-filled-button", "data-size":"medium", "disabled":true}) {
+                                            @icon("video_library", 18)<span>Import video</span>
+                                        }
+                                    </section>
+									<div id="video-panes" class="video-panes" hidden>
 										@videoPane("a", "Video A")
 										<div id="reference-pane" hidden>
 											@videoPane("b", "Video B")
@@ -211,167 +313,272 @@ templ Page(entries []Entry) {
 								<section class="timeline-panel" aria-label="Workspace timeline" data-menu-example>
 									<div class="timeline-header">
 										<div class="transport">
-											<div class="md-button-group" data-control="standard" data-size="small" role="group" aria-label="Playback controls">
-												@transportButton("previous-frame", "Previous frame", "M240-240v-480h80v480h-80Zm480 0L360-480l360-240v480Z", false)
-												@transportButton("play", "Play", "M320-200v-560l440 280-440 280Z", true)
-												@transportButton("next-frame", "Next frame", "M240-240v-480l360 240-360 240Zm400 0v-480h80v480h-80Z", false)
-											</div><output id="playhead-time"></output>
-											@ui.Select("playback-speed", "Speed", []ui.Option{{Value: "0.125", Label: "⅛×"}, {Value: "0.25", Label: "¼×"}, {Value: "0.5", Label: "½×"}, {Value: "1", Label: "1×"}, {Value: "2", Label: "2×"}, {Value: "4", Label: "4×"}})
+											<output id="playhead-time"></output>
+											@ui.Select("playback-speed", "Speed", []ui.Option{{Value: "0.125", Label: "⅛×"}, {Value: "0.25", Label: "¼×"}, {Value: "0.5", Label: "½×"}, {Value: "1", Label: "1×"}, {Value: "2", Label: "2×"}, {Value: "4", Label: "4×"}}, "1")
 											@ui.Checkbox("playback-loop", "Loop")
-											@ui.Button(templ.Attributes{"class": "md-button md-text-button", "aria-label": "Playback interval", "data-menu-open": "playback-menu", "aria-controls": "playback-menu", "aria-expanded": "false", "aria-haspopup": "menu"}) {
-												<output id="playback-range"></output>
-											}
 										</div>
+										@ui.ButtonGroup("playback-buttons", templ.Attributes{"data-control": "standard", "data-size": "small", "aria-label": "Playback controls"}) {
+											@transportButton("tracking-start", "Go to tracking start", "text_select_jump_to_beginning", false)
+											@transportButton("previous-frame", "Previous frame", "skip_previous", false)
+											@transportButton("play", "Play", "play_arrow", true)
+											@transportButton("next-frame", "Next frame", "skip_next", false)
+											@transportButton("tracking-end", "Go to tracking end", "text_select_jump_to_end", false)
+										}
 										<div class="timeline-tools">
-											@iconAction("timeline-out", "Zoom out timeline", "M200-440v-80h560v80H200Z")
-											@iconAction("timeline-in", "Zoom in timeline", "M440-440H200v-80h240v-240h80v240h240v80H520v240h-80v-240Z")
-											@action("timeline-fit", "Fit clips", true)
-											@action("timeline-range", "Fit range", true)
+											@ui.Button(templ.Attributes{"class": "md-button md-text-button", "id": "playback-interval", "title": "Playback interval", "aria-label": "Playback interval", "data-menu-open": "playback-menu", "aria-controls": "playback-menu", "aria-expanded": "false", "aria-haspopup": "menu"}) {
+												@icon("linear_scale", 18)
+												<span>Playback interval</span>
+												<output id="playback-range" class="visually-hidden"></output>
+											}
+											<div class="timeline-tool-cluster" role="group" aria-label="Timeline zoom">
+											 @iconAction("timeline-out", "Zoom out timeline", "zoom_out")
+											 @iconAction("timeline-in", "Zoom in timeline", "zoom_in")
+											</div>
+											<div class="timeline-tool-cluster" role="group" aria-label="Fit timeline">
+											 @iconAction("timeline-fit", "Fit clips", "fit_page_width")
+											 @iconAction("timeline-range", "Fit range", "compress_horizontal")
+											</div>
 										</div>
 									</div>
 									<output data-menu-output class="visually-hidden"></output>
-									<div id="playback-menu" class="md-menu playback-menu" data-variant="standard" data-orientation="vertical" popover="auto" data-menu-panel data-menu-main role="menu" aria-label="Playback interval">
-										<ul><li><button type="button" class="md-menu-item" role="menuitem" data-menu-action id="playback-start">Set start at playhead</button></li><li><button type="button" class="md-menu-item" role="menuitem" data-menu-action id="playback-end">Set end at playhead</button></li><li><button type="button" class="md-menu-item" role="menuitem" data-menu-action id="playback-reset">Full clips</button></li></ul>
-									</div>
+									@ui.Menu("playback-menu", "Playback interval", true) {
+										<li role="presentation">
+											@ui.MenuItem(templ.Attributes{"id": "playback-start", "data-menu-action": ""}, "Set start at playhead", icon("line_start", 24), nil)
+										</li>
+										<li role="presentation">
+											@ui.MenuItem(templ.Attributes{"id": "playback-end", "data-menu-action": ""}, "Set end at playhead", icon("line_end", 24), nil)
+										</li>
+										<li role="presentation">
+											@ui.MenuItem(templ.Attributes{"id": "playback-reset", "data-menu-action": ""}, "Full clips", icon("fit_page_width", 24), nil)
+										</li>
+									}
 									<p class="visually-hidden" id="timeline-help">Drag the ruler to scrub frame by frame. Drag playback handles to limit playback. Drag a clip to move it. Drag range handles to choose which frames to track.</p>
-									<svg id="timeline" role="group" aria-describedby="timeline-help" aria-label="Video tracks and time ruler" viewBox="0 0 900 200"></svg>
+									<div class="timeline-tracks"><svg id="timeline" role="group" aria-describedby="timeline-help" aria-label="Video tracks and time ruler" viewBox="0 0 900 200"></svg></div>
 									<div id="timeline-pan" class="timeline-pan" tabindex="0" role="region" aria-label="Timeline horizontal scroll"><div></div></div>
 								</section>
+								<div class="pane-gutter" aria-hidden="true"></div>
 								<section id="chart-area" class="graph-panel" aria-label="Displacement measurements">
 									<div class="chart-toolbar">
-										<h2>Displacement</h2>
-										<span id="chart-measurement-summary" class="help"></span>
-										@tool("open-reference", "Chart settings", "M440-120 424-246q-20-7-38-18l-112 49-80-138 101-76q-2-20 0-42L194-547l80-138 112 49q18-11 38-18l16-126h160l16 126q20 7 38 18l112-49 80 138-101 76q2 22 0 42l101 76-80 138-112-49q-18 11-38 18l-16 126H440Zm80-240q50 0 85-35t35-85q0-50-35-85t-85-35q-50 0-85 35t-35 85q0 50 35 85t85 35Z")
-										<span id="reference-summary" class="help" hidden></span>
-										@tool("maximize-chart", "Expand chart", "M120-120v-240h80v160h160v80H120Zm480 0v-80h160v-160h80v240H600ZM120-600v-240h240v80H200v160h-80Zm640 0v-160H600v-80h240v240h-80Z")
-									</div>
-									<p id="graph-note" class="visually-hidden">Click a sample to inspect its frame. Enable Pan plot to move the chart.</p>
-									<div class="graph-readouts">
-										<div>
-											<output id="sample-info" class="sample-info help" aria-live="polite"></output>
-											<div id="legend" class="legend"><span>Video A</span><span class="ref" id="ref-legend" hidden>Video B</span><span class="expected" id="curve-legend" hidden>Reference curve</span></div>
-											<p id="curve-note" class="help" hidden>Reference curves run from each tracking range’s first position to its last position.</p>
+										@inlineLoading("chart-loading", "Updating chart…")
+										<div class="chart-heading"><h2>Displacement</h2><span id="chart-measurement-summary" class="help" hidden></span></div>
+										<div id="legend" class="legend" hidden><span>Video A</span><span class="ref" id="ref-legend" hidden>Video B</span><span class="expected" id="curve-legend" hidden>Reference curve</span></div>
+										<div class="chart-actions">
+											@ui.Button(templ.Attributes{"id": "graph-pan", "class": "md-icon-button md-outlined-icon-button", "data-size": "xsmall", "data-shape": "round", "data-width": "default", "aria-label": "Pan chart", "title": "Pan chart", "aria-pressed": "false", "disabled": true}) {
+												@icon("pan_tool", 24)
+											}
+											@ui.Button(templ.Attributes{"id": "maximize-chart", "class": "md-button md-outlined-button", "data-size": "xsmall", "aria-pressed": "false"}) {
+												@icon("expand_content", 18)
+												<span>Expand chart</span>
+											}
 										</div>
-										<div class="measurement-results"><p id="a-result" class="help"></p><p id="b-result" class="help" hidden></p></div>
-									</div>
+									</div><span id="reference-summary" class="help" hidden></span>
+									<p id="graph-note" class="visually-hidden">Click a sample to inspect its frame. Enable Pan plot to move the chart.</p>
 									<div class="graph-wrap"><svg id="graph" viewBox="0 0 900 400" role="group" aria-label="Tracked displacement against workspace time. Use arrow keys to inspect frames." aria-describedby="sample-info" tabindex="0"></svg></div>
+									<footer class="chart-footer"><output id="sample-info" class="sample-info" aria-live="polite"></output><div class="measurement-results"><p id="a-result" class="help"></p><p id="b-result" class="help" hidden></p></div><p id="curve-note" class="help" hidden>Reference curves run from each tracking range’s first position to its last position.</p></footer>
 								</section>
 							</div>
 						</div>
 					</main>
 					@splitter("inspector-splitter", "Resize tools panel", "vertical")
-					<dialog id="inspector" class="md-sheet md-side-sheet inspector" data-control="docked" aria-labelledby="inspector-title">
-						<div class="md-sheet-content md-tabs-example">
-							<header class="md-sheet-header">
-								<h2 id="inspector-title" class="md-sheet-title">Video A</h2>@tool("close-inspector", "Hide tools", "M256-200 200-256l224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z")
-							</header>
-							<div class="inspector-tabs">
-								<div class="md-tabs" data-variant="secondary" data-control="label" role="tablist" aria-label="Inspector section">
-									for _,mode:=range []ui.Option{{Value:"tracking",Label:"Tracking"},{Value:"alignment",Label:"Alignment"},{Value:"reference",Label:"Chart"}} {
-										<button type="button" class="md-tab" id={ "inspect-" + mode.Value } role="tab" aria-selected={ mode.Value == "tracking" } tabindex="-1" aria-controls={ mode.Value + "-settings" }><span class="md-tab-content">{ mode.Label }</span><span class="md-tab-active-indicator"></span></button>
-									}
-								</div>
-							</div>
-							<div class="md-sheet-body">
-								<div id="tracking-settings" role="tabpanel" aria-labelledby="inspect-tracking">
-									@trackingInspector("a")
-									@trackingInspector("b")
-								</div>
-								<div id="alignment-settings" role="tabpanel" aria-labelledby="inspect-alignment" hidden>
-									<section class="alignment-controls" aria-label="Clip alignment">
-										<h3>Alignment</h3>
-										<div class="inspector-actions">
-											@action("mark-sync", "Mark sync point", true)
-											@action("goto-sync", "Go to sync point", true)
-											@action("align-sync", "Align sync points", true)
-										</div>
-										<p id="sync-info" class="help"></p>
-										@ui.NumberField("clip-offset", "Clip offset (ms)", "0", "-86400000", "86400000")
-										<div class="inspector-actions">
-											@action("nudge-earlier", "Move one frame earlier", true)
-											@action("nudge-later", "Move one frame later", true)
-										</div>
-									</section>
-								</div>
-								<div id="reference-settings" role="tabpanel" aria-labelledby="inspect-reference" hidden>
-									<h3>Chart display</h3>
-									<div class="chart-controls">
-										@ui.Select("axis", "Position", []ui.Option{{Value: "x", Label: "Horizontal"}, {Value: "y", Label: "Vertical"}, {Value: "width", Label: "Width"}, {Value: "height", Label: "Height"}})
-										@ui.Select("units", "Units", []ui.Option{{Value: "px", Label: "Pixels"}, {Value: "progress", Label: "Progress (%)"}})
-									</div>
-									<div class="graph-scale-controls" role="group" aria-label="Vertical axis">
-										@ui.Checkbox("graph-pan", "Pan plot")
-										@action("graph-fit", "Fit motion", true)
-										@iconAction("graph-zoom-out", "Zoom out vertical axis", "M200-440v-80h560v80H200Z")
-										@iconAction("graph-zoom-in", "Zoom in vertical axis", "M440-440H200v-80h240v-240h80v240h240v80H520v240h-80v-240Z")
-										@action("graph-fit-end", "Fit end position", true)
-										<output id="graph-scale-info"></output>
-									</div>
-									<h3>Reference curve</h3>@ui.Select("curve", "Reference curve", referenceOptions())
-									<p id="no-reference" class="help">Choose a reference to compare with the measured motion.</p>
-									<section id="reference-controls" class="reference-editor" hidden aria-label="Reference parameters">
-										<div id="bezier-controls" class="reference-controls">
-											@ui.NumberField("bezier-x1", "X1", "0.2", "0", "1")
-											@ui.NumberField("bezier-y1", "Y1", "0", "-10", "10")
-											@ui.NumberField("bezier-x2", "X2", "0", "0", "1")
-											@ui.NumberField("bezier-y2", "Y2", "1", "-10", "10")
-										</div>
-										<div id="spring-controls" class="reference-controls" hidden>
-											@ui.NumberField("spring-stiffness", "Stiffness (mass 1)", "380", "0.001", "1000000")
-											@ui.NumberField("spring-damping", "Damping ratio", "0.8", "0", "100")
-											@ui.NumberField("spring-velocity", "Initial velocity (travel/s)", "0", "-1000", "1000")
-										</div>
-										<div id="duration-controls" class="reference-controls">
-											@ui.NumberField("duration", "Reference duration (ms)", "300", "1", "60000")
-											@action("fit-a", "Fit duration to A", true)
-											@action("fit-b", "Fit duration to B", true)
-										</div>
-										<p id="spring-note" class="help" hidden>Springs use elapsed time. Initial velocity is measured in total travel distances per second.</p>
-										<p class="help"><a id="reference-source" target="_blank" rel="noopener" hidden>Reference definition</a></p>
-										<div class="inspector-actions">
-											@action("reference-save", "Save reference", false)
-											@action("reference-load", "Load reference", false)
-											<input id="reference-file" type="file" accept="application/json,.json" hidden/>
-										</div>
-										<p id="reference-status" class="help" role="status"></p>
-									</section>
-								</div>
-							</div>
+					<div class="tools-column">
+						<div class="project-actions" data-menu-example>
+							@ui.Toolbar(templ.Attributes{"data-variant": "floating", "data-control": "vibrant", "data-density": "compact", "data-elevation": "none", "data-orientation": "horizontal", "aria-label": "Workspace actions"}) {
+								@ui.Button(templ.Attributes{"id": "project-menu-button", "disabled": true, "class": "md-button md-toolbar-item", "data-toolbar-item": "project", "data-size": "xsmall", "data-menu-open": "desktop-project-menu", "aria-haspopup": "menu", "aria-expanded": "false", "aria-controls": "desktop-project-menu", "aria-label": "Project menu", "title": "Project menu"}) {
+									@icon("folder_open", 24)
+									<span>Project</span>
+								}
+								@ui.Button(templ.Attributes{"id": "open-recording", "class": "md-button md-toolbar-item", "data-toolbar-item": "import", "data-size": "xsmall", "aria-label": "Import video", "title": "Import video", "disabled": true}) {
+									@icon("video_library", 24)
+									<span>Import</span>
+								}
+								@ui.Button(templ.Attributes{"id": "open-export", "class": "md-button md-toolbar-item", "data-toolbar-item": "export", "data-size": "xsmall", "data-menu-open": "desktop-export-menu", "aria-haspopup": "menu", "aria-expanded": "false", "aria-controls": "desktop-export-menu", "aria-label": "Export", "title": "Export", "disabled": true}) {
+									@icon("video_frame_save", 24)
+									<span>Export</span>
+								}
+							}
+							@projectMenu("desktop-project-menu", false)
+							@ui.Menu("desktop-export-menu", "Export", true) {
+								<li role="presentation">
+									@ui.MenuItem(templ.Attributes{"data-export-format": "video", "data-menu-action": ""}, "Annotated video…", icon("video_frame_save", 24), nil)
+								</li>
+								<li role="presentation">
+									@ui.MenuItem(templ.Attributes{"data-export-format": "chart", "data-menu-action": ""}, "Chart SVG…", icon("show_chart", 24), nil)
+								</li>
+								<li role="presentation">
+									@ui.MenuItem(templ.Attributes{"data-export-format": "csv", "data-menu-action": ""}, "Measurements CSV", nil, nil)
+								</li>
+								<li role="presentation">
+									@ui.MenuItem(templ.Attributes{"data-export-format": "json", "data-menu-action": ""}, "Tracking JSON", nil, nil)
+								</li>
+							}
+							<output data-menu-output class="visually-hidden"></output>
 						</div>
-					</dialog>
+						<aside id="inspector" class="inspector" aria-labelledby="inspector-title">
+							<div class="tools-content">
+								<header class="tools-header">
+									<h2 id="inspector-title" class="tools-title">Tools</h2>
+								</header>
+								<div class="tools-body">
+									<details id="tracking-settings" class="tool-accordion" open>
+										<summary>
+											Tracking
+											@icon("expand_more", 24)
+										</summary>
+										<div class="tool-accordion-content">
+											@trackingInspector("a")
+											@trackingInspector("b")
+										</div>
+									</details>
+									<details id="alignment-settings" class="tool-accordion">
+										<summary>
+											Alignment
+											@icon("expand_more", 24)
+										</summary>
+										<div class="tool-accordion-content">
+											<section class="inspector-section alignment-controls" aria-label="Clip alignment">
+												<h3>Sync points</h3>
+												<div class="inspector-actions">
+													@command("mark-sync", "Mark sync point", "add_diamond")
+													@command("goto-sync", "Go to sync point", "jump_to_element")
+													@command("align-sync", "Align sync points", "align_horizontal_center")
+												</div>
+												<p id="sync-info" class="help"></p>
+											</section>
+											<section class="inspector-section" aria-label="Clip offset">
+												<h3>Clip offset</h3>
+												@ui.NumberField("clip-offset", "Clip offset (ms)", "0", "0", "86400000")
+												<div class="inspector-actions">
+													@command("nudge-earlier", "One frame earlier", "arrow_back")
+													@command("nudge-later", "One frame later", "arrow_forward")
+												</div>
+											</section>
+										</div>
+									</details>
+									<details id="reference-settings" class="tool-accordion">
+										<summary>
+											Chart
+											@icon("expand_more", 24)
+										</summary>
+										<div class="tool-accordion-content">
+											<section class="inspector-section" aria-label="Chart display">
+												<h3>Chart display</h3>
+												<div class="chart-controls">
+													@ui.Select("axis", "Position", []ui.Option{{Value: "x", Label: "Horizontal"}, {Value: "y", Label: "Vertical"}, {Value: "width", Label: "Width"}, {Value: "height", Label: "Height"}})
+													<div class="units-select">
+														@ui.Select("units", "Units", []ui.Option{{Value: "px", Label: "Pixels"}, {Value: "progress", Label: "Progress (%)"}})
+													</div>
+													<div class="units-choice" data-desktop-only>
+														<span class="help">Units</span>
+														@ui.ButtonGroup("", templ.Attributes{"data-control": "connected", "data-shape": "single", "data-size": "small", "aria-label": "Chart units"}) {
+															for _, option := range []ui.Option{{Value: "px", Label: "Pixels"}, {Value: "progress", Label: "Progress (%)"}} {
+																@ui.Button(templ.Attributes{"id": "units-" + option.Value, "class": "md-button md-outlined-button", "data-size": "small", "data-group-button": "units-" + option.Value, "data-select-choice": "units", "data-choice-value": option.Value, "aria-pressed": strconv.FormatBool(option.Value == "px")}) {
+																	<span class="md-group-check" aria-hidden="true">@icon("check", 20)</span><span>{ option.Label }</span>
+																}
+															}
+														}
+													</div>
+												</div>
+											</section>
+											<section class="inspector-section" aria-label="Chart navigation">
+												<h3>Chart navigation</h3>
+												<div class="graph-scale-controls" role="group" aria-label="Vertical axis">
+													<div class="inspector-actions" role="group" aria-label="Fit chart vertically">
+														@command("graph-fit", "Fit motion", "fit_page")
+														@command("graph-fit-end", "Fit end position", "center_focus_strong")
+													</div>
+													<div class="axis-zoom">
+														<span class="help">Vertical zoom</span>
+														<div role="group" aria-label="Vertical zoom">
+															@iconAction("graph-zoom-out", "Zoom out vertical axis", "zoom_out")
+															@iconAction("graph-zoom-in", "Zoom in vertical axis", "zoom_in")
+														</div>
+													</div>
+													<output id="graph-scale-info"></output>
+												</div>
+											</section>
+											<section class="inspector-section" aria-label="Reference curve">
+												<h3>Reference curve</h3>@ui.Select("curve", "Reference curve", referenceOptions())
+												<p id="no-reference" class="help">Choose a reference to compare with the measured motion.</p>
+												<section id="reference-controls" class="inspector-section reference-editor" hidden aria-label="Reference parameters">
+													<div id="bezier-controls" class="reference-controls">
+														@ui.NumberField("bezier-x1", "X1", "0.2", "0", "1")
+														@ui.NumberField("bezier-y1", "Y1", "0", "-10", "10")
+														@ui.NumberField("bezier-x2", "X2", "0", "0", "1")
+														@ui.NumberField("bezier-y2", "Y2", "1", "-10", "10")
+													</div>
+													<div id="spring-controls" class="reference-controls" hidden>
+														@ui.NumberField("spring-stiffness", "Stiffness (mass 1)", "380", "0.001", "1000000")
+														@ui.NumberField("spring-damping", "Damping ratio", "0.8", "0", "100")
+														@ui.NumberField("spring-velocity", "Initial velocity (travel/s)", "0", "-1000", "1000")
+													</div>
+													<div id="duration-controls" class="reference-controls">
+														@ui.NumberField("duration", "Reference duration (ms)", "300", "1", "60000")
+																@ui.Select("duration-mode", "Duration", []ui.Option{{Value: "manual", Label: "Manual"}, {Value: "a", Label: "Auto-fit A"}, {Value: "b", Label: "Auto-fit B"}})
+																<output id="duration-status" class="help" aria-live="polite"></output>
+													</div>
+													<p id="spring-note" class="help" hidden>Springs use elapsed time. Initial velocity is measured in total travel distances per second.</p>
+													<p class="help"><a id="reference-source" target="_blank" rel="noopener" hidden>Reference definition</a></p>
+													<div class="inspector-actions">
+														@command("reference-save", "Save reference", "download")
+														@command("reference-load", "Load reference", "upload_file")
+														<input id="reference-file" type="file" accept="application/json,.json" hidden/>
+													</div>
+													<p id="reference-status" class="help" role="status"></p>
+												</section>
+											</section>
+										</div>
+									</details>
+								</div>
+							</div>
+						</aside>
+					</div>
 				</div>
-				<dialog id="open-dialog" class="md-dialog" data-variant="basic" data-dialog-surface aria-labelledby="open-title">
-					<header class="md-basic-header"><h2 id="open-title">Open recording</h2></header>
-					<div class="md-dialog-content">
-						@ui.Button(templ.Attributes{"id": "import", "class": "md-button md-filled-button"}) {
-							Open video
+				<div id="mobile-tools" class="mobile-tools" data-menu-example>
+					@ui.Toolbar(templ.Attributes{"data-variant": "floating", "data-control": "vibrant", "data-orientation": "horizontal", "aria-label": "Workspace tools", "data-snackbar-avoid": ""}) {
+						@ui.Button(templ.Attributes{"id": "mobile-add", "disabled": true, "class": "md-icon-button md-toolbar-item", "data-size": "small", "data-shape": "round", "data-width": "default", "data-toolbar-item": "project", "data-menu-open": "mobile-project-menu", "aria-haspopup": "menu", "aria-expanded": "false", "aria-controls": "mobile-project-menu", "aria-label": "Project menu", "title": "Project menu"}) {
+							@icon("folder_open", 24)
 						}
-						<ul id="recent-projects" class="md-list recording-list" data-variant="standard" data-size="one-line" data-shape="baseline" data-divider="full-width" aria-label="Saved recordings"></ul>
+						@ui.Button(templ.Attributes{"id": "mobile-tracking", "disabled": true, "class": "md-icon-button md-toolbar-item", "data-size": "small", "data-shape": "round", "data-width": "default", "data-toolbar-item": "tracking", "data-menu-open": "mobile-tracking-menu", "aria-haspopup": "menu", "aria-expanded": "false", "aria-controls": "mobile-tracking-menu", "aria-label": "Tracking", "title": "Tracking"}) {
+							@icon("ink_selection", 24)
+						}
+						@ui.Button(templ.Attributes{"id": "mobile-alignment", "disabled": true, "class": "md-icon-button md-toolbar-item", "data-size": "small", "data-shape": "round", "data-width": "default", "data-toolbar-item": "alignment", "data-menu-open": "mobile-alignment-menu", "aria-haspopup": "menu", "aria-expanded": "false", "aria-controls": "mobile-alignment-menu", "aria-label": "Alignment", "title": "Alignment"}) {
+							@icon("align_horizontal_center", 24)
+						}
+						@ui.Button(templ.Attributes{"id": "mobile-chart", "disabled": true, "class": "md-icon-button md-toolbar-item", "data-size": "small", "data-shape": "round", "data-width": "default", "data-toolbar-item": "chart", "data-menu-open": "mobile-chart-menu", "aria-haspopup": "menu", "aria-expanded": "false", "aria-controls": "mobile-chart-menu", "aria-label": "Chart", "title": "Chart"}) {
+							@icon("show_chart", 24)
+						}
+						@ui.Button(templ.Attributes{"id": "mobile-export", "disabled": true, "class": "md-icon-button md-toolbar-item", "data-size": "small", "data-shape": "round", "data-width": "default", "data-toolbar-item": "export", "data-menu-open": "mobile-export-menu", "aria-haspopup": "menu", "aria-expanded": "false", "aria-controls": "mobile-export-menu", "aria-label": "Export", "title": "Export"}) {
+							@icon("video_frame_save", 24)
+						}
+					}
+					@projectMenu("mobile-project-menu", true)
+					<output data-menu-output class="visually-hidden"></output>
+				</div>
+				@ui.Dialog("replace-video-dialog", "replace-video-title", "Replace a video?", "md-dialog", replaceVideoActions()) {
+					<p>This project already contains two videos. Choose which one to replace.</p>
+				}
+				@ui.Dialog("export-dialog", "export-title", "Export", "md-dialog export-dialog", exportDialogActions()) {
+					@inlineLoading("preview-loading", "Rendering preview…")
+					<p id="export-name" class="help"></p>
+					<div class="export-format">
+						@ui.Select("export-source", "Video", []ui.Option{{Value: "a", Label: "Video A"}, {Value: "b", Label: "Video B"}})
+						@ui.Select("export-format", "Format", []ui.Option{{Value: "video", Label: "Annotated video"}, {Value: "chart", Label: "Chart SVG"}, {Value: "json", Label: "Tracking JSON"}, {Value: "csv", Label: "Measurements CSV"}})
 					</div>
-					<footer class="md-basic-actions">@action("close-open", "Cancel", false)
-</footer>
-				</dialog>
-				<dialog id="export-dialog" class="md-dialog export-dialog" data-variant="basic" data-dialog-surface aria-labelledby="export-title">
-					<header class="md-basic-header"><h2 id="export-title">Export</h2><p id="export-name" class="help"></p></header>
-					<div class="md-dialog-content">
-						<div class="export-format">
-							@ui.Select("export-source", "Video", []ui.Option{{Value: "a", Label: "Video A"}, {Value: "b", Label: "Video B"}})
-							@ui.Select("export-format", "Format", []ui.Option{{Value: "video", Label: "Annotated video"}, {Value: "chart", Label: "Chart SVG"}, {Value: "json", Label: "Tracking JSON"}, {Value: "csv", Label: "Measurements CSV"}})
-						</div>
-						@exportSettings("a")
-						@exportSettings("b")
-						<p id="export-error" class="error" role="alert"></p>
-						<p id="export-status" role="status"></p>
-					</div>
-					<footer class="md-basic-actions">
-						@ui.Button(templ.Attributes{"id": "export-close", "class": "md-button md-text-button"}) {
-							Cancel
-						}
-						@ui.Button(templ.Attributes{"id": "export-run", "class": "md-button md-filled-button"}) {
-							Export
-						}
-					</footer>
-				</dialog>
+					@exportSettings("a")
+					@exportSettings("b")
+					<p id="export-error" class="error" role="alert"></p>
+					<p id="export-status" role="status"></p>
+				}
+				<template id="mobile-menu-template">
+					@ui.Menu("", "", true)
+				</template>
+				<template id="mobile-menu-item-template">
+					@ui.MenuItem(nil, "", icon("add", 24), icon("chevron_right", 24))
+				</template>
+				<template id="mobile-menu-symbols">
+					@icon("check", 24)
+					@icon("arrow_back", 24)
+				</template>
 				<template id="recording-item-template">
 					@recordingItem("", "")
 				</template>
@@ -379,6 +586,73 @@ templ Page(entries []Entry) {
 					@ui.SelectOption("", "", "", false)
 				</template>
 			</div>
+			@site.Footer(toolSiteConfig())
+            <script src="/assets/startup.js"></script>
 		</body>
 	</html>
+}
+
+templ exportDialogActions() {
+	<div class="export-actions">
+	@processingStatus("export-processing-status")
+	<div class="export-action-buttons">
+	@ui.Button(templ.Attributes{"id": "export-close", "class": "md-button md-text-button"}) {
+		Cancel
+	}
+	@ui.Button(templ.Attributes{"id": "export-run", "class": "md-button md-filled-button"}) {
+		Export
+	}
+	</div>
+	</div>
+}
+
+templ projectMenu(id string, mobile bool) {
+	@ui.Menu(id, "Project", true) {
+		if mobile {
+			<li role="presentation">
+				@ui.MenuItem(templ.Attributes{"data-project-action": "import", "data-menu-action": ""}, "Import video…", icon("video_library", 24), nil)
+			</li>
+		}
+		<li role="presentation">
+			@ui.MenuItem(templ.Attributes{"data-project-action": "new", "data-menu-action": ""}, "New project", icon("add", 24), nil)
+		</li>
+		<li role="presentation">
+			@ui.MenuItem(templ.Attributes{"data-project-action": "open", "data-menu-action": ""}, "Open project…", icon("folder_open", 24), nil)
+		</li>
+        <li role="presentation">
+          @ui.MenuItem(templ.Attributes{"data-project-action":"copy", "data-menu-action":"", "disabled":true}, "Make a copy", nil, nil)
+        </li>
+		<li role="presentation">
+			@ui.MenuItem(templ.Attributes{"id": projectSaveID(mobile), "data-menu-action": "", "aria-label": "Save project file", "disabled": true}, "Save project file", icon("save", 24), nil)
+		</li>
+        <li role="presentation">
+            @ui.MenuItem(templ.Attributes{"data-project-action":"close", "data-menu-action":"", "disabled":true}, "Close project", icon("close", 24), nil)
+        </li>
+	}
+}
+
+templ replaceVideoActions() {
+	@ui.Button(templ.Attributes{"class": "md-button md-text-button", "data-dialog-choice": "cancel"}) {
+		Cancel
+	}
+	@ui.Button(templ.Attributes{"id": "replace-a", "class": "md-button md-outlined-button", "data-dialog-choice": "a"}) {
+		Replace video A
+	}
+	@ui.Button(templ.Attributes{"id": "replace-b", "class": "md-button md-outlined-button", "data-dialog-choice": "b"}) {
+		Replace video B
+	}
+}
+
+func projectSaveID(mobile bool) string {
+	if mobile {
+		return "mobile-save"
+	}
+	return "save-project"
+}
+
+func versionedAsset(path string, version []string) string {
+	if len(version) == 0 {
+		return path
+	}
+	return path + "?v=" + version[0]
 }

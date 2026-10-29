@@ -22,110 +22,37 @@ const themeCSS = postcss.parse(
     "\n" +
     (await readFile(theme, "utf8")),
 );
-const elevation = postcss.parse(
-  await read("forge/components/static/elevation.css"),
-);
-
-const allowed = new Set([
-  "md-button",
-  "md-checkbox",
-  "md-checkbox-box",
-  "md-checkbox-check",
-  "md-checkbox-dash",
-  "md-icon-button",
-  "md-standard-icon-button",
-  "md-filled-icon-button",
-  "md-tonal-icon-button",
-  "md-button-ripple",
-  "md-filled-button",
-  "md-tonal-button",
-  "md-outlined-button",
-  "md-filter-chip",
-  "md-menu",
-  "md-menu-item",
-  "md-field-menu",
-  "md-field-empty",
-  "md-field-menu-divider",
-  "md-divider",
-  "md-card",
-  "md-elevated-card",
-  "md-outlined-card",
-  "md-navigation",
-  "md-navigation-drawer",
-  "md-nav-items",
-  "md-nav-item",
-  "md-nav-indicator",
-  "md-nav-label",
-  "md-nav-icon",
-  "md-list",
-  "md-list-item",
-  "md-list-body",
-  "md-list-label",
+// Consume the Catalog's published component modules intact. Module ownership
+// already includes each family's slots, states, media rules and keyframes.
+const usedModules = new Set([
+  "common",
+  "checkbox",
+  "messages",
+  "toolbar",
+  "button-group",
+  "list",
+  "card",
+  "dialog",
+  "navigation",
+  "progress",
+  "loading",
 ]);
-for (const match of components
-  .toString()
-  .matchAll(
-    /\.(md-(?:slider|field|button-group|group|toolbar|dialog|basic|full|sheet|side-sheet|navigation|nav|tabs|tab)[\w-]*)/g,
-  ))
-  allowed.add(match[1]);
-for (const c of [
-  "md-text-button",
-  "md-outlined-text-field",
-  "md-filled-text-field",
-  "md-outlined-select",
-  "md-filled-select",
-  "md-outlined-autocomplete",
-  "md-filled-autocomplete",
-])
-  allowed.add(c);
+const moduleManifest = "forge/components/static/bundles/modules.json";
+const moduleOrder = JSON.parse(await read(moduleManifest));
+for (const name of usedModules)
+  if (!moduleOrder.includes(name))
+    throw Error("Missing component module " + name);
+const bundleFiles = moduleOrder
+  .filter((name) => usedModules.has(name))
+  .map((name) => `forge/components/static/bundles/${name}.css`);
 const output = postcss.root();
-for (const root of [buttons, components, elevation])
-  root.walkRules((rule) => {
-    if (
-      root === buttons &&
-      rule.selector.startsWith(":root:not([data-feedback-ready])")
-    ) {
-      output.append(
-        rule.clone({
-          selector:
-            ":root:not([data-feedback-ready]) :is(.md-button,.md-icon-button,.md-filter-chip)::before",
-        }),
-      );
-      return;
-    }
-    const selectors = rule.selectors
-      .map((s) =>
-        s.replace(
-          /:is\(\.md-filter-chip,\s*\.md-assist-chip,\s*\.md-suggestion-chip,\s*\.md-input-chip\)/g,
-          ".md-filter-chip",
-        ),
-      )
-      .filter((s) => {
-        const classes = [...s.matchAll(/\.([\w-]+)/g)].map((m) => m[1]);
-        if (!classes.length || !classes.every((c) => allowed.has(c)))
-          return false;
-        if (root === components && !classes.some((c) => allowed.has(c)))
-          return false;
-        if (
-          /data-variant=[\"']?(?:vibrant|baseline)/.test(
-            s.replace(/:not\(\[data-variant=(?:vibrant|baseline)\]\)/g, ""),
-          )
-        )
-          return false;
-        if (
-          /data-size=["']?(?:xsmall|medium|large|xlarge)|data-width=["']?(?:narrow|wide)/.test(
-            s,
-          )
-        )
-          return false;
-        return true;
-      });
-    if (!selectors.length) return;
-    const clone = rule.clone({ selector: selectors.join(", ") });
-    if (rule.parent.type === "atrule")
-      output.append(rule.parent.clone({ nodes: [clone] }));
-    else output.append(clone);
-  });
+for (const root of [
+  buttons,
+  ...(await Promise.all(
+    bundleFiles.map(async (file) => postcss.parse(await read(file))),
+  )),
+])
+  for (const node of root.nodes) output.append(node.clone());
 const defs = new Map();
 for (const root of [themeCSS, components])
   root.nodes
@@ -180,6 +107,7 @@ const collect = (text) => {
 };
 collect(output.toString());
 collect(await readFile("web/style.css", "utf8"));
+collect(await read("forge/site/site.css"));
 for (const key of needed) {
   if (!defs.has(key)) throw Error("Missing source token " + key);
   collect(defs.get(key));
@@ -190,7 +118,7 @@ for (const key of [...needed].sort())
 output.prepend(tokens);
 await writeFile(
   "public/material.css",
-  "/* Material light/default token and component subset. Refresh with scripts/import-material.mjs. */\n" +
+  "/* Material light/default tokens and intact Catalog component modules. Refresh with scripts/import-material.mjs. */\n" +
     output.toString() +
     "\n",
 );
@@ -211,33 +139,42 @@ await copyFile(
 for (const [from, to] of [
   ["forge/components/static/buttons.js", "buttons.js"],
   ["forge/components/static/menus.js", "menus.js"],
+  ["forge/components/static/progress.js", "progress.js"],
+  ["forge/components/static/loading.js", "loading.js"],
+  ["forge/components/static/loading-shapes.json", "loading-shapes.json"],
   ["forge/components/static/runtime/utils.js", "utils.js"],
-  ["forge/components/static/runtime/sliders.js", "sliders.js"],
-  ["forge/components/static/runtime/navigation.js", "navigation.js"],
   ["forge/components/static/runtime/button-groups.js", "button-groups.js"],
-  ["forge/components/static/runtime/tabs.js", "tabs.js"],
+  ["forge/components/static/runtime/snackbars.js", "snackbars.js"],
+  ["forge/components/static/runtime/toolbars.js", "toolbars.js"],
+  ["forge/components/static/runtime/navigation.js", "navigation.js"],
 ])
   await copyFile(path.join(source, from), path.join("public/material", to));
 
 console.log(
-  `Material subset: ${needed.size} tokens, ${output.nodes.length - 1} rules, ${Buffer.byteLength(output.toString())} bytes.`,
+  `Material import: ${needed.size} tokens, ${output.nodes.length - 1} rules, ${Buffer.byteLength(output.toString())} bytes.`,
 );
 
 const files = [
+  "forge/components/static/progress.js",
+  "forge/components/static/loading.js",
+  "forge/components/static/loading-shapes.json",
   "published-review/assets/theme.css",
   "published-review/assets/dtcg/light-default/tokens.css",
   "forge/components/static/buttons.css",
   "forge/components/static/components.css",
-  "forge/components/static/elevation.css",
+  "forge/site/site.css",
+  "forge/site/site.js",
+  moduleManifest,
+  ...bundleFiles,
   "forge/components/static/buttons.js",
   "forge/components/static/menus.js",
   "forge/components/static/fields.js",
   "forge/components/static/motion.cjs",
   "forge/components/static/runtime/utils.js",
-  "forge/components/static/runtime/sliders.js",
-  "forge/components/static/runtime/navigation.js",
   "forge/components/static/runtime/button-groups.js",
-  "forge/components/static/runtime/tabs.js",
+  "forge/components/static/runtime/snackbars.js",
+  "forge/components/static/runtime/toolbars.js",
+  "forge/components/static/runtime/navigation.js",
 ];
 await writeFile(
   "public/token-source.json",

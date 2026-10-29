@@ -3,9 +3,22 @@
     "target": "ES2023",
     "module": "ESNext",
     "moduleResolution": "Bundler",
+    "resolveJsonModule": true,
     "strict": true,
-    "lib": ["ES2023", "DOM", "DOM.Iterable"],
-    "noEmit": true
+    "lib": [
+      "ES2023",
+      "DOM",
+      "DOM.Iterable"
+    ],
+    "noEmit": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noUncheckedSideEffectImports": true
   },
-  "include": ["web/**/*.ts"]
+  "include": [
+    "web/**/*.ts"
+  ]
 }

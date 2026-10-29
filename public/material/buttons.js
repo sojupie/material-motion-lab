@@ -148,13 +148,17 @@
     const group=button.closest('.md-button-group');if(group?.dataset?.control!=='standard')return;
     let state=widthGroups.get(group);
     if(!state){
-      const items=[...group.querySelectorAll(':scope > .md-button')];
+      const items=[...group.querySelectorAll(':scope > .md-button,:scope > .md-icon-button')];
       state={items,base:items.map(item=>item.getBoundingClientRect().width),original:items.map(item=>item.style.width),limits:items.map(item=>{const s=getComputedStyle(item);return Math.min(parseFloat(s.paddingInlineStart),parseFloat(s.paddingInlineEnd));}),animations:[],revision:0};
       widthGroups.set(group,state);
     }
     const from=state.items.map(item=>item.getBoundingClientRect().width);
     const velocity=from.map((_,i)=>state.motion&&state.animations[i]?springState(state.motion.damping,state.motion.stiffness,Math.max(0,Number(state.animations[i].currentTime)||0)/1000,state.motion.from[i],state.motion.to[i],state.motion.velocity[i]).velocity:0);
     for(const animation of state.animations)animation.cancel();
+    // Content can change during press/release. Measure its current natural size,
+    // rather than returning to cached widths and snapping when auto is restored.
+    for(const [i,item]of state.items.entries())item.style.width=state.original[i];
+    state.base=state.items.map(item=>item.getBoundingClientRect().width);
     const revision=++state.revision,style=getComputedStyle(group);
     const held=state.items.findIndex(item=>item.hasAttribute('data-pressed'));
     const index=pressed?state.items.indexOf(button):held>=0?held:group.dataset.componentState==='pressed'?1:-1;
@@ -175,7 +179,7 @@
   const widthGallery=new WeakSet();
   function initializeWidthGroups(){
     for(const group of document.querySelectorAll('.md-button-group[data-control="standard"][data-component-state="pressed"]'))if(!widthGallery.has(group)){
-      widthGallery.add(group);const button=group.querySelectorAll(':scope > .md-button')[1];
+      widthGallery.add(group);const button=group.querySelectorAll(':scope > .md-button,:scope > .md-icon-button')[1];
       widthGroup(button,true);const state=widthGroups.get(group);for(const animation of state?.animations||[])animation.finish();
     }
   }
@@ -570,6 +574,18 @@
   new MutationObserver((mutations = []) => {
     // Application click handlers can change selection after capture-phase release.
     // Retarget from the current animated corners before the next paint.
+    const changedGroups=new Set();
+    for(const mutation of mutations){
+      if(!["childList","characterData"].includes(mutation.type))continue;
+      const target=mutation.target.nodeType===3?mutation.target.parentElement:mutation.target;
+      if(target?.closest?.('.md-button-ripple'))continue;
+      const nodes=[...mutation.addedNodes||[],...mutation.removedNodes||[]];
+      if(nodes.length&&nodes.every(node=>node.className==='md-button-ripple'))continue;
+      const button=buttonFor(target),group=button?.closest('.md-button-group');
+      if(group&&widthGroups.has(group))changedGroups.add(group);
+    }
+    // MutationObserver runs before paint, including changes made by app click handlers.
+    for(const group of changedGroups)widthGroup(widthGroups.get(group).items[0],false);
     for (const mutation of mutations) {
       if (!["aria-pressed","aria-expanded"].includes(mutation.attributeName)) continue;
       const button = buttonFor(mutation.target);
@@ -595,6 +611,7 @@
   }).observe(document.documentElement, {
     subtree: true,
     childList: true,
+    characterData: true,
     attributes: true,
     attributeOldValue: true,
     attributeFilter: ["disabled", "aria-disabled", "aria-pressed", "aria-expanded"],

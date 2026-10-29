@@ -66,6 +66,7 @@ type Comparison struct {
 	ZeroFrame int    `json:"zeroFrame"`
 }
 type Project struct {
+	Example    string      `json:"example,omitempty"`
 	Schema     int         `json:"schema"`
 	ID         string      `json:"id"`
 	Name       string      `json:"name"`

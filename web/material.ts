@@ -1,5 +1,5 @@
 // Go templates own control anatomy. This adapter synchronizes application state
-// with the unmodified Forge interaction runtimes.
+// With the unmodified Forge interaction runtimes.
 const selects = new Map<HTMLSelectElement, HTMLElement>();
 export function syncMaterialControls() {
   for (const [select, root] of selects) {
@@ -11,19 +11,30 @@ export function syncMaterialControls() {
     )!;
     const display = root.querySelector<HTMLElement>("[data-field-display]")!;
     value.value = select.value;
-    button.value = select.selectedOptions[0]?.textContent || "";
+    button.value = select.selectedOptions[0]?.textContent ?? "";
     display.textContent = button.value;
     button.disabled = select.disabled;
     for (const row of root.querySelectorAll<HTMLElement>(
       "[role=option][data-field-value]",
-    ))
+    )) {
       row.setAttribute(
         "aria-selected",
         String(row.dataset.fieldValue === select.value),
       );
+    }
+  }
+  for (const button of document.querySelectorAll<HTMLButtonElement>(
+    "[data-select-choice]",
+  )) {
+    const select = document.querySelector(
+      `#${CSS.escape(button.dataset.selectChoice!)}`,
+    ) as HTMLSelectElement;
+    button.disabled = select.disabled;
+    setButtonToggle(button, select.value === button.dataset.choiceValue);
+    button.tabIndex = select.value === button.dataset.choiceValue ? 0 : -1;
   }
 }
-export async function installMaterialControls() {
+export function installMaterialControls() {
   for (const select of document.querySelectorAll<HTMLSelectElement>("select")) {
     const root = select.closest<HTMLElement>("[data-field-example]")!;
     selects.set(select, root);
@@ -37,10 +48,10 @@ export async function installMaterialControls() {
     new MutationObserver(() => {
       const list = root.querySelector("ul")!;
       list.replaceChildren();
-      const template = document.getElementById(
-        "field-option-template",
+      const template = document.querySelector(
+        "#field-option-template",
       ) as HTMLTemplateElement;
-      for (const [i, option] of Array.from(select.options).entries()) {
+      for (const [i, option] of [...select.options].entries()) {
         const item = template.content.firstElementChild!.cloneNode(
           true,
         ) as HTMLElement;
@@ -56,25 +67,38 @@ export async function installMaterialControls() {
       document.dispatchEvent(new Event("htmx:afterSwap"));
     }).observe(select, { childList: true, subtree: true });
   }
+  for (const button of document.querySelectorAll<HTMLButtonElement>(
+    "[data-select-choice]",
+  )) {
+    button.onclick = () => {
+      const select = document.querySelector(
+        `#${CSS.escape(button.dataset.selectChoice!)}`,
+      ) as HTMLSelectElement;
+      select.value = button.dataset.choiceValue!;
+      select.dispatchEvent(new Event("change", { bubbles: true }));
+      syncMaterialControls();
+    };
+  }
   syncMaterialControls();
-  for (const file of [
-    "motion.js",
-    "buttons.js",
-    "fields.js",
-    "utils.js",
-    "navigation.js",
-    "sliders.js",
-    "button-groups.js",
-    "tabs.js",
-    "menus.js",
-  ]) {
-    await new Promise<void>((resolve, reject) => {
-      const script = document.createElement("script");
-      script.src = "/material/" + file;
-      script.onload = () => resolve();
-      script.onerror = () =>
-        reject(Error("Failed to load shared controls: " + file));
-      document.head.append(script);
-    });
+}
+
+// Shared button variants own their selected styling through aria-pressed.
+export function setButtonToggle(button: HTMLElement, selected: boolean) {
+  button.setAttribute("aria-pressed", String(selected));
+}
+
+// The shared runtime owns notification placement, dismissal and focus return.
+export function showSnackbar(bar: HTMLElement, opener?: HTMLElement) {
+  const runtime = (
+    globalThis as typeof globalThis & {
+      MaterialSnackbars?: {
+        show: (bar: HTMLElement, opener?: HTMLElement) => void;
+      };
+    }
+  ).MaterialSnackbars;
+  if (runtime?.show) {
+    runtime.show(bar, opener);
+  } else {
+    bar.showPopover();
   }
 }
