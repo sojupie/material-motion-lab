@@ -10,6 +10,7 @@ import (
 
 func TestStaticExportHasNoProjectStoreOrAbsoluteToolAssets(t *testing.T) {
 	dir := t.TempDir()
+	copyComponentAssets(t, dir)
 	if err := os.MkdirAll(filepath.Join(dir, "assets"), 0755); err != nil {
 		t.Fatal(err)
 	}

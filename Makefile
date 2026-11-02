@@ -1,7 +1,7 @@
 .PHONY: build build-static generate frontend test serve
 build: build-static
 	./scripts/go-local.sh build -o bin/ui-motion ./cmd/ui-motion
-build-static: generate frontend
+build-static: frontend
 	CGO_ENABLED=0 go run -tags staticweb ./cmd/web-static --out dist
 	node scripts/startup-assets.mjs
 	node scripts/offline-assets.mjs

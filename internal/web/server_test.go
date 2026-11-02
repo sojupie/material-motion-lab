@@ -58,7 +58,11 @@ func TestServerRenderedControlsAndAPI(t *testing.T) {
 		t.Fatal("chart pan is still an inspector checkbox")
 	}
 
-	exportStart := strings.Index(body, `<dialog id="export-dialog"`)
+	exportTag := regexp.MustCompile(`<dialog\b[^>]*id="export-dialog"[^>]*>`).FindStringIndex(body)
+	exportStart := -1
+	if exportTag != nil {
+		exportStart = exportTag[0]
+	}
 	if exportStart < 0 {
 		t.Fatal("export dialog absent")
 	}
@@ -69,7 +73,7 @@ func TestServerRenderedControlsAndAPI(t *testing.T) {
 			t.Fatal("export control outside dialog", id)
 		}
 	}
-	if regexp.MustCompile(`<dialog id="export-dialog"[^>]*\sopen(?:[\s=>])`).MatchString(body) {
+	if regexp.MustCompile(`<dialog\b[^>]*id="export-dialog"[^>]*\sopen(?:[\s=>])`).MatchString(body) {
 		t.Fatal("export dialog opens by default")
 	}
 	if !regexp.MustCompile(`<button[^>]*class="md-button md-filled-button"[^>]*id="play"|<button[^>]*id="play"[^>]*class="md-button md-filled-button"`).MatchString(body) {

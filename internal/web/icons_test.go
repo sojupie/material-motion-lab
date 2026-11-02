@@ -33,7 +33,9 @@ func TestControlIconMeanings(t *testing.T) {
 	actual := map[string]string{}
 	for _, m := range regexp.MustCompile(`(?s)<button\b[^>]*id="([^"]+)"[^>]*>(.*?)</button>`).FindAllStringSubmatch(page.String(), -1) {
 		icon := regexp.MustCompile(`data-icon="([^"]+)"`).FindStringSubmatch(m[2])
-		if icon != nil {
+		if strings.Contains(m[2], `class="md-group-check"`) {
+			actual[m[1]] = "check"
+		} else if icon != nil {
 			actual[m[1]] = icon[1]
 		}
 	}

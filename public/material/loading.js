@@ -53,6 +53,13 @@
       }
     }catch(error){console.error(error);pending=undefined;}
   }
+  new MutationObserver(records=>{
+    for(const {target} of records){
+      const entry=entries.get(target);if(!entry)continue;
+      entry.started=performance.now();paint(target,entry,0);
+    }
+    schedule();
+  }).observe(document.documentElement,{subtree:true,attributes:true,attributeFilter:['data-control','aria-valuenow']});
   document.addEventListener('input',event=>{
     if(!event.target.matches('.md-progress-control .md-slider-input input'))return;
     const demo=event.target.closest('.md-progress-demo'),element=demo.querySelector('.md-loading');if(!element)return;

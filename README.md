@@ -148,14 +148,41 @@ The optional native CLI uses the Go analysis package and the `projects/` directo
 | `web/local-*.ts`, `web/worker-messages.ts` | Browser processing, IndexedDB storage and typed worker messages |
 | `public/` | Token Catalog CSS, fonts and unmodified interaction runtimes |
 
-Go renders the control markup. Dynamic list entries clone templates rendered by those same components. TypeScript handles analysis interactions rather than rebuilding component anatomy. Vite builds the browser assets; it does not serve the application shell.
+The static build renders Forge Go/templ components into `dist/index.html`.
+Dynamic list and menu entries clone component templates rendered in that page.
+TypeScript owns analysis state and application actions. The deployed app needs
+only static files; Go runs during the build.
 
-Refresh Material assets from Token Catalog with:
+Run `make build-static` for the complete browser build. `npm run build` generates
+templ code, collects dependencies from the rendered page and its templates,
+imports matching Forge assets, then builds the browser code. The Go exporter
+writes the HTML; the remaining steps generate first-paint styles, offline caching
+and compressed assets.
+
+The importer resolves the Tokens module selected by `go.mod`. It uses Forge's
+module order and script declarations instead of maintaining its own module list.
+`public/token-source.json` records collected modules, source hashes, output hashes
+and the Tokens commit. Scripts in the HTML use content hashes. The exporter
+rejects stale imports or modified component outputs; rerun `npm run build` to
+recover. Keep imported assets and the generated page together when publishing.
+
+To refresh the checked-in Material assets alone, run `npm run material`. An
+optional source argument must match the resolved Go module; the theme argument
+can select another generated theme:
 
 ```sh
-node scripts/import-material.mjs ../tokens
-make build
+node scripts/import-material.mjs ../tokens ../tokens/published-review/assets/theme.css
 ```
+
+The component adoption audit covers ordinary actions, icon buttons, connected and
+standard groups, toolbar containers, the example card, list frames/content, and
+progress/loading.
+Native-select adapters remain because application code reads and changes their
+native options. Menus supply application commands through shared slots. Toolbar
+items retain `md-toolbar-item` and overflow hooks as the current lower-level slot;
+Forge owns their geometry and behavior. The local SVG helper supplies reviewed
+Material glyphs, including application-specific symbols. Application layout,
+canvas/timeline rendering and splitter controls remain local.
 
 `make test` checks workspace persistence and recording preservation, alignment and source-frame mapping, known fractional motion, both edge axes, correction and tracking loss, curve fitting, variable frame timing, linked-time mapping, exports, static route restrictions, rendered controls, token references and shared runtime integrity. Generate templ code after editing templates with `make generate`.
 

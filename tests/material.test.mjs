@@ -7,9 +7,9 @@ import postcss from "postcss";
 
 test("recent projects keep a full-width list item and an independent trailing action", () => {
   const page = fs.readFileSync("internal/web/page.templ", "utf8");
-  assert.match(page, /data-control="actions"/);
-  assert.match(page, /class="md-list-row"/);
-  assert.match(page, /md-standard-icon-button md-list-action/);
+  assert.match(page, /"data-control":"actions"/);
+  assert.match(page, /@ui.ListRowFrame\(/);
+  assert.match(page, /ui.IconButtonProps\{Label:"Delete project"/);
   const css = postcss.parse(fs.readFileSync("public/material.css", "utf8"));
   let reserved = false, positioned = false;
   css.walkRules(rule => {
@@ -28,20 +28,8 @@ test("shared interaction code matches the recorded source bytes", () => {
   const source = JSON.parse(
     fs.readFileSync("public/token-source.json", "utf8"),
   );
-  const files = {
-    "buttons.js": "buttons.js",
-    "fields.js": "fields.js",
-    "motion.cjs": "motion.js",
-    "utils.js": "utils.js",
-    "button-groups.js": "button-groups.js",
-    "menus.js": "menus.js",
-    "snackbars.js": "snackbars.js",
-    "toolbars.js": "toolbars.js",
-    "navigation.js": "navigation.js",
-    "progress.js": "progress.js",
-    "loading.js": "loading.js",
-    "loading-shapes.json": "loading-shapes.json",
-  };
+  const files = Object.fromEntries(source.componentManifest.scripts.map(file => [path.basename(file), file === "motion.cjs" ? "motion.js" : path.basename(file)]));
+  if(source.componentManifest.modules.includes("loading")) files["loading-shapes.json"]="loading-shapes.json";
   for (const [original, local] of Object.entries(files)) {
     const record = source.files.find((f) => path.basename(f.file) === original);
     assert.ok(record, original);
@@ -130,8 +118,8 @@ test("import retains complete shared component modules", () => {
   const bundles = provenance.files.filter((entry) =>
     /bundles\/[^/]+\.css$/.test(entry.file),
   );
-  assert.equal(bundles.length, 11);
-  assert.ok(bundles.some(({file}) => file.endsWith("/card.css")));
+  assert.deepEqual(bundles.map(({file}) => path.basename(file,".css")).sort(), [...provenance.componentManifest.modules].sort());
+  assert.ok(bundles.some(({file}) => file.endsWith("/card.css")), "example card must register its module");
   for (const { file } of [
     ...bundles,
     { file: "forge/components/static/buttons.css" },

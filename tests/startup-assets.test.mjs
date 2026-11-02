@@ -18,9 +18,9 @@ test("first-paint styles retain token dependencies and themes without copying un
   assert.match(css, /url\(.\/roboto.woff2\)/);
 });
 test("initial shell discovers ordered deferred controls before the application entry", () => {
-  const page = fs.readFileSync("internal/web/page.templ", "utf8");
+  const page = fs.readFileSync("dist/index.html", "utf8");
   const scripts = [
-    ...page.matchAll(/<script src="\/material\/([^"\s]+)" defer/g),
+    ...page.matchAll(/<script src="\.\/material\/([^"?\s]+)\?v=[a-f0-9]+" defer/g),
   ].map((m) => m[1]);
   assert.equal(scripts[0], "utils.js");
   assert.equal(scripts[1], "motion.js");

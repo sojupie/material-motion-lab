@@ -571,7 +571,46 @@
   window.addEventListener("blur", cancelAll);
   reduced.addEventListener("change", cancelAll);
   forced.addEventListener("change", cancelAll);
+  const loadingButtons = new WeakMap();
+  function loadingButton(button) {
+    const busy = button.getAttribute('aria-busy') === 'true';
+    let state = loadingButtons.get(button);
+    if (state?.busy === busy) return;
+    if (!state) { state = {}; loadingButtons.set(button, state); }
+    state.busy = busy;
+    clearTimeout(state.timer);
+    if (!busy && !button.hasAttribute('data-loading-visible') && !state.animation) return;
+    const change = () => {
+      if (!button.isConnected) return;
+      const slot = button.parentElement, disk = button.querySelector('.md-button-loading-disk');
+      const before = getComputedStyle(button);
+      const from = {width:button.getBoundingClientRect().width+'px', paddingLeft:before.paddingLeft, paddingRight:before.paddingRight, borderRadius:before.borderRadius};
+      state.animation?.cancel();
+      button.style.width = ''; button.style.paddingLeft = ''; button.style.paddingRight = ''; button.style.borderRadius = '';
+      const natural = button.getBoundingClientRect(), style = getComputedStyle(button);
+      slot.style.width = natural.width+'px';
+      const to = busy ? {width:natural.height+'px', paddingLeft:'0px', paddingRight:'0px', borderRadius:natural.height/2+'px'} :
+        {width:natural.width+'px', paddingLeft:style.paddingLeft, paddingRight:style.paddingRight, borderRadius:style.borderRadius};
+      button.toggleAttribute('data-loading-visible', busy);
+      disk.dataset.control = busy ? 'indeterminate' : 'determinate';
+      if (busy) Object.assign(button.style, to);
+      if (!reduced.matches && button.animate) {
+        const animation = button.animate([from,to], MaterialMotion.timing(button,'default-spatial'));
+        state.animation = animation;
+        animation.finished.then(() => {
+          if (state.animation !== animation) return;
+          state.animation = undefined;
+          if (!busy) slot.style.width = '';
+        }, () => {});
+      } else if (!busy) slot.style.width = '';
+    };
+    // Avoid flashing a loader for a selection that resolves immediately.
+    if (busy) state.timer = setTimeout(change, 200); else change();
+  }
   new MutationObserver((mutations = []) => {
+    for (const mutation of mutations)
+      if (mutation.attributeName === 'aria-busy' && mutation.target.matches('.md-loading-button'))
+        loadingButton(mutation.target);
     // Application click handlers can change selection after capture-phase release.
     // Retarget from the current animated corners before the next paint.
     const changedGroups=new Set();
@@ -587,7 +626,7 @@
     // MutationObserver runs before paint, including changes made by app click handlers.
     for(const group of changedGroups)widthGroup(widthGroups.get(group).items[0],false);
     for (const mutation of mutations) {
-      if (!["aria-pressed","aria-expanded"].includes(mutation.attributeName)) continue;
+      if (!["aria-pressed","aria-expanded","aria-selected","data-selected"].includes(mutation.attributeName)) continue;
       const button = buttonFor(mutation.target);
       if (button && button === mutation.target && button.isConnected &&
           !disabled(button) && !active.has(button) &&
@@ -614,7 +653,7 @@
     characterData: true,
     attributes: true,
     attributeOldValue: true,
-    attributeFilter: ["disabled", "aria-disabled", "aria-pressed", "aria-expanded"],
+    attributeFilter: ["disabled", "aria-disabled", "aria-pressed", "aria-expanded", "aria-selected", "data-selected", "aria-busy"],
   });
   if(document.fonts)document.fonts.ready.then(initializeWidthGroups);else initializeWidthGroups();
   document.documentElement.setAttribute("data-feedback-ready", "");

@@ -1,15 +1,26 @@
 // Refresh the shared Material styles and runtimes used by this tool.
 // node scripts/import-material.mjs /path/to/tokens /path/to/theme.css
-import { readFile, writeFile, mkdir, copyFile } from "node:fs/promises";
+import { readFile, writeFile, mkdir, copyFile, mkdtemp, rm } from "node:fs/promises";
 import postcss from "postcss";
 import path from "node:path";
 import crypto from "node:crypto";
-const [source, themeArg] = process.argv.slice(2);
-const theme =
-  themeArg || path.join(source || "", "published-review/assets/theme.css");
-if (!source || !theme)
-  throw Error("Provide the source repository and its generated theme.css.");
-
+import { execFileSync } from "node:child_process";
+import { tmpdir } from "node:os";
+const [sourceArg, themeArg] = process.argv.slice(2);
+// Resolve the very module that compiles the page; never import assets from a
+// different checkout just because it was supplied on the command line.
+const module = JSON.parse(execFileSync("go", ["list", "-m", "-json", "github.com/sojupie/tokens"], {encoding:"utf8"}));
+const source = module.Dir;
+if (sourceArg && path.resolve(sourceArg) !== path.resolve(source))
+  throw Error("Asset source must match the Tokens module used to compile the page: " + source);
+const theme = themeArg || path.join(source, "published-review/assets/theme.css");
+const temp = await mkdtemp(path.join(tmpdir(), "motion-components-"));
+let componentManifest;
+try {
+  const manifestPath = path.join(temp, "components.json");
+  execFileSync("go", ["run", "-tags", "staticweb", "./cmd/web-static", "--component-manifest", manifestPath], {stdio:"inherit"});
+  componentManifest = JSON.parse(await readFile(manifestPath,"utf8"));
+} finally { await rm(temp, {recursive:true, force:true}); }
 const read = (p) => readFile(path.join(source, p), "utf8");
 const buttons = postcss.parse(
   await read("forge/components/static/buttons.css"),
@@ -24,27 +35,14 @@ const themeCSS = postcss.parse(
 );
 // Consume the Catalog's published component modules intact. Module ownership
 // already includes each family's slots, states, media rules and keyframes.
-const usedModules = new Set([
-  "common",
-  "checkbox",
-  "messages",
-  "toolbar",
-  "button-group",
-  "list",
-  "card",
-  "dialog",
-  "navigation",
-  "progress",
-  "loading",
-]);
-const moduleManifest = "forge/components/static/bundles/modules.json";
-const moduleOrder = JSON.parse(await read(moduleManifest));
-for (const name of usedModules)
-  if (!moduleOrder.includes(name))
-    throw Error("Missing component module " + name);
-const bundleFiles = moduleOrder
-  .filter((name) => usedModules.has(name))
-  .map((name) => `forge/components/static/bundles/${name}.css`);
+const usedModules = new Set(componentManifest.modules);
+const bundleFiles = componentManifest.modules.map(name => `forge/components/static/bundles/${name}.css`);
+// The Go collector fingerprints embedded assets. Verify the files used below
+// against those bytes before producing the browser bundle.
+for (const [file, expected] of Object.entries(componentManifest.files)) {
+  const actual = crypto.createHash("sha256").update(await readFile(path.join(source,"forge/components",file))).digest("hex");
+  if (actual !== expected) throw Error("Forge asset changed during build: " + file);
+}
 const output = postcss.root();
 for (const root of [
   buttons,
@@ -128,60 +126,34 @@ for (const file of ["roboto-latin.woff2", "OFL.txt"])
     path.join(source, "catalog/web/static/fonts", file),
     path.join("public", file),
   );
-await copyFile(
-  path.join(source, "forge/components/static/fields.js"),
-  "public/material/fields.js",
-);
-await copyFile(
-  path.join(source, "forge/components/static/motion.cjs"),
-  "public/material/motion.js",
-);
-for (const [from, to] of [
-  ["forge/components/static/buttons.js", "buttons.js"],
-  ["forge/components/static/menus.js", "menus.js"],
-  ["forge/components/static/progress.js", "progress.js"],
-  ["forge/components/static/loading.js", "loading.js"],
-  ["forge/components/static/loading-shapes.json", "loading-shapes.json"],
-  ["forge/components/static/runtime/utils.js", "utils.js"],
-  ["forge/components/static/runtime/button-groups.js", "button-groups.js"],
-  ["forge/components/static/runtime/snackbars.js", "snackbars.js"],
-  ["forge/components/static/runtime/toolbars.js", "toolbars.js"],
-  ["forge/components/static/runtime/navigation.js", "navigation.js"],
-])
-  await copyFile(path.join(source, from), path.join("public/material", to));
+const localScript = script => script === "motion.cjs" ? "motion.js" : path.basename(script);
+const copiedAssets = componentManifest.scripts.map(script => [`static/${script}`,localScript(script)]);
+if (usedModules.has("loading")) copiedAssets.push(["static/loading-shapes.json","loading-shapes.json"]);
+// Discard old imported scripts so removed dependencies do not ship indefinitely.
+await rm("public/material", {recursive:true, force:true});
+await mkdir("public/material", {recursive:true});
+for (const [from,to] of copiedAssets)
+  await copyFile(path.join(source,"forge/components",from),path.join("public/material",to));
 
 console.log(
   `Material import: ${needed.size} tokens, ${output.nodes.length - 1} rules, ${Buffer.byteLength(output.toString())} bytes.`,
 );
 
 const files = [
-  "forge/components/static/progress.js",
-  "forge/components/static/loading.js",
-  "forge/components/static/loading-shapes.json",
-  "published-review/assets/theme.css",
+  ...Object.keys(componentManifest.files).map(file => "forge/components/"+file),
   "published-review/assets/dtcg/light-default/tokens.css",
-  "forge/components/static/buttons.css",
-  "forge/components/static/components.css",
-  "forge/site/site.css",
-  "forge/site/site.js",
-  moduleManifest,
-  ...bundleFiles,
-  "forge/components/static/buttons.js",
-  "forge/components/static/menus.js",
-  "forge/components/static/fields.js",
-  "forge/components/static/motion.cjs",
-  "forge/components/static/runtime/utils.js",
-  "forge/components/static/runtime/button-groups.js",
-  "forge/components/static/runtime/snackbars.js",
-  "forge/components/static/runtime/toolbars.js",
-  "forge/components/static/runtime/navigation.js",
+  "forge/site/site.css", "forge/site/site.js",
 ];
+const themeRecord = {file: path.relative(source,theme),sha256:crypto.createHash("sha256").update(await readFile(theme)).digest("hex")};
 await writeFile(
   "public/token-source.json",
   JSON.stringify(
     {
       repository: "https://github.com/sojupie/tokens",
-      files: await Promise.all(
+      revision: execFileSync("git", ["-C",source,"rev-parse","HEAD"], {encoding:"utf8"}).trim(),
+      componentManifest,
+      outputs: Object.fromEntries(await Promise.all(["material.css",...copiedAssets.map(([,to])=>"material/"+to)].map(async file=>[file,crypto.createHash("sha256").update(await readFile(path.join("public",file))).digest("hex")]))),
+      files: [themeRecord, ...await Promise.all(
         files.map(async (file) => ({
           file,
           sha256: crypto
@@ -189,7 +161,7 @@ await writeFile(
             .update(await read(file))
             .digest("hex"),
         })),
-      ),
+      )],
       tokenCount: needed.size,
     },
     null,

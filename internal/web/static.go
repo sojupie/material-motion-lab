@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strconv"
 	"strings"
 )
@@ -19,6 +20,9 @@ import (
 // ExportStatic writes the web shell without opening a project store or exposing an API.
 func ExportStatic(dir string) error {
 	if err := os.MkdirAll(dir, 0755); err != nil {
+		return err
+	}
+	if err := verifyComponentAssets(dir); err != nil {
 		return err
 	}
 	var page bytes.Buffer
@@ -117,4 +121,42 @@ func acceptsEncoding(header, encoding string) bool {
 		return true
 	}
 	return false
+}
+
+// Reject a stale import even when callers bypass make/npm's normal build order.
+func verifyComponentAssets(dir string) error {
+	data, err := os.ReadFile(filepath.Join(dir, "token-source.json"))
+	if err != nil {
+		return fmt.Errorf("component assets: run npm run build before exporting: %w", err)
+	}
+	var imported struct {
+		ComponentManifest ComponentManifest `json:"componentManifest"`
+		Outputs           map[string]string `json:"outputs"`
+	}
+	if err = json.Unmarshal(data, &imported); err != nil {
+		return err
+	}
+	current, err := CollectComponentAssets(context.Background(), Page(nil))
+	if err != nil {
+		return err
+	}
+	if !reflect.DeepEqual(current, imported.ComponentManifest) {
+		return fmt.Errorf("component assets differ from the compiled page; run npm run build before exporting")
+	}
+	if len(imported.Outputs) == 0 {
+		return fmt.Errorf("missing component output hashes; run npm run build before exporting")
+	}
+	for name, want := range imported.Outputs {
+		if !filepath.IsLocal(name) {
+			return fmt.Errorf("invalid component asset path %q", name)
+		}
+		data, e := os.ReadFile(filepath.Join(dir, name))
+		if e != nil {
+			return e
+		}
+		if fmt.Sprintf("%x", sha256.Sum256(data)) != want {
+			return fmt.Errorf("component asset %s changed after import; run npm run build", name)
+		}
+	}
+	return nil
 }

@@ -69,7 +69,7 @@
    else update(item,selected);
    message=label+(selected?' selected':' unselected');
   }
-  demo.querySelector('[data-menu-output]').textContent=message;
+  const output=demo.querySelector('[data-menu-output]');if(output)output.textContent=message;
   if(menu?.dataset.menuSelection==='multiple')return;
   const root=demo.querySelector('[data-menu-main]:popover-open'),submenu=item.closest('[data-menu-panel][popover]');if(root)close(root,true);else if(submenu)close(submenu,true);
  });
@@ -84,7 +84,7 @@
  });
  document.addEventListener('focusin',event=>{const menu=event.target.closest?.('[data-menu-example] [data-menu-panel]');if(menu){for(const item of items(menu))item.tabIndex=item===event.target?0:-1;activity(menu);}});
  document.addEventListener('pointerover',event=>{
-  if(event.pointerType==='touch'||event.buttons)return;const item=event.target.closest?.('[data-menu-example] [role^="menuitem"]'),menu=item?.closest('[data-menu-panel]');if(!menu||item.contains(event.relatedTarget))return;activity(menu);
+  if(event.pointerType!=='mouse'||event.buttons)return;const item=event.target.closest?.('[data-menu-example] [role^="menuitem"]'),menu=item?.closest('[data-menu-panel]');if(!menu||item.contains(event.relatedTarget))return;activity(menu);
   // Replacing surfaces can appear beneath a stationary mouse. Require explicit
   // activation there so pointer hover cannot navigate another level by itself.
   if(menu.hasAttribute('data-menu-replace'))return;
@@ -95,6 +95,6 @@
  document.addEventListener('pointerout',event=>{const trigger=event.target.closest?.('[data-menu-submenu]');if(trigger&&!trigger.contains(event.relatedTarget))clearTimeout(pending.get(trigger));});
  const reposition=()=>{for(const menu of document.querySelectorAll('[data-menu-example] [data-menu-panel]:popover-open'))position(menu);};
  addEventListener('resize',reposition);document.addEventListener('scroll',reposition,true);
- document.addEventListener('htmx:beforeCleanupElement',event=>{const root=event.detail?.elt;if(!root)return;for(const trigger of root.querySelectorAll('[data-menu-submenu]'))clearTimeout(pending.get(trigger));for(const menu of root.querySelectorAll('[data-menu-panel]:popover-open'))menu.hidePopover();});
+ document.addEventListener('htmx:beforeCleanupElement',event=>{const root=event.detail?.elt;if(typeof root?.querySelectorAll!=='function')return;for(const trigger of root.querySelectorAll('[data-menu-submenu]'))clearTimeout(pending.get(trigger));for(const menu of root.querySelectorAll('[data-menu-panel]:popover-open'))menu.hidePopover();});
  document.addEventListener('htmx:afterSwap',init);document.addEventListener('htmx:historyRestore',init);if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();

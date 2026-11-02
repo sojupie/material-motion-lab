@@ -1,6 +1,5 @@
 package web
 
-import "strconv"
 
 import "github.com/sojupie/tokens/forge/components/ui"
 import "github.com/sojupie/tokens/forge/site"
@@ -15,13 +14,13 @@ func referenceOptions() []ui.Option {
 }
 
 templ action(id string, label string, disabled bool) {
-	@ui.Button(templ.Attributes{"id": id, "class": "md-button md-text-button", "disabled": disabled}) {
+	@ui.Action(ui.ButtonProps{ID: id, Disabled: disabled, Variant: "text"}) {
 		{ label }
 	}
 }
 
 templ command(id string, label string, symbol string) {
-	@ui.Button(templ.Attributes{"id": id, "class": "md-button md-text-button", "disabled": id != "reference-save" && id != "reference-load"}) {
+	@ui.Action(ui.ButtonProps{ID: id, Disabled: id != "reference-save" && id != "reference-load", Variant: "text"}) {
 		if symbol == "line_end" || symbol == "text_select_jump_to_end" {
 			<span>{ label }</span>@icon(symbol, 18)
 		} else {
@@ -32,7 +31,7 @@ templ command(id string, label string, symbol string) {
 }
 
 templ groupedCommand(id string, label string, symbol string, description string, color string) {
-	@ui.Button(templ.Attributes{"id": id, "class": "md-button md-" + color + "-button", "data-size": "small", "data-group-button": id, "aria-label": description, "title": description, "disabled": true}) {
+	@ui.Action(ui.ButtonProps{ID: id, Disabled: true, Size: ui.Size("small"), Variant: ui.ButtonVariant(color), Attrs: templ.Attributes{"data-group-button": id, "aria-label": description, "title": description}}) {
 		if symbol == "navigate_next" || symbol == "line_end" || symbol == "text_select_jump_to_end" {
 			<span>{ label }</span>@icon(symbol, 18)
 		} else {
@@ -46,7 +45,7 @@ templ icon(name string, size int) {
 }
 
 templ iconAction(id string, label string, symbol string) {
-	@ui.Button(templ.Attributes{"id": id, "class": "md-icon-button md-standard-icon-button", "data-size": "small", "data-shape": "round", "data-width": "default", "aria-label": label, "title": label, "disabled": true}) {
+	@ui.IconButtonContent(ui.IconButtonProps{Label: label, Width: "default", Disabled: true, Size: ui.Size("small"), Shape: ui.ButtonShape("round"), Variant: "standard", Attrs: templ.Attributes{"id": id, "title": label}}) {
 		@icon(symbol, 24)
 	}
 }
@@ -54,13 +53,13 @@ templ iconAction(id string, label string, symbol string) {
 templ videoPane(prefix string, label string) {
 	<section id={ prefix + "-pane" } class="video-pane" aria-label={ label }>
 		<div class="viewer-toolbar">
-			@ui.Button(templ.Attributes{"id": prefix + "-select", "class": "md-button md-text-button viewer-title", "aria-current": "false"}) {
+			@ui.Action(ui.ButtonProps{ID: prefix + "-select", Variant: "text", Attrs: templ.Attributes{"aria-current": "false", "class": "viewer-title"}}) {
 				<span id={ prefix + "-name" }>{ label }</span>
 			}
 			<div class="viewer-controls">
 				@ui.Select(prefix+"-zoom", "Viewer zoom", []ui.Option{{Value: "fit", Label: "Fit"}, {Value: "1", Label: "100%"}, {Value: "2", Label: "200%"}, {Value: "4", Label: "400%"}})
 				if prefix == "a" {
-					@ui.Button(templ.Attributes{"id": "maximize-viewer", "class": "md-button md-outlined-button", "data-size": "xsmall", "aria-pressed": "false"}) {
+					@ui.Action(ui.ButtonProps{ID: "maximize-viewer", Size: ui.Size("xsmall"), Variant: "outlined", Attrs: templ.Attributes{"aria-pressed": "false"}}) {
 						@icon("expand_content", 18)<span>Expand viewer</span>
 					}
 				}
@@ -83,11 +82,11 @@ templ trackingInspector(prefix string) {
 				@ui.NumberField(prefix+"-start", "First frame", "0", "0", "")
 				@ui.NumberField(prefix+"-end", "Last frame", "0", "0", "")
 			</div>
-			@ui.ButtonGroup("tracking-boundaries "+prefix+"-set-range", templ.Attributes{"data-control": "standard", "data-size": "small", "aria-label": "Set tracking boundaries"}) {
+			@ui.ButtonGroupSurface(ui.GroupProps{Label: "Set tracking boundaries", Size: ui.Size("small"), Attrs: templ.Attributes{"class": "tracking-boundaries "+prefix+"-set-range"}}) {
 				@groupedCommand(prefix+"-start-here", "Set start", "line_start", "Set start", "tonal")
 				@groupedCommand(prefix+"-end-here", "Set end", "line_end", "Set end", "tonal")
 			}
-			@ui.ButtonGroup("tracking-boundaries "+prefix+"-jump-range", templ.Attributes{"data-control": "standard", "data-size": "small", "aria-label": "Inspect tracking boundary"}) {
+			@ui.ButtonGroupSurface(ui.GroupProps{Label: "Inspect tracking boundary", Size: ui.Size("small"), Attrs: templ.Attributes{"class": "tracking-boundaries "+prefix+"-jump-range"}}) {
 				@groupedCommand(prefix+"-goto-start", "Go to start", "text_select_jump_to_beginning", "Go to start", "text")
 				@groupedCommand(prefix+"-goto-end", "Go to end", "text_select_jump_to_end", "Go to end", "text")
 			}
@@ -96,7 +95,7 @@ templ trackingInspector(prefix string) {
 			<h3>Tracking</h3>
 			@ui.Select(prefix+"-method", "Method", []ui.Option{{Value: "feature", Label: "Image patch"}, {Value: "edge-x", Label: "Vertical edge (X)"}, {Value: "edge-y", Label: "Horizontal edge (Y)"}, {Value: "width", Label: "Width (opposing edges)"}, {Value: "height", Label: "Height (opposing edges)"}})
 			<p id={ prefix + "-method-help" } class="help"></p>
-			@ui.Button(templ.Attributes{"id": prefix + "-draw", "class": "md-button md-filled-button", "data-size": "small", "aria-pressed": "false", "disabled": true}) {
+			@ui.Action(ui.ButtonProps{ID: prefix + "-draw", Disabled: true, Size: ui.Size("small"), Variant: "filled", Attrs: templ.Attributes{"aria-pressed": "false"}}) {
 				@icon("ink_selection", 18)
 				<span>Draw tracking region</span>
 			}
@@ -107,10 +106,10 @@ templ trackingInspector(prefix string) {
 			</div>
 			<p id={ prefix + "-dirty" } class="help"></p>
 			<div class="inspector-actions">
-				@ui.Button(templ.Attributes{"id": prefix + "-track", "class": "md-button md-tonal-button", "data-size": "small", "disabled": true}) {
+				@ui.Action(ui.ButtonProps{ID: prefix + "-track", Disabled: true, Size: ui.Size("small"), Variant: "tonal"}) {
 					Track range
 				}
-				@ui.Button(templ.Attributes{"id": prefix + "-correct", "class": "md-button md-tonal-button", "data-size": "small", "disabled": true}) {
+				@ui.Action(ui.ButtonProps{ID: prefix + "-correct", Disabled: true, Size: ui.Size("small"), Variant: "tonal"}) {
 					@icon("edit", 18)<span>Correct position here</span>
 				}
 			</div>
@@ -120,7 +119,7 @@ templ trackingInspector(prefix string) {
 			<div class="mark-navigation">
 				<h4>Corrections</h4>
 				<p class="help">Jump to a frame you corrected manually.</p>
-				@ui.ButtonGroup("tracking-boundaries", templ.Attributes{"data-control": "standard", "data-size": "small", "aria-label": "Navigate corrections"}) {
+				@ui.ButtonGroupSurface(ui.GroupProps{Label: "Navigate corrections", Size: ui.Size("small"), Attrs: templ.Attributes{"class": "tracking-boundaries"}}) {
 					@groupedCommand(prefix+"-anchor-prev", "Previous", "navigate_before", "Previous correction", "text")
 					@groupedCommand(prefix+"-anchor-next", "Next", "navigate_next", "Next correction", "text")
 				}
@@ -128,7 +127,7 @@ templ trackingInspector(prefix string) {
 			<div class="mark-navigation">
 				<h4>Tracking loss</h4>
 				<p class="help">Jump to a frame where tracking lost its target.</p>
-				@ui.ButtonGroup("tracking-boundaries", templ.Attributes{"data-control": "standard", "data-size": "small", "aria-label": "Navigate tracking loss"}) {
+				@ui.ButtonGroupSurface(ui.GroupProps{Label: "Navigate tracking loss", Size: ui.Size("small"), Attrs: templ.Attributes{"class": "tracking-boundaries"}}) {
 					@groupedCommand(prefix+"-weak-prev", "Previous", "navigate_before", "Previous tracking loss", "text")
 					@groupedCommand(prefix+"-weak-next", "Next", "navigate_next", "Next tracking loss", "text")
 				}
@@ -169,20 +168,14 @@ templ exportSettings(prefix string) {
 	</div>
 }
 
-func transportClass(primary bool) string {
-	if primary {
-		return "md-button md-filled-button"
-	}
-	return "md-icon-button md-tonal-icon-button"
-}
-
 templ transportButton(id string, label string, symbol string, primary bool) {
-	@ui.Button(templ.Attributes{"id": id, "class": transportClass(primary), "data-size": "small", "data-shape": "round", "data-width": "default", "data-group-button": id, "aria-label": label, "title": label, "disabled": true}) {
-		@icon(symbol, 24)
-		if primary {
-			<span data-transport-label>Play</span>
-		}
-	}
+ if primary {
+  @ui.Action(ui.ButtonProps{ID:id, Variant:ui.Filled, Disabled:true, Attrs:templ.Attributes{"data-group-button":id,"aria-label":label,"title":label}}) {
+   @icon(symbol,24)<span data-transport-label>Play</span>
+  }
+ } else {
+  @ui.IconButtonContent(ui.IconButtonProps{Label:label, Variant:"tonal", Disabled:true, Attrs:templ.Attributes{"id":id,"data-group-button":id,"title":label}}) { @icon(symbol,24) }
+ }
 }
 
 templ splitter(id string, label string, orientation string) {
@@ -190,12 +183,11 @@ templ splitter(id string, label string, orientation string) {
 }
 
 templ recordingItem(id string, name string) {
-	<li>
-		<div class="md-list-row">
-   @ui.ListItem(templ.Attributes{"data-project-id": id, "disabled": true}, name)
-   @ui.Button(templ.Attributes{"class":"md-icon-button md-standard-icon-button md-list-action", "data-size":"small", "data-delete-project":"", "aria-label":"Delete project", "disabled":true}) { @icon("delete", 24) }
-  </div>
-	</li>
+ @ui.ListRowFrame(ui.ListRowFrameProps{ContentAttrs:ui.ListItemProps{Disabled:true, Attrs:templ.Attributes{"data-project-id":id,"disabled":true}}.Attributes(), Content:ui.ListContent(ui.ListItemProps{Label:name,SingleLine:true}), After:recordingDelete()})
+}
+
+templ recordingDelete() {
+ @ui.IconButtonContent(ui.IconButtonProps{Label:"Delete project", Disabled:true, Attrs:templ.Attributes{"class":"md-list-action","data-delete-project":""}}) { @icon("delete",24) }
 }
 
 templ processingStatus(id string) {
@@ -203,20 +195,20 @@ templ processingStatus(id string) {
 		<div class="processing-heading">
 			<p data-processing-label role="status" aria-live="polite" aria-atomic="true">Working…</p>
 			<span data-processing-percent aria-hidden="true"></span>
-			@ui.Button(templ.Attributes{"class":"md-button md-text-button", "data-size":"small", "data-cancel-processing":"", "aria-label":"Cancel processing"}) { Cancel }
+			@ui.Action(ui.ButtonProps{Size: ui.Size("small"), Variant: "text", Attrs: templ.Attributes{"data-cancel-processing": "", "aria-label": "Cancel processing"}}) { Cancel }
 		</div>
-		@ui.ProgressIndicator(templ.Attributes{"data-processing-bar":"", "data-variant":"linear", "data-shape":"flat", "data-size":"normal", "data-control":"indeterminate", "aria-label":"Current operation progress"})
+		@ui.Progress(ui.ProgressProps{Label: "Current operation progress", Variant: "linear", Shape: "flat", Size: "normal", Attrs: templ.Attributes{"data-processing-bar":""}})
 	</section>
 }
 
 templ inlineLoading(id string, label string) {
 	<span id={ id } class="inline-loading" hidden>
-		@ui.LoadingIndicator(templ.Attributes{"aria-label":label})
+		@ui.Loading(ui.ProgressProps{Label:label})
 		<span>{ label }</span>
 	</span>
 }
 
-templ Page(entries []Entry, version ...string) {
+templ page(entries []Entry, version ...string) {
 	<!DOCTYPE html>
 	<html lang="en">
 		<head>
@@ -227,17 +219,9 @@ templ Page(entries []Entry, version ...string) {
 			<link rel="apple-touch-icon" href="/site-logo.png"/>
 			<link rel="preload" href="/roboto-latin.woff2" as="font" type="font/woff2" crossorigin="anonymous"/>
 			<link id="workspace-styles" rel="stylesheet" href={ versionedAsset("/assets/main.css", version) }/>
-            <script src="/material/utils.js" defer></script>
-            <script src="/material/motion.js" defer></script>
-            <script src="/material/buttons.js" defer></script>
-            <script src="/material/fields.js" defer></script>
-            <script src="/material/button-groups.js" defer></script>
-            <script src="/material/snackbars.js" defer></script>
-            <script src="/material/toolbars.js" defer></script>
-            <script src="/material/menus.js" defer></script>
-            <script src="/material/progress.js" defer></script>
-            <script src="/material/loading.js" defer></script>
-			<script src="/material/navigation.js" defer></script>
+            for _, script := range pageComponentPlan(ctx).Scripts {
+                <script src={ "/material/" + ComponentScriptName(script) + "?v=" + pageComponentPlan(ctx).Files["static/"+script] } defer></script>
+            }
 			<script type="module" src={ versionedAsset("/assets/main.js", version) }></script>
 		</head>
 		<body>
@@ -264,7 +248,7 @@ templ Page(entries []Entry, version ...string) {
 									<div id="empty-viewer" class="empty-viewer">
 										<header class="video-library-header">
 											<div><h2 id="project-title">Measure motion in a video</h2><p class="help">Import a video, or explore the example below.</p><p id="offline-state" class="help" role="status" hidden></p></div>
-											@ui.Button(templ.Attributes{"id": "empty-add", "class": "md-button md-filled-button", "data-size": "medium", "disabled": true}) {
+											@ui.Action(ui.ButtonProps{ID: "empty-add", Disabled: true, Size: ui.Size("medium"), Variant: "filled"}) {
 												@icon("video_library", 18)
 												<span>Import video</span>
 											}
@@ -272,33 +256,33 @@ templ Page(entries []Entry, version ...string) {
 										<div class="video-library">
 											<section class="project-section" aria-labelledby="example-heading">
 												<h3 id="example-heading">Example project</h3>
-												<article class="md-card md-outlined-card project-example">
+												@ui.CardSurface(ui.CardProps{Variant:"outlined", Attrs:templ.Attributes{"class":"project-example"}}) {
 													<img src="/assets/example-carousel.webp" alt="Carousel cards with one card changing width" width="480" height="213"/>
 													<div class="project-example-content">
 														<h4>Carousel press</h4>
 														<p class="help">Inspect a card’s measured width change and compare it with an MD3 motion curve.</p>
-														@ui.Button(templ.Attributes{"id": "open-example", "disabled": true, "class": "md-button md-tonal-button", "data-size": "small"}) {
+														@ui.Action(ui.ButtonProps{ID: "open-example", Disabled: true, Size: ui.Size("small"), Variant: "tonal"}) {
 															@icon("play_arrow", 18)
 															<span>Open example</span>
 														}
 													</div>
-												</article>
+												}
 											</section>
 											<section class="project-section" aria-labelledby="recent-heading">
 												<h3 id="recent-heading">Recent projects</h3>
 												<p id="recent-empty" class="help">Projects autosave in this browser. Save a project file to keep a portable copy.</p>
-												<ul id="recent-projects" class="md-list recording-list" data-variant="standard" data-control="actions" data-size="one-line" data-shape="baseline" data-divider="full-width" aria-label="Recent projects">
+												@ui.List(ui.ListProps{ID:"recent-projects", Label:"Recent projects", Appearance:ui.Baseline, Lines:ui.OneLine, Dividers:"full-width", Attrs:templ.Attributes{"class":"recording-list", "data-control":"actions"}}) {
 													for _,entry:=range entries {
 														@recordingItem(entry.ID, entry.Name)
 													}
-												</ul>
+												}
 											</section>
 										</div>
 									</div>
                                     <section id="empty-project" class="empty-project" hidden aria-labelledby="empty-project-heading">
                                         <h3 id="empty-project-heading">No videos in this project</h3>
                                         <p class="help">Import a video to start measuring motion.</p>
-                                        @ui.Button(templ.Attributes{"id":"empty-project-add", "class":"md-button md-filled-button", "data-size":"medium", "disabled":true}) {
+                                        @ui.Action(ui.ButtonProps{ID: "empty-project-add", Disabled: true, Size: ui.Size("medium"), Variant: "filled"}) {
                                             @icon("video_library", 18)<span>Import video</span>
                                         }
                                     </section>
@@ -317,7 +301,7 @@ templ Page(entries []Entry, version ...string) {
 											@ui.Select("playback-speed", "Speed", []ui.Option{{Value: "0.125", Label: "⅛×"}, {Value: "0.25", Label: "¼×"}, {Value: "0.5", Label: "½×"}, {Value: "1", Label: "1×"}, {Value: "2", Label: "2×"}, {Value: "4", Label: "4×"}}, "1")
 											@ui.Checkbox("playback-loop", "Loop")
 										</div>
-										@ui.ButtonGroup("playback-buttons", templ.Attributes{"data-control": "standard", "data-size": "small", "aria-label": "Playback controls"}) {
+										@ui.ButtonGroupSurface(ui.GroupProps{Label: "Playback controls", Size: ui.Size("small"), Attrs: templ.Attributes{"class": "playback-buttons"}}) {
 											@transportButton("tracking-start", "Go to tracking start", "text_select_jump_to_beginning", false)
 											@transportButton("previous-frame", "Previous frame", "skip_previous", false)
 											@transportButton("play", "Play", "play_arrow", true)
@@ -325,7 +309,7 @@ templ Page(entries []Entry, version ...string) {
 											@transportButton("tracking-end", "Go to tracking end", "text_select_jump_to_end", false)
 										}
 										<div class="timeline-tools">
-											@ui.Button(templ.Attributes{"class": "md-button md-text-button", "id": "playback-interval", "title": "Playback interval", "aria-label": "Playback interval", "data-menu-open": "playback-menu", "aria-controls": "playback-menu", "aria-expanded": "false", "aria-haspopup": "menu"}) {
+											@ui.Action(ui.ButtonProps{ID: "playback-interval", Variant: "text", Attrs: templ.Attributes{"title": "Playback interval", "aria-label": "Playback interval", "data-menu-open": "playback-menu", "aria-controls": "playback-menu", "aria-expanded": "false", "aria-haspopup": "menu"}}) {
 												@icon("linear_scale", 18)
 												<span>Playback interval</span>
 												<output id="playback-range" class="visually-hidden"></output>
@@ -363,10 +347,10 @@ templ Page(entries []Entry, version ...string) {
 										<div class="chart-heading"><h2>Displacement</h2><span id="chart-measurement-summary" class="help" hidden></span></div>
 										<div id="legend" class="legend" hidden><span>Video A</span><span class="ref" id="ref-legend" hidden>Video B</span><span class="expected" id="curve-legend" hidden>Reference curve</span></div>
 										<div class="chart-actions">
-											@ui.Button(templ.Attributes{"id": "graph-pan", "class": "md-icon-button md-outlined-icon-button", "data-size": "xsmall", "data-shape": "round", "data-width": "default", "aria-label": "Pan chart", "title": "Pan chart", "aria-pressed": "false", "disabled": true}) {
+											@ui.IconButtonContent(ui.IconButtonProps{Label: "Pan chart", Width: "default", Disabled: true, Size: ui.Size("xsmall"), Shape: ui.ButtonShape("round"), Variant: "outlined", Attrs: templ.Attributes{"id": "graph-pan", "title": "Pan chart", "aria-pressed": "false"}}) {
 												@icon("pan_tool", 24)
 											}
-											@ui.Button(templ.Attributes{"id": "maximize-chart", "class": "md-button md-outlined-button", "data-size": "xsmall", "aria-pressed": "false"}) {
+											@ui.Action(ui.ButtonProps{ID: "maximize-chart", Size: ui.Size("xsmall"), Variant: "outlined", Attrs: templ.Attributes{"aria-pressed": "false"}}) {
 												@icon("expand_content", 18)
 												<span>Expand chart</span>
 											}
@@ -382,16 +366,16 @@ templ Page(entries []Entry, version ...string) {
 					@splitter("inspector-splitter", "Resize tools panel", "vertical")
 					<div class="tools-column">
 						<div class="project-actions" data-menu-example>
-							@ui.Toolbar(templ.Attributes{"data-variant": "floating", "data-control": "vibrant", "data-density": "compact", "data-elevation": "none", "data-orientation": "horizontal", "aria-label": "Workspace actions"}) {
-								@ui.Button(templ.Attributes{"id": "project-menu-button", "disabled": true, "class": "md-button md-toolbar-item", "data-toolbar-item": "project", "data-size": "xsmall", "data-menu-open": "desktop-project-menu", "aria-haspopup": "menu", "aria-expanded": "false", "aria-controls": "desktop-project-menu", "aria-label": "Project menu", "title": "Project menu"}) {
+							@ui.ToolbarSurface(ui.ToolbarProps{Variant:"floating", Orientation:"horizontal", Label:"Workspace actions", Attrs:templ.Attributes{"data-control":"vibrant", "data-density": "compact", "data-elevation": "none"}}) {
+								@ui.Action(ui.ButtonProps{Variant: ui.Filled, Disabled: true, Size: "xsmall", Attrs: templ.Attributes{"id": "project-menu-button", "class": "md-toolbar-item", "data-toolbar-item": "project", "data-menu-open": "desktop-project-menu", "aria-haspopup": "menu", "aria-expanded": "false", "aria-controls": "desktop-project-menu", "aria-label": "Project menu", "title": "Project menu"}}) {
 									@icon("folder_open", 24)
 									<span>Project</span>
 								}
-								@ui.Button(templ.Attributes{"id": "open-recording", "class": "md-button md-toolbar-item", "data-toolbar-item": "import", "data-size": "xsmall", "aria-label": "Import video", "title": "Import video", "disabled": true}) {
+								@ui.Action(ui.ButtonProps{Variant: ui.Filled, Disabled: true, Size: "xsmall", Attrs: templ.Attributes{"id": "open-recording", "class": "md-toolbar-item", "data-toolbar-item": "import", "aria-label": "Import video", "title": "Import video"}}) {
 									@icon("video_library", 24)
 									<span>Import</span>
 								}
-								@ui.Button(templ.Attributes{"id": "open-export", "class": "md-button md-toolbar-item", "data-toolbar-item": "export", "data-size": "xsmall", "data-menu-open": "desktop-export-menu", "aria-haspopup": "menu", "aria-expanded": "false", "aria-controls": "desktop-export-menu", "aria-label": "Export", "title": "Export", "disabled": true}) {
+								@ui.Action(ui.ButtonProps{Variant: ui.Filled, Disabled: true, Size: "xsmall", Attrs: templ.Attributes{"id": "open-export", "class": "md-toolbar-item", "data-toolbar-item": "export", "data-menu-open": "desktop-export-menu", "aria-haspopup": "menu", "aria-expanded": "false", "aria-controls": "desktop-export-menu", "aria-label": "Export", "title": "Export"}}) {
 									@icon("video_frame_save", 24)
 									<span>Export</span>
 								}
@@ -469,11 +453,9 @@ templ Page(entries []Entry, version ...string) {
 													</div>
 													<div class="units-choice" data-desktop-only>
 														<span class="help">Units</span>
-														@ui.ButtonGroup("", templ.Attributes{"data-control": "connected", "data-shape": "single", "data-size": "small", "aria-label": "Chart units"}) {
-															for _, option := range []ui.Option{{Value: "px", Label: "Pixels"}, {Value: "progress", Label: "Progress (%)"}} {
-																@ui.Button(templ.Attributes{"id": "units-" + option.Value, "class": "md-button md-outlined-button", "data-size": "small", "data-group-button": "units-" + option.Value, "data-select-choice": "units", "data-choice-value": option.Value, "aria-pressed": strconv.FormatBool(option.Value == "px")}) {
-																	<span class="md-group-check" aria-hidden="true">@icon("check", 20)</span><span>{ option.Label }</span>
-																}
+														@ui.ButtonGroupSurface(ui.GroupProps{Label: "Chart units", Size: ui.Size("small"), Connected: true, Selection: "single", Attrs: templ.Attributes{"class": ""}}) {
+															for i, option := range []ui.Option{{Value: "px", Label: "Pixels"}, {Value: "progress", Label: "Progress (%)"}} {
+																@ui.GroupItem(ui.GroupItemProps{Index: i, Label: option.Label, Connected: true, Variant: ui.Outlined, Selected: option.Value == "px", Attrs: templ.Attributes{"id": "units-" + option.Value, "data-group-button": "units-" + option.Value, "data-select-choice": "units", "data-choice-value": option.Value}})
 															}
 														}
 													</div>
@@ -534,20 +516,20 @@ templ Page(entries []Entry, version ...string) {
 					</div>
 				</div>
 				<div id="mobile-tools" class="mobile-tools" data-menu-example>
-					@ui.Toolbar(templ.Attributes{"data-variant": "floating", "data-control": "vibrant", "data-orientation": "horizontal", "aria-label": "Workspace tools", "data-snackbar-avoid": ""}) {
-						@ui.Button(templ.Attributes{"id": "mobile-add", "disabled": true, "class": "md-icon-button md-toolbar-item", "data-size": "small", "data-shape": "round", "data-width": "default", "data-toolbar-item": "project", "data-menu-open": "mobile-project-menu", "aria-haspopup": "menu", "aria-expanded": "false", "aria-controls": "mobile-project-menu", "aria-label": "Project menu", "title": "Project menu"}) {
+					@ui.ToolbarSurface(ui.ToolbarProps{Variant:"floating", Orientation:"horizontal", Label:"Workspace tools", Attrs:templ.Attributes{"data-control":"vibrant", "data-snackbar-avoid": ""}}) {
+						@ui.IconButtonContent(ui.IconButtonProps{Label: "Project menu", Disabled: true, Size: "small", Shape: "round", Width: "default", Attrs: templ.Attributes{"id": "mobile-add", "class": "md-toolbar-item", "data-toolbar-item": "project", "data-menu-open": "mobile-project-menu", "aria-haspopup": "menu", "aria-expanded": "false", "aria-controls": "mobile-project-menu", "title": "Project menu"}}) {
 							@icon("folder_open", 24)
 						}
-						@ui.Button(templ.Attributes{"id": "mobile-tracking", "disabled": true, "class": "md-icon-button md-toolbar-item", "data-size": "small", "data-shape": "round", "data-width": "default", "data-toolbar-item": "tracking", "data-menu-open": "mobile-tracking-menu", "aria-haspopup": "menu", "aria-expanded": "false", "aria-controls": "mobile-tracking-menu", "aria-label": "Tracking", "title": "Tracking"}) {
+						@ui.IconButtonContent(ui.IconButtonProps{Label: "Tracking", Disabled: true, Size: "small", Shape: "round", Width: "default", Attrs: templ.Attributes{"id": "mobile-tracking", "class": "md-toolbar-item", "data-toolbar-item": "tracking", "data-menu-open": "mobile-tracking-menu", "aria-haspopup": "menu", "aria-expanded": "false", "aria-controls": "mobile-tracking-menu", "title": "Tracking"}}) {
 							@icon("ink_selection", 24)
 						}
-						@ui.Button(templ.Attributes{"id": "mobile-alignment", "disabled": true, "class": "md-icon-button md-toolbar-item", "data-size": "small", "data-shape": "round", "data-width": "default", "data-toolbar-item": "alignment", "data-menu-open": "mobile-alignment-menu", "aria-haspopup": "menu", "aria-expanded": "false", "aria-controls": "mobile-alignment-menu", "aria-label": "Alignment", "title": "Alignment"}) {
+						@ui.IconButtonContent(ui.IconButtonProps{Label: "Alignment", Disabled: true, Size: "small", Shape: "round", Width: "default", Attrs: templ.Attributes{"id": "mobile-alignment", "class": "md-toolbar-item", "data-toolbar-item": "alignment", "data-menu-open": "mobile-alignment-menu", "aria-haspopup": "menu", "aria-expanded": "false", "aria-controls": "mobile-alignment-menu", "title": "Alignment"}}) {
 							@icon("align_horizontal_center", 24)
 						}
-						@ui.Button(templ.Attributes{"id": "mobile-chart", "disabled": true, "class": "md-icon-button md-toolbar-item", "data-size": "small", "data-shape": "round", "data-width": "default", "data-toolbar-item": "chart", "data-menu-open": "mobile-chart-menu", "aria-haspopup": "menu", "aria-expanded": "false", "aria-controls": "mobile-chart-menu", "aria-label": "Chart", "title": "Chart"}) {
+						@ui.IconButtonContent(ui.IconButtonProps{Label: "Chart", Disabled: true, Size: "small", Shape: "round", Width: "default", Attrs: templ.Attributes{"id": "mobile-chart", "class": "md-toolbar-item", "data-toolbar-item": "chart", "data-menu-open": "mobile-chart-menu", "aria-haspopup": "menu", "aria-expanded": "false", "aria-controls": "mobile-chart-menu", "title": "Chart"}}) {
 							@icon("show_chart", 24)
 						}
-						@ui.Button(templ.Attributes{"id": "mobile-export", "disabled": true, "class": "md-icon-button md-toolbar-item", "data-size": "small", "data-shape": "round", "data-width": "default", "data-toolbar-item": "export", "data-menu-open": "mobile-export-menu", "aria-haspopup": "menu", "aria-expanded": "false", "aria-controls": "mobile-export-menu", "aria-label": "Export", "title": "Export"}) {
+						@ui.IconButtonContent(ui.IconButtonProps{Label: "Export", Disabled: true, Size: "small", Shape: "round", Width: "default", Attrs: templ.Attributes{"id": "mobile-export", "class": "md-toolbar-item", "data-toolbar-item": "export", "data-menu-open": "mobile-export-menu", "aria-haspopup": "menu", "aria-expanded": "false", "aria-controls": "mobile-export-menu", "title": "Export"}}) {
 							@icon("video_frame_save", 24)
 						}
 					}
@@ -596,10 +578,10 @@ templ exportDialogActions() {
 	<div class="export-actions">
 	@processingStatus("export-processing-status")
 	<div class="export-action-buttons">
-	@ui.Button(templ.Attributes{"id": "export-close", "class": "md-button md-text-button"}) {
+	@ui.Action(ui.ButtonProps{ID: "export-close", Variant: "text"}) {
 		Cancel
 	}
-	@ui.Button(templ.Attributes{"id": "export-run", "class": "md-button md-filled-button"}) {
+	@ui.Action(ui.ButtonProps{ID: "export-run", Variant: "filled"}) {
 		Export
 	}
 	</div>
@@ -632,13 +614,13 @@ templ projectMenu(id string, mobile bool) {
 }
 
 templ replaceVideoActions() {
-	@ui.Button(templ.Attributes{"class": "md-button md-text-button", "data-dialog-choice": "cancel"}) {
+	@ui.Action(ui.ButtonProps{Variant: "text", Attrs: templ.Attributes{"data-dialog-choice": "cancel"}}) {
 		Cancel
 	}
-	@ui.Button(templ.Attributes{"id": "replace-a", "class": "md-button md-outlined-button", "data-dialog-choice": "a"}) {
+	@ui.Action(ui.ButtonProps{ID: "replace-a", Variant: "outlined", Attrs: templ.Attributes{"data-dialog-choice": "a"}}) {
 		Replace video A
 	}
-	@ui.Button(templ.Attributes{"id": "replace-b", "class": "md-button md-outlined-button", "data-dialog-choice": "b"}) {
+	@ui.Action(ui.ButtonProps{ID: "replace-b", Variant: "outlined", Attrs: templ.Attributes{"data-dialog-choice": "b"}}) {
 		Replace video B
 	}
 }
