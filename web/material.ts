@@ -1,19 +1,19 @@
 // Go templates own control anatomy. This adapter synchronizes application state
 // With the unmodified Forge interaction runtimes.
-const selects = new Map<HTMLSelectElement, HTMLElement>();
+const selects = new Map<HTMLSelectElement, {
+  root: HTMLElement;
+  display: HTMLElement;
+  native: HTMLSelectElement;
+  trigger: HTMLButtonElement;
+}>();
+
 export function syncMaterialControls() {
-  for (const [select, root] of selects) {
-    const value = root.querySelector<HTMLInputElement>(
-      "input[data-field-value]",
-    )!;
-    const button = root.querySelector<HTMLButtonElement>(
-      "button[data-field-combo]",
-    )!;
-    const display = root.querySelector<HTMLElement>("[data-field-display]")!;
-    value.value = select.value;
-    button.value = select.selectedOptions[0]?.textContent ?? "";
-    display.textContent = button.value;
-    button.disabled = select.disabled;
+  for (const [select, { root, display, native, trigger }] of selects) {
+    native.value = select.value;
+    native.disabled = select.disabled;
+    trigger.value = select.selectedOptions[0]?.textContent ?? "";
+    display.textContent = trigger.value;
+    trigger.disabled = select.disabled;
     for (const row of root.querySelectorAll<HTMLElement>(
       "[role=option][data-field-value]",
     )) {
@@ -35,37 +35,24 @@ export function syncMaterialControls() {
   }
 }
 export function installMaterialControls() {
-  for (const select of document.querySelectorAll<HTMLSelectElement>("select")) {
+  for (const select of document.querySelectorAll<HTMLSelectElement>(
+    "[data-field-example] select[hidden]:not([data-field-value])",
+  )) {
     const root = select.closest<HTMLElement>("[data-field-example]")!;
-    selects.set(select, root);
-    root.querySelector("button")!.addEventListener("change", () => {
-      select.value = root.querySelector<HTMLInputElement>(
-        "input[data-field-value]",
-      )!.value;
+    const native = root.querySelector<HTMLSelectElement>("select[data-field-value]");
+    const trigger = root.querySelector<HTMLButtonElement>("button[data-field-combo]");
+    const display = root.querySelector<HTMLElement>("[data-field-display]");
+    if (!native || !trigger || !display) {
+      throw new Error(`Missing Forge select controls for ${select.id}.`);
+    }
+    selects.set(select, { root, display, native, trigger });
+    const applySelection = () => {
+      select.value = native.value;
       select.dispatchEvent(new Event("change", { bubbles: true }));
       syncMaterialControls();
-    });
-    new MutationObserver(() => {
-      const list = root.querySelector("ul")!;
-      list.replaceChildren();
-      const template = document.querySelector(
-        "#field-option-template",
-      ) as HTMLTemplateElement;
-      for (const [i, option] of [...select.options].entries()) {
-        const item = template.content.firstElementChild!.cloneNode(
-          true,
-        ) as HTMLElement;
-        const row = item.querySelector<HTMLElement>("[role=option]")!;
-        row.id = `${select.id}-option-${i}`;
-        row.dataset.fieldOption = option.textContent || "";
-        row.dataset.fieldValue = option.value;
-        row.querySelector("[data-option-label]")!.textContent =
-          option.textContent;
-        list.append(item);
-      }
-      syncMaterialControls();
-      document.dispatchEvent(new Event("htmx:afterSwap"));
-    }).observe(select, { childList: true, subtree: true });
+    };
+    trigger.addEventListener("change", applySelection);
+    native.addEventListener("change", applySelection);
   }
   for (const button of document.querySelectorAll<HTMLButtonElement>(
     "[data-select-choice]",

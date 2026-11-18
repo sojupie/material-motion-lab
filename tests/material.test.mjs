@@ -124,7 +124,7 @@ test("import retains complete shared component modules", () => {
     ...bundles,
     { file: "forge/components/static/buttons.css" },
   ]) {
-    const upstream = fs.readFileSync("../tokens/" + file, "utf8");
+    const upstream = fs.readFileSync("../tokens/" + file.replace("/static/", "/generated/"), "utf8");
     assert.ok(
       imported.includes(upstream.trim()),
       file + " was rewritten or filtered",

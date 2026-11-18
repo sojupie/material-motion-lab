@@ -16,17 +16,27 @@ if (sourceArg && path.resolve(sourceArg) !== path.resolve(source))
 const theme = themeArg || path.join(source, "published-review/assets/theme.css");
 const temp = await mkdtemp(path.join(tmpdir(), "motion-components-"));
 let componentManifest;
+const componentAssets = new Map();
 try {
   const manifestPath = path.join(temp, "components.json");
-  execFileSync("go", ["run", "-tags", "staticweb", "./cmd/web-static", "--component-manifest", manifestPath], {stdio:"inherit"});
+  execFileSync("go", [
+    "run", "-tags", "staticweb", "./cmd/web-static",
+    "--component-manifest", manifestPath, "--component-assets", temp,
+  ], {stdio:"inherit"});
   componentManifest = JSON.parse(await readFile(manifestPath,"utf8"));
+  for (const [file, expected] of Object.entries(componentManifest.files)) {
+    const bytes = await readFile(path.join(temp, file));
+    const actual = crypto.createHash("sha256").update(bytes).digest("hex");
+    if (actual !== expected) throw Error("Forge asset changed during build: " + file);
+    componentAssets.set(file, bytes);
+  }
 } finally { await rm(temp, {recursive:true, force:true}); }
 const read = (p) => readFile(path.join(source, p), "utf8");
 const buttons = postcss.parse(
-  await read("forge/components/static/buttons.css"),
+  componentAssets.get("static/buttons.css").toString("utf8"),
 );
 const components = postcss.parse(
-  await read("forge/components/static/components.css"),
+  componentAssets.get("static/components.css").toString("utf8"),
 );
 const themeCSS = postcss.parse(
   (await read("published-review/assets/dtcg/light-default/tokens.css")) +
@@ -36,19 +46,11 @@ const themeCSS = postcss.parse(
 // Consume the Catalog's published component modules intact. Module ownership
 // already includes each family's slots, states, media rules and keyframes.
 const usedModules = new Set(componentManifest.modules);
-const bundleFiles = componentManifest.modules.map(name => `forge/components/static/bundles/${name}.css`);
-// The Go collector fingerprints embedded assets. Verify the files used below
-// against those bytes before producing the browser bundle.
-for (const [file, expected] of Object.entries(componentManifest.files)) {
-  const actual = crypto.createHash("sha256").update(await readFile(path.join(source,"forge/components",file))).digest("hex");
-  if (actual !== expected) throw Error("Forge asset changed during build: " + file);
-}
+const bundleFiles = componentManifest.modules.map(name => `static/bundles/${name}.css`);
 const output = postcss.root();
 for (const root of [
   buttons,
-  ...(await Promise.all(
-    bundleFiles.map(async (file) => postcss.parse(await read(file))),
-  )),
+  ...bundleFiles.map(file => postcss.parse(componentAssets.get(file).toString("utf8"))),
 ])
   for (const node of root.nodes) output.append(node.clone());
 const defs = new Map();
@@ -123,7 +125,7 @@ await writeFile(
 await mkdir("public/material", { recursive: true });
 for (const file of ["roboto-latin.woff2", "OFL.txt"])
   await copyFile(
-    path.join(source, "catalog/web/static/fonts", file),
+    path.join(source, "catalog/web/assets/fonts", file),
     path.join("public", file),
   );
 const localScript = script => script === "motion.cjs" ? "motion.js" : path.basename(script);
@@ -133,14 +135,13 @@ if (usedModules.has("loading")) copiedAssets.push(["static/loading-shapes.json",
 await rm("public/material", {recursive:true, force:true});
 await mkdir("public/material", {recursive:true});
 for (const [from,to] of copiedAssets)
-  await copyFile(path.join(source,"forge/components",from),path.join("public/material",to));
+  await writeFile(path.join("public/material",to),componentAssets.get(from));
 
 console.log(
   `Material import: ${needed.size} tokens, ${output.nodes.length - 1} rules, ${Buffer.byteLength(output.toString())} bytes.`,
 );
 
 const files = [
-  ...Object.keys(componentManifest.files).map(file => "forge/components/"+file),
   "published-review/assets/dtcg/light-default/tokens.css",
   "forge/site/site.css", "forge/site/site.js",
 ];
@@ -153,15 +154,20 @@ await writeFile(
       revision: execFileSync("git", ["-C",source,"rev-parse","HEAD"], {encoding:"utf8"}).trim(),
       componentManifest,
       outputs: Object.fromEntries(await Promise.all(["material.css",...copiedAssets.map(([,to])=>"material/"+to)].map(async file=>[file,crypto.createHash("sha256").update(await readFile(path.join("public",file))).digest("hex")]))),
-      files: [themeRecord, ...await Promise.all(
-        files.map(async (file) => ({
+      files: [
+        themeRecord,
+        ...Object.entries(componentManifest.files).map(([file, sha256]) => ({
+          file: "forge/components/" + file,
+          sha256,
+        })),
+        ...await Promise.all(files.map(async (file) => ({
           file,
           sha256: crypto
             .createHash("sha256")
             .update(await read(file))
             .digest("hex"),
-        })),
-      )],
+        }))),
+      ],
       tokenCount: needed.size,
     },
     null,

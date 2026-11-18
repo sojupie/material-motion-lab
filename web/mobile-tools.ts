@@ -141,6 +141,7 @@ export function installMobileTools(prepareExport: () => void) {
     >("select,input[type=number],input[type=checkbox],button[id]")) {
       if (
         control.closest("[data-desktop-only]") ||
+        control.matches("select[data-field-value]") ||
         control.parentElement?.closest("[hidden]") ||
         (control.hidden === true && !(control instanceof HTMLSelectElement)) ||
         (control.closest("[data-field-example]") &&
