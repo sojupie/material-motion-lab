@@ -13,7 +13,29 @@ const module = JSON.parse(execFileSync("go", ["list", "-m", "-json", "github.com
 const source = module.Dir;
 if (sourceArg && path.resolve(sourceArg) !== path.resolve(source))
   throw Error("Asset source must match the Tokens module used to compile the page: " + source);
+const publicationTokens = "published-review/assets/dtcg/light-default/tokens.css";
 const theme = themeArg || path.join(source, "published-review/assets/theme.css");
+// A source-only build starts from the Material light/default definitions shipped
+// with this app. A local publication can refresh them.
+const publication = await Promise.all([
+  readFile(path.join(source, publicationTokens), "utf8"),
+  readFile(theme, "utf8"),
+]).catch(error => {
+  if (themeArg || error.code !== "ENOENT") throw error;
+  return null;
+});
+const themeCSS = postcss.parse(
+  publication?.join("\n") ?? await readFile("public/material.css", "utf8"),
+);
+const checkoutRevision = () => {
+  try {
+    return execFileSync("git", ["-C", source, "rev-parse", "HEAD"], {
+      encoding: "utf8", stdio: ["ignore", "pipe", "ignore"],
+    }).trim();
+  } catch {
+    return module.Version;
+  }
+};
 const temp = await mkdtemp(path.join(tmpdir(), "motion-components-"));
 let componentManifest;
 const componentAssets = new Map();
@@ -37,11 +59,6 @@ const buttons = postcss.parse(
 );
 const components = postcss.parse(
   componentAssets.get("static/components.css").toString("utf8"),
-);
-const themeCSS = postcss.parse(
-  (await read("published-review/assets/dtcg/light-default/tokens.css")) +
-    "\n" +
-    (await readFile(theme, "utf8")),
 );
 // Consume the Catalog's published component modules intact. Module ownership
 // already includes each family's slots, states, media rules and keyframes.
@@ -142,25 +159,23 @@ console.log(
 );
 
 const files = [
-  "published-review/assets/dtcg/light-default/tokens.css",
   "forge/site/site.css", "forge/site/site.js",
 ];
-const themeRecord = {file: path.relative(source,theme),sha256:crypto.createHash("sha256").update(await readFile(theme)).digest("hex")};
+const publicationFiles = publication ? [publicationTokens, path.relative(source, theme)] : [];
 await writeFile(
   "public/token-source.json",
   JSON.stringify(
     {
       repository: "https://github.com/sojupie/tokens",
-      revision: execFileSync("git", ["-C",source,"rev-parse","HEAD"], {encoding:"utf8"}).trim(),
+      revision: checkoutRevision(),
       componentManifest,
       outputs: Object.fromEntries(await Promise.all(["material.css",...copiedAssets.map(([,to])=>"material/"+to)].map(async file=>[file,crypto.createHash("sha256").update(await readFile(path.join("public",file))).digest("hex")]))),
       files: [
-        themeRecord,
         ...Object.entries(componentManifest.files).map(([file, sha256]) => ({
           file: "forge/components/" + file,
           sha256,
         })),
-        ...await Promise.all(files.map(async (file) => ({
+        ...await Promise.all([...files, ...publicationFiles].map(async (file) => ({
           file,
           sha256: crypto
             .createHash("sha256")

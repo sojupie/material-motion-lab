@@ -2591,6 +2591,7 @@
   --md-ref-typeface-weight-bold: 700;
   --md-ref-typeface-weight-medium: 500;
   --md-ref-typeface-weight-regular: 400;
+  --md-sys-color-error-container: #f9dedc;
   --md-sys-color-error: #ba1a1a;
   --md-sys-color-inverse-on-surface: #f5eff7;
   --md-sys-color-inverse-primary: #cfbdfe;
@@ -2646,6 +2647,7 @@
   --md-sys-motion-spring-fast-spatial-stiffness: 800;
   --md-sys-shape-corner-extra-large: 28px;
   --md-sys-shape-corner-extra-small: 4px;
+  --md-sys-shape-corner-full: calc(infinity * 1px);
   --md-sys-shape-corner-large: 16px;
   --md-sys-shape-corner-medium: 12px;
   --md-sys-shape-corner-small: 8px;
