@@ -88,14 +88,16 @@ export class TransportController {
       this.editor.projects.saveWorkspace();
     }
   };
-  show = async (t: number) => {
+  show = async (t: number, { snap = true } = {}) => {
     const loaded = this.editor.views().filter((v) => v.project);
-    t = workspaceFrame(
-      loaded.map((v) => ({ times: v.project!.times, offset: v.offset })),
-      loaded.indexOf(this.editor.selected),
-      t,
-      this.playing ? this.playbackRange() : undefined,
-    );
+    if (snap) {
+      t = workspaceFrame(
+        loaded.map((v) => ({ times: v.project!.times, offset: v.offset })),
+        loaded.indexOf(this.editor.selected),
+        t,
+        this.playing ? this.playbackRange() : undefined,
+      );
+    }
     this.time = t;
     const generation = ++this.showGeneration;
     await Promise.all(
@@ -116,6 +118,12 @@ export class TransportController {
     this.editor.inspector();
     this.editor.timeline.paint();
     this.editor.graph.paint();
+  };
+  refresh = () => {
+    this.pause();
+    void reportFailure(this.show(this.time, { snap: false }), (message) => {
+      this.editor.operations.status(message, true);
+    });
   };
   seek = (t: number) => {
     if (this.editor.operations.busy) {

@@ -63,9 +63,7 @@ export class WorkspaceController {
       this.views,
       () => this.transport.time,
       () => this.selected,
-      (t) => {
-        this.transport.seek(t);
-      },
+      this.transport,
       this.selectVideo,
       this.transport.changed,
       this.transport.playbackRange,

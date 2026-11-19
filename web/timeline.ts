@@ -26,7 +26,10 @@ export class Timeline {
     private readonly views: () => VideoView[],
     private readonly time: () => number,
     private readonly selected: () => VideoView,
-    private readonly seek: (t: number) => void,
+    private readonly transport: {
+      seek: (t: number) => void;
+      refresh: () => void;
+    },
     private readonly select: (v: VideoView) => void,
     private readonly change: (save: boolean) => void,
     private readonly playback: () => [number, number],
@@ -79,16 +82,16 @@ export class Timeline {
       this.drag = { kind, view, x: e.clientX, offset };
       svg.setPointerCapture(e.pointerId);
       if (kind === "scrub") {
-        this.seek(this.at(e.clientX));
+        this.transport.seek(this.at(e.clientX));
       } else if (
         kind === "start" ||
         kind === "end" ||
         kind.startsWith("playback-")
       ) {
-        this.seek(this.time());
+        this.transport.seek(this.time());
       }
       if (kind === "mark") {
-        this.seek(Number(target!.dataset.time));
+        this.transport.seek(Number(target!.dataset.time));
         this.drag = null;
       }
       if (this.drag) {
@@ -102,7 +105,7 @@ export class Timeline {
         return;
       }
       if (d.kind === "scrub") {
-        this.seek(this.at(e.clientX));
+        this.transport.seek(this.at(e.clientX));
         return;
       }
       const time = d.offset + this.at(e.clientX) - this.at(d.x);
@@ -129,7 +132,7 @@ export class Timeline {
       }
       this.change(false);
       if (d.kind === "clip") {
-        this.seek(this.time());
+        this.transport.refresh();
       }
     };
     const finishDrag = () => {
@@ -155,7 +158,7 @@ export class Timeline {
       const { kind } = target.dataset;
       const dir = e.key === "ArrowLeft" ? -1 : 1;
       if (kind === "mark") {
-        this.seek(Number(target.dataset.time));
+        this.transport.seek(Number(target.dataset.time));
         return;
       }
       if (kind === "playback-start" || kind === "playback-end") {
@@ -188,6 +191,9 @@ export class Timeline {
         v.offset += dir * this.frameStep(v);
       }
       this.change(true);
+      if (kind === "clip" && e.key.startsWith("Arrow")) {
+        this.transport.refresh();
+      }
     };
     for (const [id, factor] of [
       ["timeline-in", 0.5],
