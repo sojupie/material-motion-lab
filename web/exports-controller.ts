@@ -25,7 +25,6 @@ export class ExportsController {
     this.previewRequest?.abort();
     const request = new AbortController();
     this.previewRequest = request;
-    $("preview-loading").hidden = false;
     v.el("export-preview").setAttribute("aria-busy", "true");
     try {
       const response = await localFetch(
@@ -58,7 +57,6 @@ export class ExportsController {
       }
     } finally {
       if (this.previewRequest === request) {
-        $("preview-loading").hidden = true;
         v.el("export-preview").removeAttribute("aria-busy");
       }
     }
@@ -228,7 +226,6 @@ export class ExportsController {
     this.exportDialog.addEventListener("close", () => {
       clearTimeout(this.previewTimer);
       this.previewRequest?.abort();
-      $("preview-loading").hidden = true;
       this.editor.operations.paintProcessing();
       this.editor.layout.render();
     });

@@ -540,7 +540,6 @@ templ page(entries []Entry, version ...string) {
 					<p>This project already contains two videos. Choose which one to replace.</p>
 				}
 				@ui.Dialog("export-dialog", "export-title", "Export", "md-dialog export-dialog", exportDialogActions()) {
-					@inlineLoading("preview-loading", "Rendering preview…")
 					<p id="export-name" class="help"></p>
 					<div class="export-format">
 						@ui.Select("export-source", "Video", []ui.Option{{Value: "a", Label: "Video A"}, {Value: "b", Label: "Video B"}})
