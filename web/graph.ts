@@ -230,23 +230,17 @@ export class MotionGraph {
     return $<HTMLSelectElement>("units").value === "progress";
   }
   controls(busy: boolean) {
-    for (const id of [
-      "graph-pan",
-      "graph-fit",
-      "graph-zoom-in",
-      "graph-zoom-out",
-      "graph-fit-end",
-    ]) {
-      $<HTMLButtonElement>(id).disabled =
-        busy || !this.views().some((v) => (v.project?.samples.length ?? 0) > 0);
+    const hasVideo = this.views().some((v) => v.project !== null);
+    const hasSamples = this.views().some((v) => (v.project?.samples.length ?? 0) > 0);
+    for (const id of ["axis", "units", "curve"]) {
+      $<HTMLSelectElement>(id).disabled = busy || !hasVideo;
+    }
+    for (const id of ["graph-pan", "graph-fit", "graph-zoom-in", "graph-zoom-out", "graph-fit-end"]) {
+      $<HTMLButtonElement>(id).disabled = busy || !hasSamples;
     }
     const mode = $<HTMLSelectElement>("duration-mode");
-    mode.disabled =
-      busy ||
-      this.preset === "none" ||
-      this.reference.curve().kind === "spring";
-    $<HTMLInputElement>("duration").disabled =
-      busy || this.preset === "none" || mode.value !== "manual";
+    mode.disabled = busy || !hasVideo || this.preset === "none" || this.reference.curve().kind === "spring";
+    $<HTMLInputElement>("duration").disabled = busy || !hasVideo || this.preset === "none" || mode.value !== "manual";
     syncMaterialControls();
   }
   setActive(v: VideoView) {

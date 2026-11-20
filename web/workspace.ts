@@ -110,7 +110,18 @@ export class WorkspaceController {
     this.controls();
   };
   inspector = () => {
+    $<HTMLInputElement>("clip-offset").disabled =
+      this.operations.busy || !this.selected.project;
     if (!this.selected.project) {
+      for (const id of [
+        "goto-sync",
+        "mark-sync",
+        "align-sync",
+        "nudge-earlier",
+        "nudge-later",
+      ]) {
+        $<HTMLButtonElement>(id).disabled = true;
+      }
       return;
     }
     $("inspector-title").textContent =

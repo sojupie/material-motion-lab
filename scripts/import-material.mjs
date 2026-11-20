@@ -17,13 +17,16 @@ const publicationTokens = "published-review/assets/dtcg/light-default/tokens.css
 const theme = themeArg || path.join(source, "published-review/assets/theme.css");
 // A source-only build starts from the Material light/default definitions shipped
 // with this app. A local publication can refresh them.
-const publication = await Promise.all([
-  readFile(path.join(source, publicationTokens), "utf8"),
-  readFile(theme, "utf8"),
-]).catch(error => {
-  if (themeArg || error.code !== "ENOENT") throw error;
-  return null;
+const optionalRead = (p) => readFile(p, "utf8").catch(error => {
+  if (error.code === "ENOENT") return null;
+  throw error;
 });
+const publicationTokensData = await optionalRead(path.join(source, publicationTokens));
+const publication = themeArg
+  ? [publicationTokensData, await readFile(theme, "utf8")].filter(Boolean)
+  : publicationTokensData
+    ? await optionalRead(theme).then(t => t ? [publicationTokensData, t] : null)
+    : null;
 const themeCSS = postcss.parse(
   publication?.join("\n") ?? await readFile("public/material.css", "utf8"),
 );
@@ -161,7 +164,9 @@ console.log(
 const files = [
   "forge/site/site.css", "forge/site/site.js",
 ];
-const publicationFiles = publication ? [publicationTokens, path.relative(source, theme)] : [];
+const publicationFiles = publication
+  ? [...(publicationTokensData ? [publicationTokens] : []), path.relative(source, theme)]
+  : [];
 await writeFile(
   "public/token-source.json",
   JSON.stringify(

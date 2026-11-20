@@ -1,6 +1,6 @@
 {
   "repository": "https://github.com/sojupie/tokens",
-  "revision": "adc72a652569e2c0f59c457616f7c6c4ae94715e",
+  "revision": "d96fa456ae165e832f2df914b95d7616beee32e5",
   "componentManifest": {
     "modules": [
       "common",
@@ -33,199 +33,191 @@
       "dialogs.js"
     ],
     "files": {
-      "modules.json": "0fc20ac27bcc60af6e5f8111a08d918dd6c2fd4393b83088ccdb81ab6e1cdb17",
-      "static/bundles/button-group.css": "fc44c37dafb55143780e0710023d91eb9e318cf8545325d28903b750e12aeac5",
-      "static/bundles/card.css": "1c2364285f454054c60e5a17029526847c1546355480614d260044c8e5931c83",
-      "static/bundles/checkbox.css": "14fce120fc35f536652a552fb61c1138760c548eab2c71feb2a72430b2192365",
-      "static/bundles/common.css": "d7f55b9d1be57be32f524041e62581650a10a4d5c051ebacf372ce6dbe625c5b",
-      "static/bundles/dialog.css": "7b7f3511f5bfb62339f00af718499e549b36d721de57a7388e6673916750bd77",
-      "static/bundles/list.css": "74ff1b972f81b50654518b68f70b133ae8e149d3f31b300bda23a67c1101f2eb",
-      "static/bundles/loading.css": "b669e0ed3b74fd5da27b90334d5fe0d65eba59d1b9ebb86cf9d4aeb79f49fcef",
-      "static/bundles/messages.css": "336b5cb53d8e1511edc3c0e4e062e481d4cde9975daa3e1be264b8e936a2bec3",
-      "static/bundles/modules.json": "e62867cf28c0a8beef0d09b137e39c40c7738cf69c232bef222347f80bbe0b17",
-      "static/bundles/navigation.css": "e04f1289487d2711fd235ad9fff85fe17ce1373e2e03fef17132c6c170d35e65",
-      "static/bundles/progress.css": "6c9359565c824ce27996d4360bc907a69833c98915701d8b5d1f240f609ad1bd",
-      "static/bundles/toolbar.css": "b52c17521057da7575a0c0dcbbde8bea46c3b2b1da8bda3afcd9f9a057d2ee4b",
-      "static/buttons.css": "fc4adcdbfda6bd6f127b6b8650645161e5b0425ef93f4ba2ccff3bc613994593",
-      "static/buttons.js": "3d072ed5e5a65a78597a8a2010f2f728ffa661eed03343a4b6b96f30039beb5c",
-      "static/components.css": "fd17d0d887bc961da76acddabef2e46201bdf76ecbac0dfd613754196044a228",
-      "static/dialogs.js": "8b02b3845a8338bc0e762c83e8ba08f56e24074a4124e3c5c1d6ef77abf6e58c",
-      "static/fields.js": "edd039858572ec4f6e86df954580c3ab3ae5e39fda003b3ebe90a40fed7ce75d",
-      "static/lists.js": "15638fcfd637b30c1b8df42209381f5ee8cdd44ed1d7afc5f71057ed1dc70350",
-      "static/loading-shapes.json": "6aae8ab1e757be1787ab79e37fc4e3ac05664d19197a00ca27ea68d504a6b4c7",
-      "static/loading.js": "574f7624d85268a53524ddbb49c6e743057f6b3be4e074f7b14bba750df0528f",
-      "static/menus.js": "03defb2c2fc268e5a591b7397e2b7b6a5bfead55295c973432b839b4bf9eee13",
-      "static/motion.cjs": "5f688add56d70bb13f183c681c5a58cb18c543e95351938f5e705ec2fe04672c",
-      "static/progress.js": "726194b98c763f3737daae40f596ea96c054d4e9389f1427fe068317877f3e5f",
-      "static/runtime/button-groups.js": "8c977b3d0ad88e27253ba9f828af396b807a9178984fd4c6d30df69f1120fceb",
-      "static/runtime/chips.js": "f33299d95879688adc3a15c29529f42353bc347d991749fae0629cde18a90155",
-      "static/runtime/navigation.js": "563ced254c4510f7ede86a96f6c53b6c55c6f2c0872562e555362d1b68bf4057",
-      "static/runtime/snackbars.js": "9a141f92b821686a085319ebe437395df0dcf68f110689834a5c8569577b08b7",
-      "static/runtime/toolbars.js": "facb18d750bb3ab7ea250b5e7bde0d158d683f310e638f0c229d1c93e2d014c5",
-      "static/runtime/tooltips.js": "205a9b105027a4dcbccb182acf2fa7823b84f665367867a2fcdbf7e32b974aa7",
-      "static/runtime/utils.js": "1be72b87f8e057d1527bb7b89210a22290fb96aee16228fb9343c39285d98452"
+      "modules.json": "9da4d9102c59347433fadf398f14d89fa45caf84b355694c5eee6043cb46b425",
+      "static/bundles/button-group.css": "b2a1591e5be1033dfb9eff15fc3f34a1b63a6810deccd1954aafe9a6cab4e0cf",
+      "static/bundles/card.css": "930b4c81bea7cadebd7672b38a6edb2c7a47b902f1a9a38c9250ee162e28ce5a",
+      "static/bundles/checkbox.css": "771dcda55ce5c9f82147d9e9ad06130c627b0f783ce20612650e863a16276bc4",
+      "static/bundles/common.css": "8f307ac9ce7b08c25c3379deaa1967b0741d81b885c373b71a6cb59f0c2e2643",
+      "static/bundles/dialog.css": "a7aceddb3e0521a1117751f2b24c7775f2959e4adcc6ce3b154f3f08872f282b",
+      "static/bundles/list.css": "83eace2f442a765da3399d3412e45151b0274c1a9bae5cd0db7f73d26bc39ef3",
+      "static/bundles/loading.css": "e4a64fc490493705fa5b13ff900714f28fc7ff367b91cb4d9f176b209287959a",
+      "static/bundles/messages.css": "cb19344c8d8da103ff7a2899a87bbf17bda3be52f2d6d381bd0b66b1a2fc7e99",
+      "static/bundles/modules.json": "3fc611d86733d8ef508563e2fdcac0f2b4c9d5bcbffd9441c095121a1a064b43",
+      "static/bundles/navigation.css": "6e9f2dfc236a274f52155a64ddf93a0ef2f0c9800e14666aa6b4bbb559139262",
+      "static/bundles/progress.css": "4a92b390ba8610e2108b4226147e2b8b489601d33559f5f8b9b541d2f8f855db",
+      "static/bundles/toolbar.css": "fa661c30832f2161ca84020112ebb91d3ce882eac7f88ec23ac06a0edad6c1df",
+      "static/buttons.css": "2e8749fcf5abcda923712ca1a5b264f8b3e40ec5d98f539bc3f95a8115d51ade",
+      "static/buttons.js": "dfbf088b8d20319f14cd51e8b296fec6928341028e38795b4b63e40784da2b47",
+      "static/components.css": "577be60d4a526f64b47d81bb4030be1dfad2fb92f02b0aa005ad49875f8ddb5e",
+      "static/dialogs.js": "c57cf556f70d5ccb5ae8c2eaf64009f28da410a27f1b70746e17d6e10de4ba2f",
+      "static/fields.js": "e475e7256111aac32359bf9782fc53bd3214021ca5102261c5de428fbb84679f",
+      "static/lists.js": "c9c10bf7e33110c1e7b15121ce57dc5196bdbafd361b8a3705cc15638cc994cc",
+      "static/loading-shapes.json": "5c1526848b716b4bddbbd2e0b100309e3d42e28a09159313adcc9be2ee051267",
+      "static/loading.js": "bcfac4771af867dc9b885528a51704a18f25ee1316594cfaae8803ccfd1fa0f6",
+      "static/menus.js": "119e8ec5cf7dbaf8aabc740dc6581d8f6de5ee1260a3a6996116b2f3a2793fba",
+      "static/motion.cjs": "3fbb92d34687f4a6dcdaf237dc843d6f30aa444ee86abfd54ec864c9a7c82793",
+      "static/progress.js": "34a2bf82a457a131a931f38d1c80d436b1e448f783061e1c131710731d3f46ee",
+      "static/runtime/button-groups.js": "c6dc0d4a292a6967ad2fe06b3b62353051ee8f111bb7ecad6146cd8c80827a3e",
+      "static/runtime/chips.js": "ba543d7f84d3e42332714ed1795debe85e17faa26236fdcf4f853a70f0acf2d5",
+      "static/runtime/navigation.js": "1cbb08fed99c795b91f3d2f6cf0fff8d91adc244a6c66bc3f9c9bbe496db2b8c",
+      "static/runtime/snackbars.js": "faf3e715ae04ebc6169c03cd2b26add08c58cf1faec9ed291cfefa73256822c2",
+      "static/runtime/toolbars.js": "d67444811178fbd6a4c695d40d540c10bb6521ea33b2fd6a0a3fb31c0667682c",
+      "static/runtime/tooltips.js": "59d7d5138d7af0e80374dac9496d845d9634ca3cc783d3c5f50e99c0779d18d1",
+      "static/runtime/utils.js": "8edbccb1111a1a255da1a8db64a58fb4bd6c3307b0fb0c876722cf4ab510500a"
     }
   },
   "outputs": {
-    "material.css": "e42069718bac24ff2e8498c80d8ba760084595725d304bd3ec5fef9548bc38e2",
-    "material/utils.js": "1be72b87f8e057d1527bb7b89210a22290fb96aee16228fb9343c39285d98452",
-    "material/motion.js": "5f688add56d70bb13f183c681c5a58cb18c543e95351938f5e705ec2fe04672c",
-    "material/buttons.js": "3d072ed5e5a65a78597a8a2010f2f728ffa661eed03343a4b6b96f30039beb5c",
-    "material/chips.js": "f33299d95879688adc3a15c29529f42353bc347d991749fae0629cde18a90155",
-    "material/fields.js": "edd039858572ec4f6e86df954580c3ab3ae5e39fda003b3ebe90a40fed7ce75d",
-    "material/menus.js": "03defb2c2fc268e5a591b7397e2b7b6a5bfead55295c973432b839b4bf9eee13",
-    "material/snackbars.js": "9a141f92b821686a085319ebe437395df0dcf68f110689834a5c8569577b08b7",
-    "material/tooltips.js": "205a9b105027a4dcbccb182acf2fa7823b84f665367867a2fcdbf7e32b974aa7",
-    "material/navigation.js": "563ced254c4510f7ede86a96f6c53b6c55c6f2c0872562e555362d1b68bf4057",
-    "material/progress.js": "726194b98c763f3737daae40f596ea96c054d4e9389f1427fe068317877f3e5f",
-    "material/loading.js": "574f7624d85268a53524ddbb49c6e743057f6b3be4e074f7b14bba750df0528f",
-    "material/toolbars.js": "facb18d750bb3ab7ea250b5e7bde0d158d683f310e638f0c229d1c93e2d014c5",
-    "material/button-groups.js": "8c977b3d0ad88e27253ba9f828af396b807a9178984fd4c6d30df69f1120fceb",
-    "material/lists.js": "15638fcfd637b30c1b8df42209381f5ee8cdd44ed1d7afc5f71057ed1dc70350",
-    "material/dialogs.js": "8b02b3845a8338bc0e762c83e8ba08f56e24074a4124e3c5c1d6ef77abf6e58c",
-    "material/loading-shapes.json": "6aae8ab1e757be1787ab79e37fc4e3ac05664d19197a00ca27ea68d504a6b4c7"
+    "material.css": "c4733eb2d6d0697aa3e2e51ad6c2a4386015eedf3a5c636451e4fdf51248cd16",
+    "material/utils.js": "8edbccb1111a1a255da1a8db64a58fb4bd6c3307b0fb0c876722cf4ab510500a",
+    "material/motion.js": "3fbb92d34687f4a6dcdaf237dc843d6f30aa444ee86abfd54ec864c9a7c82793",
+    "material/buttons.js": "dfbf088b8d20319f14cd51e8b296fec6928341028e38795b4b63e40784da2b47",
+    "material/chips.js": "ba543d7f84d3e42332714ed1795debe85e17faa26236fdcf4f853a70f0acf2d5",
+    "material/fields.js": "e475e7256111aac32359bf9782fc53bd3214021ca5102261c5de428fbb84679f",
+    "material/menus.js": "119e8ec5cf7dbaf8aabc740dc6581d8f6de5ee1260a3a6996116b2f3a2793fba",
+    "material/snackbars.js": "faf3e715ae04ebc6169c03cd2b26add08c58cf1faec9ed291cfefa73256822c2",
+    "material/tooltips.js": "59d7d5138d7af0e80374dac9496d845d9634ca3cc783d3c5f50e99c0779d18d1",
+    "material/navigation.js": "1cbb08fed99c795b91f3d2f6cf0fff8d91adc244a6c66bc3f9c9bbe496db2b8c",
+    "material/progress.js": "34a2bf82a457a131a931f38d1c80d436b1e448f783061e1c131710731d3f46ee",
+    "material/loading.js": "bcfac4771af867dc9b885528a51704a18f25ee1316594cfaae8803ccfd1fa0f6",
+    "material/toolbars.js": "d67444811178fbd6a4c695d40d540c10bb6521ea33b2fd6a0a3fb31c0667682c",
+    "material/button-groups.js": "c6dc0d4a292a6967ad2fe06b3b62353051ee8f111bb7ecad6146cd8c80827a3e",
+    "material/lists.js": "c9c10bf7e33110c1e7b15121ce57dc5196bdbafd361b8a3705cc15638cc994cc",
+    "material/dialogs.js": "c57cf556f70d5ccb5ae8c2eaf64009f28da410a27f1b70746e17d6e10de4ba2f",
+    "material/loading-shapes.json": "5c1526848b716b4bddbbd2e0b100309e3d42e28a09159313adcc9be2ee051267"
   },
   "files": [
     {
-      "file": "published-review/assets/theme.css",
-      "sha256": "6cc9679c82a217902c466592a5b82390fa69272043e3c3ff7ec6a7f5f99895b7"
-    },
-    {
       "file": "forge/components/modules.json",
-      "sha256": "0fc20ac27bcc60af6e5f8111a08d918dd6c2fd4393b83088ccdb81ab6e1cdb17"
+      "sha256": "9da4d9102c59347433fadf398f14d89fa45caf84b355694c5eee6043cb46b425"
     },
     {
       "file": "forge/components/static/bundles/button-group.css",
-      "sha256": "fc44c37dafb55143780e0710023d91eb9e318cf8545325d28903b750e12aeac5"
+      "sha256": "b2a1591e5be1033dfb9eff15fc3f34a1b63a6810deccd1954aafe9a6cab4e0cf"
     },
     {
       "file": "forge/components/static/bundles/card.css",
-      "sha256": "1c2364285f454054c60e5a17029526847c1546355480614d260044c8e5931c83"
+      "sha256": "930b4c81bea7cadebd7672b38a6edb2c7a47b902f1a9a38c9250ee162e28ce5a"
     },
     {
       "file": "forge/components/static/bundles/checkbox.css",
-      "sha256": "14fce120fc35f536652a552fb61c1138760c548eab2c71feb2a72430b2192365"
+      "sha256": "771dcda55ce5c9f82147d9e9ad06130c627b0f783ce20612650e863a16276bc4"
     },
     {
       "file": "forge/components/static/bundles/common.css",
-      "sha256": "d7f55b9d1be57be32f524041e62581650a10a4d5c051ebacf372ce6dbe625c5b"
+      "sha256": "8f307ac9ce7b08c25c3379deaa1967b0741d81b885c373b71a6cb59f0c2e2643"
     },
     {
       "file": "forge/components/static/bundles/dialog.css",
-      "sha256": "7b7f3511f5bfb62339f00af718499e549b36d721de57a7388e6673916750bd77"
+      "sha256": "a7aceddb3e0521a1117751f2b24c7775f2959e4adcc6ce3b154f3f08872f282b"
     },
     {
       "file": "forge/components/static/bundles/list.css",
-      "sha256": "74ff1b972f81b50654518b68f70b133ae8e149d3f31b300bda23a67c1101f2eb"
+      "sha256": "83eace2f442a765da3399d3412e45151b0274c1a9bae5cd0db7f73d26bc39ef3"
     },
     {
       "file": "forge/components/static/bundles/loading.css",
-      "sha256": "b669e0ed3b74fd5da27b90334d5fe0d65eba59d1b9ebb86cf9d4aeb79f49fcef"
+      "sha256": "e4a64fc490493705fa5b13ff900714f28fc7ff367b91cb4d9f176b209287959a"
     },
     {
       "file": "forge/components/static/bundles/messages.css",
-      "sha256": "336b5cb53d8e1511edc3c0e4e062e481d4cde9975daa3e1be264b8e936a2bec3"
+      "sha256": "cb19344c8d8da103ff7a2899a87bbf17bda3be52f2d6d381bd0b66b1a2fc7e99"
     },
     {
       "file": "forge/components/static/bundles/modules.json",
-      "sha256": "e62867cf28c0a8beef0d09b137e39c40c7738cf69c232bef222347f80bbe0b17"
+      "sha256": "3fc611d86733d8ef508563e2fdcac0f2b4c9d5bcbffd9441c095121a1a064b43"
     },
     {
       "file": "forge/components/static/bundles/navigation.css",
-      "sha256": "e04f1289487d2711fd235ad9fff85fe17ce1373e2e03fef17132c6c170d35e65"
+      "sha256": "6e9f2dfc236a274f52155a64ddf93a0ef2f0c9800e14666aa6b4bbb559139262"
     },
     {
       "file": "forge/components/static/bundles/progress.css",
-      "sha256": "6c9359565c824ce27996d4360bc907a69833c98915701d8b5d1f240f609ad1bd"
+      "sha256": "4a92b390ba8610e2108b4226147e2b8b489601d33559f5f8b9b541d2f8f855db"
     },
     {
       "file": "forge/components/static/bundles/toolbar.css",
-      "sha256": "b52c17521057da7575a0c0dcbbde8bea46c3b2b1da8bda3afcd9f9a057d2ee4b"
+      "sha256": "fa661c30832f2161ca84020112ebb91d3ce882eac7f88ec23ac06a0edad6c1df"
     },
     {
       "file": "forge/components/static/buttons.css",
-      "sha256": "fc4adcdbfda6bd6f127b6b8650645161e5b0425ef93f4ba2ccff3bc613994593"
+      "sha256": "2e8749fcf5abcda923712ca1a5b264f8b3e40ec5d98f539bc3f95a8115d51ade"
     },
     {
       "file": "forge/components/static/buttons.js",
-      "sha256": "3d072ed5e5a65a78597a8a2010f2f728ffa661eed03343a4b6b96f30039beb5c"
+      "sha256": "dfbf088b8d20319f14cd51e8b296fec6928341028e38795b4b63e40784da2b47"
     },
     {
       "file": "forge/components/static/components.css",
-      "sha256": "fd17d0d887bc961da76acddabef2e46201bdf76ecbac0dfd613754196044a228"
+      "sha256": "577be60d4a526f64b47d81bb4030be1dfad2fb92f02b0aa005ad49875f8ddb5e"
     },
     {
       "file": "forge/components/static/dialogs.js",
-      "sha256": "8b02b3845a8338bc0e762c83e8ba08f56e24074a4124e3c5c1d6ef77abf6e58c"
+      "sha256": "c57cf556f70d5ccb5ae8c2eaf64009f28da410a27f1b70746e17d6e10de4ba2f"
     },
     {
       "file": "forge/components/static/fields.js",
-      "sha256": "edd039858572ec4f6e86df954580c3ab3ae5e39fda003b3ebe90a40fed7ce75d"
+      "sha256": "e475e7256111aac32359bf9782fc53bd3214021ca5102261c5de428fbb84679f"
     },
     {
       "file": "forge/components/static/lists.js",
-      "sha256": "15638fcfd637b30c1b8df42209381f5ee8cdd44ed1d7afc5f71057ed1dc70350"
+      "sha256": "c9c10bf7e33110c1e7b15121ce57dc5196bdbafd361b8a3705cc15638cc994cc"
     },
     {
       "file": "forge/components/static/loading-shapes.json",
-      "sha256": "6aae8ab1e757be1787ab79e37fc4e3ac05664d19197a00ca27ea68d504a6b4c7"
+      "sha256": "5c1526848b716b4bddbbd2e0b100309e3d42e28a09159313adcc9be2ee051267"
     },
     {
       "file": "forge/components/static/loading.js",
-      "sha256": "574f7624d85268a53524ddbb49c6e743057f6b3be4e074f7b14bba750df0528f"
+      "sha256": "bcfac4771af867dc9b885528a51704a18f25ee1316594cfaae8803ccfd1fa0f6"
     },
     {
       "file": "forge/components/static/menus.js",
-      "sha256": "03defb2c2fc268e5a591b7397e2b7b6a5bfead55295c973432b839b4bf9eee13"
+      "sha256": "119e8ec5cf7dbaf8aabc740dc6581d8f6de5ee1260a3a6996116b2f3a2793fba"
     },
     {
       "file": "forge/components/static/motion.cjs",
-      "sha256": "5f688add56d70bb13f183c681c5a58cb18c543e95351938f5e705ec2fe04672c"
+      "sha256": "3fbb92d34687f4a6dcdaf237dc843d6f30aa444ee86abfd54ec864c9a7c82793"
     },
     {
       "file": "forge/components/static/progress.js",
-      "sha256": "726194b98c763f3737daae40f596ea96c054d4e9389f1427fe068317877f3e5f"
+      "sha256": "34a2bf82a457a131a931f38d1c80d436b1e448f783061e1c131710731d3f46ee"
     },
     {
       "file": "forge/components/static/runtime/button-groups.js",
-      "sha256": "8c977b3d0ad88e27253ba9f828af396b807a9178984fd4c6d30df69f1120fceb"
+      "sha256": "c6dc0d4a292a6967ad2fe06b3b62353051ee8f111bb7ecad6146cd8c80827a3e"
     },
     {
       "file": "forge/components/static/runtime/chips.js",
-      "sha256": "f33299d95879688adc3a15c29529f42353bc347d991749fae0629cde18a90155"
+      "sha256": "ba543d7f84d3e42332714ed1795debe85e17faa26236fdcf4f853a70f0acf2d5"
     },
     {
       "file": "forge/components/static/runtime/navigation.js",
-      "sha256": "563ced254c4510f7ede86a96f6c53b6c55c6f2c0872562e555362d1b68bf4057"
+      "sha256": "1cbb08fed99c795b91f3d2f6cf0fff8d91adc244a6c66bc3f9c9bbe496db2b8c"
     },
     {
       "file": "forge/components/static/runtime/snackbars.js",
-      "sha256": "9a141f92b821686a085319ebe437395df0dcf68f110689834a5c8569577b08b7"
+      "sha256": "faf3e715ae04ebc6169c03cd2b26add08c58cf1faec9ed291cfefa73256822c2"
     },
     {
       "file": "forge/components/static/runtime/toolbars.js",
-      "sha256": "facb18d750bb3ab7ea250b5e7bde0d158d683f310e638f0c229d1c93e2d014c5"
+      "sha256": "d67444811178fbd6a4c695d40d540c10bb6521ea33b2fd6a0a3fb31c0667682c"
     },
     {
       "file": "forge/components/static/runtime/tooltips.js",
-      "sha256": "205a9b105027a4dcbccb182acf2fa7823b84f665367867a2fcdbf7e32b974aa7"
+      "sha256": "59d7d5138d7af0e80374dac9496d845d9634ca3cc783d3c5f50e99c0779d18d1"
     },
     {
       "file": "forge/components/static/runtime/utils.js",
-      "sha256": "1be72b87f8e057d1527bb7b89210a22290fb96aee16228fb9343c39285d98452"
-    },
-    {
-      "file": "published-review/assets/dtcg/light-default/tokens.css",
-      "sha256": "d025d8b0389776b3d57853fa96e6fe685c64d5adc5b9a5be475162d7e4d3b322"
+      "sha256": "8edbccb1111a1a255da1a8db64a58fb4bd6c3307b0fb0c876722cf4ab510500a"
     },
     {
       "file": "forge/site/site.css",
-      "sha256": "f2edca37c63d83a944f7cd11a4b86d498cd5b98a021333a6c06fedb33fc31907"
+      "sha256": "440e01db6d4b1601d612cb48c09c71cb2864ee0bcf6c3970db59c3deac4db33b"
     },
     {
       "file": "forge/site/site.js",
-      "sha256": "61f141d62b92c24b82e8b41ce3fdb133d4ba570631404879787898bdcbc9e6fb"
+      "sha256": "2981ba2fa226402ef5856cf635946c1d2e9bd68074d77de2f72b4675d8e42004"
     }
   ],
-  "tokenCount": 2725
+  "tokenCount": 2728
 }
