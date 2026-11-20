@@ -1,60 +1,48 @@
 # Motion references
 
-The reference list covers MD3 easing and motion schemes. Definitions live in
-`internal/analysis/reference.go`; the static build exports that list for the browser; the native CLI also uses it.
+Reference curve definitions live in `internal/motion/` (re-exported by
+`internal/analysis/reference.go`) and are bundled into the static browser build
+as well as used by the native CLI.
 
-Values were checked on 2026-10-26 against these primary sources:
+Checked on 2026-10-26 against upstream Material sources:
 
-- [MDC-Android motion definitions](https://github.com/material-components/material-components-android/blob/master/docs/theming/Motion.md): emphasized path and easing curves.
-- [Compose MotionTokens, v0_103](https://github.com/androidx/androidx/blob/androidx-main/compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/MotionTokens.kt): standard, emphasized approximation, legacy and linear Béziers.
-- [Compose ExpressiveMotionTokens, v0_14_0](https://github.com/androidx/androidx/blob/androidx-main/compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/ExpressiveMotionTokens.kt): expressive spring parameters.
-- [Compose StandardMotionTokens, v0_14_0](https://github.com/androidx/androidx/blob/androidx-main/compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/StandardMotionTokens.kt): standard spring parameters.
+- [MDC-Android Motion](https://github.com/material-components/material-components-android/blob/master/docs/theming/Motion.md) — two-segment emphasized path and easing curves.
+- [Compose `MotionTokens` (v0_103)](https://github.com/androidx/androidx/blob/androidx-main/compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/MotionTokens.kt) — standard, emphasized single-Bézier approximation, legacy, and linear Béziers.
+- [Compose `ExpressiveMotionTokens` (v0_14_0)](https://github.com/androidx/androidx/blob/androidx-main/compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/ExpressiveMotionTokens.kt) — expressive springs.
+- [Compose `StandardMotionTokens` (v0_14_0)](https://github.com/androidx/androidx/blob/androidx-main/compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/StandardMotionTokens.kt) — standard springs.
 
-Emphasized has a two-segment path in MDC-Android and a single Bézier approximation
-in Compose. Both are listed with their implementation names.
+## Easing curves
 
-## Easing
-
-Standard, emphasized and legacy each have accelerate and decelerate variants.
-Linear is also available. The duration is independent of the easing; enter it in
-milliseconds or fit it to a recording. Custom Béziers accept four control-point
-coordinates. X coordinates must be within 0–1; Y coordinates may overshoot.
+Standard, emphasized (both MDC-Android path and Compose approximation), and
+legacy each include accelerate and decelerate variants, plus linear. Duration
+is independent of the easing—enter it in milliseconds or auto-fit it to a
+recording. Custom Béziers take four control-point coordinates (`x` in `0–1`,
+`y` may overshoot).
 
 ## Springs
 
-Each scheme has fast, default and slow spatial and effects springs. The effects
-parameters are identical across schemes. The complete parameters appear when a
-spring is selected. Editing a parameter switches the selection to Custom spring.
+Standard and expressive schemes each define fast, default, and slow spatial and
+effects springs (effects parameters are identical across schemes). Editing any
+parameter switches the selection to a custom spring.
 
-The solver evaluates a unit-mass damped harmonic oscillator in seconds. It handles
-underdamped, critically damped and overdamped motion, including zero damping and
-nonzero initial velocity. Velocity is normalized travel per second: 1 means one
-start-to-end distance per second in the direction of travel. Negative values move
-away from the endpoint initially.
-
-Springs retain overshoot and their physical timing. They are not truncated to 1,
-rescaled to an easing duration, or duration-fitted. Reference points are spaced at 4 ms or finer across the measured interval,
-with at least 120 segments. Long recordings are capped at 15,000 segments. This is a trajectory comparison, not a simulation of a platform's
-visibility threshold or final-value snapping.
+The solver integrates a unit-mass damped harmonic oscillator in seconds
+(underdamped, critically damped, overdamped, zero damping, and nonzero initial
+velocity in normalized travel per second). Springs preserve physical timing and
+overshoot—they are never truncated to `1` or duration-fitted. Reference points
+are sampled every ≤ 4 ms (at least 120 segments, capped at 15,000).
 
 ## Comparing recordings
 
-The tracking range supplies the reference start time, start position and endpoint.
-Each recording is normalized separately; choose an endpoint frame after settling
-when measuring spring motion. Progress mode maps that measured displacement to
-0–100%. Keep both recordings visible to compare an MD3 recording with an
-implementation, and mark sync points to align corresponding events.
+Each tracking range supplies the reference's start time, start position, and
+endpoint (for springs, pick an endpoint frame after settling). Progress mode
+normalizes measured displacement to `0–100%`. Custom references can be saved to
+and loaded from JSON; loaded curves always become custom so edited values never
+carry an official preset label.
 
-Custom references can be saved to JSON and loaded again. The file contains a
-schema version, reference parameters and easing duration. Loading a spring or
-Bézier makes it custom, so edited values cannot inherit an official preset label.
-Imported references are validated by the same Go code used for measurement.
+## CLI measurement
 
-## Native CLI and browser measurements
-
-`GET /api/references` lists preset IDs, parameters and source links.
-`POST /api/references/validate` validates a reference object.
-The browser evaluates references and fits durations in its processing worker. The static deployment has no measurement endpoint.
+The browser evaluates references and duration fits in its processing worker.
+With the optional native CLI:
 
 ```sh
 ./scripts/run.sh measure PROJECT_ID --start 30 --end 90 --curve expressive-fast-spatial
