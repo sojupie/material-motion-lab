@@ -1,6 +1,6 @@
 {
   "repository": "https://github.com/sojupie/tokens",
-  "revision": "d96fa456ae165e832f2df914b95d7616beee32e5",
+  "revision": "60ed97613c035f2403b63326e359def9539304b6",
   "componentManifest": {
     "modules": [
       "common",
@@ -39,7 +39,7 @@
       "static/bundles/checkbox.css": "771dcda55ce5c9f82147d9e9ad06130c627b0f783ce20612650e863a16276bc4",
       "static/bundles/common.css": "8f307ac9ce7b08c25c3379deaa1967b0741d81b885c373b71a6cb59f0c2e2643",
       "static/bundles/dialog.css": "a7aceddb3e0521a1117751f2b24c7775f2959e4adcc6ce3b154f3f08872f282b",
-      "static/bundles/list.css": "83eace2f442a765da3399d3412e45151b0274c1a9bae5cd0db7f73d26bc39ef3",
+      "static/bundles/list.css": "b114a04876f5fa725b6e7cdecba48560e640113d0437c3126ed9d7d317666bf1",
       "static/bundles/loading.css": "e4a64fc490493705fa5b13ff900714f28fc7ff367b91cb4d9f176b209287959a",
       "static/bundles/messages.css": "cb19344c8d8da103ff7a2899a87bbf17bda3be52f2d6d381bd0b66b1a2fc7e99",
       "static/bundles/modules.json": "3fc611d86733d8ef508563e2fdcac0f2b4c9d5bcbffd9441c095121a1a064b43",
@@ -47,11 +47,11 @@
       "static/bundles/progress.css": "4a92b390ba8610e2108b4226147e2b8b489601d33559f5f8b9b541d2f8f855db",
       "static/bundles/toolbar.css": "fa661c30832f2161ca84020112ebb91d3ce882eac7f88ec23ac06a0edad6c1df",
       "static/buttons.css": "2e8749fcf5abcda923712ca1a5b264f8b3e40ec5d98f539bc3f95a8115d51ade",
-      "static/buttons.js": "dfbf088b8d20319f14cd51e8b296fec6928341028e38795b4b63e40784da2b47",
-      "static/components.css": "577be60d4a526f64b47d81bb4030be1dfad2fb92f02b0aa005ad49875f8ddb5e",
+      "static/buttons.js": "0931cc5b10a91aa375a285bec16f879af8e76ac5fe695b7ae5205816fcc1acc9",
+      "static/components.css": "bbafa2dbbdacff43675d420cf58145cdc178bd48381b5a9d59723a3fe8833150",
       "static/dialogs.js": "c57cf556f70d5ccb5ae8c2eaf64009f28da410a27f1b70746e17d6e10de4ba2f",
       "static/fields.js": "e475e7256111aac32359bf9782fc53bd3214021ca5102261c5de428fbb84679f",
-      "static/lists.js": "c9c10bf7e33110c1e7b15121ce57dc5196bdbafd361b8a3705cc15638cc994cc",
+      "static/lists.js": "6abdd2384a1547d85482eb79f837f91c90f15bfd51cde50ee4afe4bc03ae86c1",
       "static/loading-shapes.json": "5c1526848b716b4bddbbd2e0b100309e3d42e28a09159313adcc9be2ee051267",
       "static/loading.js": "bcfac4771af867dc9b885528a51704a18f25ee1316594cfaae8803ccfd1fa0f6",
       "static/menus.js": "119e8ec5cf7dbaf8aabc740dc6581d8f6de5ee1260a3a6996116b2f3a2793fba",
@@ -62,26 +62,26 @@
       "static/runtime/navigation.js": "1cbb08fed99c795b91f3d2f6cf0fff8d91adc244a6c66bc3f9c9bbe496db2b8c",
       "static/runtime/snackbars.js": "faf3e715ae04ebc6169c03cd2b26add08c58cf1faec9ed291cfefa73256822c2",
       "static/runtime/toolbars.js": "d67444811178fbd6a4c695d40d540c10bb6521ea33b2fd6a0a3fb31c0667682c",
-      "static/runtime/tooltips.js": "59d7d5138d7af0e80374dac9496d845d9634ca3cc783d3c5f50e99c0779d18d1",
+      "static/runtime/tooltips.js": "d685d7769354ebe35fda945b6198d33a89d73f6ee74664505bc4e513f06220f5",
       "static/runtime/utils.js": "8edbccb1111a1a255da1a8db64a58fb4bd6c3307b0fb0c876722cf4ab510500a"
     }
   },
   "outputs": {
-    "material.css": "c4733eb2d6d0697aa3e2e51ad6c2a4386015eedf3a5c636451e4fdf51248cd16",
+    "material.css": "dacc92ba2ff755c7c3fa1762cab282c79accac3e5e33f81bf8f4bbef1eb20f0c",
     "material/utils.js": "8edbccb1111a1a255da1a8db64a58fb4bd6c3307b0fb0c876722cf4ab510500a",
     "material/motion.js": "3fbb92d34687f4a6dcdaf237dc843d6f30aa444ee86abfd54ec864c9a7c82793",
-    "material/buttons.js": "dfbf088b8d20319f14cd51e8b296fec6928341028e38795b4b63e40784da2b47",
+    "material/buttons.js": "0931cc5b10a91aa375a285bec16f879af8e76ac5fe695b7ae5205816fcc1acc9",
     "material/chips.js": "ba543d7f84d3e42332714ed1795debe85e17faa26236fdcf4f853a70f0acf2d5",
     "material/fields.js": "e475e7256111aac32359bf9782fc53bd3214021ca5102261c5de428fbb84679f",
     "material/menus.js": "119e8ec5cf7dbaf8aabc740dc6581d8f6de5ee1260a3a6996116b2f3a2793fba",
     "material/snackbars.js": "faf3e715ae04ebc6169c03cd2b26add08c58cf1faec9ed291cfefa73256822c2",
-    "material/tooltips.js": "59d7d5138d7af0e80374dac9496d845d9634ca3cc783d3c5f50e99c0779d18d1",
+    "material/tooltips.js": "d685d7769354ebe35fda945b6198d33a89d73f6ee74664505bc4e513f06220f5",
     "material/navigation.js": "1cbb08fed99c795b91f3d2f6cf0fff8d91adc244a6c66bc3f9c9bbe496db2b8c",
     "material/progress.js": "34a2bf82a457a131a931f38d1c80d436b1e448f783061e1c131710731d3f46ee",
     "material/loading.js": "bcfac4771af867dc9b885528a51704a18f25ee1316594cfaae8803ccfd1fa0f6",
     "material/toolbars.js": "d67444811178fbd6a4c695d40d540c10bb6521ea33b2fd6a0a3fb31c0667682c",
     "material/button-groups.js": "c6dc0d4a292a6967ad2fe06b3b62353051ee8f111bb7ecad6146cd8c80827a3e",
-    "material/lists.js": "c9c10bf7e33110c1e7b15121ce57dc5196bdbafd361b8a3705cc15638cc994cc",
+    "material/lists.js": "6abdd2384a1547d85482eb79f837f91c90f15bfd51cde50ee4afe4bc03ae86c1",
     "material/dialogs.js": "c57cf556f70d5ccb5ae8c2eaf64009f28da410a27f1b70746e17d6e10de4ba2f",
     "material/loading-shapes.json": "5c1526848b716b4bddbbd2e0b100309e3d42e28a09159313adcc9be2ee051267"
   },
@@ -112,7 +112,7 @@
     },
     {
       "file": "forge/components/static/bundles/list.css",
-      "sha256": "83eace2f442a765da3399d3412e45151b0274c1a9bae5cd0db7f73d26bc39ef3"
+      "sha256": "b114a04876f5fa725b6e7cdecba48560e640113d0437c3126ed9d7d317666bf1"
     },
     {
       "file": "forge/components/static/bundles/loading.css",
@@ -144,11 +144,11 @@
     },
     {
       "file": "forge/components/static/buttons.js",
-      "sha256": "dfbf088b8d20319f14cd51e8b296fec6928341028e38795b4b63e40784da2b47"
+      "sha256": "0931cc5b10a91aa375a285bec16f879af8e76ac5fe695b7ae5205816fcc1acc9"
     },
     {
       "file": "forge/components/static/components.css",
-      "sha256": "577be60d4a526f64b47d81bb4030be1dfad2fb92f02b0aa005ad49875f8ddb5e"
+      "sha256": "bbafa2dbbdacff43675d420cf58145cdc178bd48381b5a9d59723a3fe8833150"
     },
     {
       "file": "forge/components/static/dialogs.js",
@@ -160,7 +160,7 @@
     },
     {
       "file": "forge/components/static/lists.js",
-      "sha256": "c9c10bf7e33110c1e7b15121ce57dc5196bdbafd361b8a3705cc15638cc994cc"
+      "sha256": "6abdd2384a1547d85482eb79f837f91c90f15bfd51cde50ee4afe4bc03ae86c1"
     },
     {
       "file": "forge/components/static/loading-shapes.json",
@@ -204,7 +204,7 @@
     },
     {
       "file": "forge/components/static/runtime/tooltips.js",
-      "sha256": "59d7d5138d7af0e80374dac9496d845d9634ca3cc783d3c5f50e99c0779d18d1"
+      "sha256": "d685d7769354ebe35fda945b6198d33a89d73f6ee74664505bc4e513f06220f5"
     },
     {
       "file": "forge/components/static/runtime/utils.js",
