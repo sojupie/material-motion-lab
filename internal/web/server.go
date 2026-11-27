@@ -8,7 +8,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/sojupie/tokens/forge/site"
 	"github.com/sojupie/ui-motion/internal/analysis"
 	"io"
 	"net/http"
@@ -371,7 +370,7 @@ func (s *Server) Handler() http.Handler {
 	})
 	for target, name := range map[string]string{"site-logo.svg": "logo.svg", "site-logo.png": "logo-250x250.png", "site-logo.webp": "logo-250x250.webp"} {
 		mux.HandleFunc("GET /"+target, func(w http.ResponseWriter, r *http.Request) {
-			data, _ := site.Files.ReadFile(name)
+			data, _ := logoFiles.ReadFile(name)
 			http.ServeContent(w, r, target, time.Time{}, bytes.NewReader(data))
 		})
 	}

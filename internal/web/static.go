@@ -6,7 +6,6 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
-	"github.com/sojupie/tokens/forge/site"
 	"github.com/sojupie/ui-motion/internal/motion"
 	"mime"
 	"net/http"
@@ -52,7 +51,7 @@ func ExportStatic(dir string) error {
 		return err
 	}
 	for name, target := range map[string]string{"logo.svg": "site-logo.svg", "logo-250x250.png": "site-logo.png", "logo-250x250.webp": "site-logo.webp"} {
-		data, err := site.Files.ReadFile(name)
+		data, err := logoFiles.ReadFile(name)
 		if err != nil {
 			return err
 		}
